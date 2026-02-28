@@ -23,7 +23,7 @@ The technology exists. The methodology is demonstrated. Participation is volunta
 
 ## Revision History
 
-### R0: January 2026
+### R0: January 2026 (Post-Croydon)
 
 - Initial version with agentic interview proposal and experimental results
 
@@ -292,7 +292,7 @@ Interviews are one such measure - a deliberate investment in capturing knowledge
 
 ### 4.3 Interview Guide
 
-Effective interviews elicit tacit knowledge that experts may not realize they possess. The key is drawing out *stories*-specific narratives about decisions, problems, and outcomes. Learning from mistakes transfers tacit knowledge better than success stories, though both have value.
+Effective interviews elicit tacit knowledge that experts may not realize they possess. The key is drawing out *stories* - specific narratives about decisions, problems, and outcomes. Learning from mistakes transfers tacit knowledge better than success stories, though both have value.
 
 **Interview Technique**
 
@@ -396,7 +396,7 @@ Matheus also articulates a tension between library and language features: founda
 
 **Key Insights:**
 
-- Near-unanimous EWG votes can mask widespread misunderstanding of a paper's implications; voters sometimes follow trusted experts on topics they don't fully understand-a reasonable trust mechanism, but one that can obscure whether genuine comprehension backs the vote
+- Near-unanimous EWG votes can mask widespread misunderstanding of a paper's implications; voters sometimes follow trusted experts on topics they do not fully understand - a reasonable trust mechanism, but one that can obscure whether genuine comprehension backs the vote
 - Features that bypass EWG review risk incomplete specifications that only surface during implementation-potentially years later
 - The simultaneous scheduling of CWG and EWG prevents experts from contributing to evolution discussions, causing papers to arrive at CWG in suboptimal shape
 - The committee should throttle feature adoption based on available implementation capacity; approving features faster than they can be implemented wastes resources
@@ -728,8 +728,7 @@ Scoring: PASS = 2 (compliant), PARTIAL = 1 (partial), FAIL = 0 (non-compliant)
 
 ### Criterion-by-Criterion Analysis
 
-#### 1. Political Fragility Kills Proposals - [emoji]
-
+#### 1. Political Fragility Kills Proposals
 **Score: X/2**
 
 > Consensus without a tiebreaker is structurally fragile. Competing proposals fracture politically. One defection after approval kills years of work. No one can compel resolution; champions simply tire and leave.
@@ -746,8 +745,7 @@ Scoring: PASS = 2 (compliant), PARTIAL = 1 (partial), FAIL = 0 (non-compliant)
 
 ---
 
-#### 2. Standardize Proven Practice - [emoji]
-
+#### 2. Standardize Proven Practice
 **Score: X/2**
 
 > Standardize proven practice. Require field experience from independent users outside the proposer's organization. A last-minute implementation is not field experience. A library nobody uses has no value.
@@ -764,8 +762,7 @@ Scoring: PASS = 2 (compliant), PARTIAL = 1 (partial), FAIL = 0 (non-compliant)
 
 ---
 
-#### 3. Complexity Threatens C++ - [emoji]
-
+#### 3. Complexity Threatens C++
 **Score: X/2**
 
 > Complexity that only grows kills a language. C++ requires expertise merely to use it. Features accumulate; nothing is removed. The trajectory ends at COBOL.
@@ -782,8 +779,7 @@ Scoring: PASS = 2 (compliant), PARTIAL = 1 (partial), FAIL = 0 (non-compliant)
 
 ---
 
-#### 4. Consensus Collaboration Produces Great Things - [emoji]
-
+#### 4. Consensus Collaboration Produces Great Things
 **Score: X/2**
 
 > Experts collaborating without ego exceed individual capability. Arguments serve understanding, not dominance. This requires leadership that moderates rather than advocates.
@@ -800,8 +796,7 @@ Scoring: PASS = 2 (compliant), PARTIAL = 1 (partial), FAIL = 0 (non-compliant)
 
 ---
 
-#### 5. Implementation Validates Design - [emoji]
-
+#### 5. Implementation Validates Design
 **Score: X/2**
 
 > Implementation is the minimum credible evidence. A live demo outperforms any paper. Feedback from compiler and library maintainers outweighs committee speculation.
@@ -818,8 +813,7 @@ Scoring: PASS = 2 (compliant), PARTIAL = 1 (partial), FAIL = 0 (non-compliant)
 
 ---
 
-#### 6. Innovation Requires External Incubation - [emoji]
-
+#### 6. Innovation Requires External Incubation
 **Score: X/2**
 
 > Innovation needs a sandbox outside the standard. Designs must iterate through real use before stabilization. Premature standardization locks in mistakes. Boost proved this for C++11; Swift proved it again.
@@ -836,8 +830,7 @@ Scoring: PASS = 2 (compliant), PARTIAL = 1 (partial), FAIL = 0 (non-compliant)
 
 ---
 
-#### 7. Institutional Knowledge Degrades Without Capture - [emoji]
-
+#### 7. Institutional Knowledge Degrades Without Capture
 **Score: X/2**
 
 > Rationale not written down is rationale lost. Knowledge degrades at every process transition. The committee has no retrospectives, no formal onboarding, no written institutional memory.
@@ -854,8 +847,7 @@ Scoring: PASS = 2 (compliant), PARTIAL = 1 (partial), FAIL = 0 (non-compliant)
 
 ---
 
-#### 8. Library Complexity Belongs in the Language - [emoji]
-
+#### 8. Library Complexity Belongs in the Language
 **Score: X/2**
 
 > When a simple concept requires a complex implementation, the language is missing a feature. `std::pair` at 2000 lines is a language deficiency. `std::move` as a template instantiated everywhere is a tax on every translation unit.
@@ -872,8 +864,7 @@ Scoring: PASS = 2 (compliant), PARTIAL = 1 (partial), FAIL = 0 (non-compliant)
 
 ---
 
-#### 9. Permissive Licensing Maximizes Adoption - [emoji]
-
+#### 9. Permissive Licensing Maximizes Adoption
 **Score: X/2**
 
 > One license. Maximally permissive. No copyleft, no credit requirements, no strings. Legal departments default to "no"; every friction point is an adoption that never happens.
@@ -890,8 +881,7 @@ Scoring: PASS = 2 (compliant), PARTIAL = 1 (partial), FAIL = 0 (non-compliant)
 
 ---
 
-#### 10. Standardize What Was Previously Impossible - [emoji]
-
+#### 10. Standardize What Was Previously Impossible
 **Score: X/2**
 
 > Standardize what was impossible. Make the difficult easy. Do not standardize the already-easy. A library's value is enabling domain experts to stay in their domain.
@@ -908,8 +898,7 @@ Scoring: PASS = 2 (compliant), PARTIAL = 1 (partial), FAIL = 0 (non-compliant)
 
 ---
 
-#### 11. Without Agreed Principles, Decisions Drift - [emoji]
-
+#### 11. Without Agreed Principles, Decisions Drift
 **Score: X/2**
 
 > Without documented design principles, every decision is ad hoc. Similar questions receive different answers. The language becomes the sum of political victories, not a coherent design.
