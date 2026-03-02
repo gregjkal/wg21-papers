@@ -1,6 +1,6 @@
 ---
 title: "Coroutines for I/O"
-document: P4003R0
+document: P4003R1
 date: 2026-02-22
 reply-to:
   - "Vinnie Falco <vinnie.falco@gmail.com>"
@@ -157,7 +157,8 @@ struct my_awaitable
     bool await_ready() const noexcept { return false; }
 
     // This signature satisfies IoAwaitable
-    std::coroutine_handle<> await_suspend( std::coroutine_handle<> cont, io_env const* env )
+    std::coroutine_handle<>
+        await_suspend( std::coroutine_handle<> cont, io_env const* env )
     {
         cont_ = cont;
         env_ = env;
@@ -304,7 +305,8 @@ struct task
     T await_resume() { return h_.promise().result(); }
 
     // Satisfies IoAwaitable
-    std::coroutine_handle<> await_suspend( std::coroutine_handle<> cont, io_env const* env )
+    std::coroutine_handle<>
+        await_suspend( std::coroutine_handle<> cont, io_env const* env )
     {
         h_.promise().set_continuation( cont );
         h_.promise().set_environment( env );
@@ -434,10 +436,11 @@ A launch function (e.g., `run_async`, `run`) bridges non-coroutine code into the
 
 ```cpp
 template<Executor Ex, class... Args>
-unspecified run_async( Ex ex, Args&&... args );  // returns wrapper, caller invokes with task
+unspecified run_async( Ex ex, Args&&... args ); // returns wrapper,
+                                                // caller invokes with task
 
 template<Executor Ex, class... Args>
-unspecified run( Ex ex, Args&&... args );        // returns wrapper for co_await
+unspecified run( Ex ex, Args&&... args );       // returns wrapper for co_await
 ```
 
 **Requirements:**

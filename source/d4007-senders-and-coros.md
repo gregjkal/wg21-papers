@@ -1,6 +1,6 @@
 ---
 title: "Senders and Coroutines"
-document: P4007R0
+document: P4007R1
 date: 2026-02-22
 reply-to:
   - "Vinnie Falco <vinnie.falco@gmail.com>"
@@ -164,8 +164,8 @@ read(tcp::socket& sock)
     char buf[1024];
     for (;;)
     {
-        auto [ec, n] = co_await sock.read_some(buf);    // also a tuple
-        result.append(buf, n);                          // n bytes arrived regardless of ec
+        auto [ec, n] = co_await sock.read_some(buf);   // also a tuple
+        result.append(buf, n);                         // n bytes arrived regardless of ec
         if (ec)
             co_return {ec, std::move(result)};
     }
@@ -877,7 +877,9 @@ struct read_op
         read_op* self_;
         void set_value(std::size_t n) && noexcept { self_->completed({}, n); }
         void set_error(std::error_code ec) && noexcept { self_->completed(ec, 0); }
-        void set_stopped() && noexcept { execution::set_stopped(std::move(self_->rcvr_)); }
+        void set_stopped() && noexcept {
+            execution::set_stopped(std::move(self_->rcvr_));
+        }
     };
 
     Rcvr rcvr_;
