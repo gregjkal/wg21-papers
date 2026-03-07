@@ -838,8 +838,10 @@ outline: none;
   <li><a href="#revision-history" id="toc-revision-history">Revision
   History</a>
   <ul>
-  <li><a href="#r0-march-2026-pre-croydon-mailing" id="toc-r0-march-2026-pre-croydon-mailing">R0: March 2026 (pre-Croydon
+  <li><a href="#r1-march-2026-pre-croydon-mailing" id="toc-r1-march-2026-pre-croydon-mailing">R1: March 2026 (pre-Croydon
   mailing)</a></li>
+  <li><a href="#r0-february-2026-pre-croydon-mailing" id="toc-r0-february-2026-pre-croydon-mailing">R0: February 2026
+  (pre-Croydon mailing)</a></li>
   </ul></li>
   <li><a href="#disclosure" id="toc-disclosure">1. Disclosure</a></li>
   <li><a href="#coroutine-native-io" id="toc-coroutine-native-io">2.
@@ -919,20 +921,7 @@ outline: none;
   <li><a href="#abi-makes-the-choice-permanent" id="toc-abi-makes-the-choice-permanent">7.5 ABI Makes the Choice
   Permanent</a></li>
   </ul></li>
-  <li><a href="#why-wait-to-ship" id="toc-why-wait-to-ship">8. Why Wait
-  To Ship?</a>
-  <ul>
-  <li><a href="#c-needs-a-standard-task.-six-years-is-long-enough." id="toc-c-needs-a-standard-task.-six-years-is-long-enough.">8.1 “C++
-  needs a standard task. Six years is long enough.”</a></li>
-  <li><a href="#the-gaps-are-manageable.-ship-now-iterate-later." id="toc-the-gaps-are-manageable.-ship-now-iterate-later.">8.2 “The
-  gaps are manageable. Ship now, iterate later.”</a></li>
-  <li><a href="#a-standard-task-enables-library-interop-that-no-third-party-type-can." id="toc-a-standard-task-enables-library-interop-that-no-third-party-type-can.">8.3
-  “A standard task enables library interop that no third-party type
-  can.”</a></li>
-  <li><a href="#without-task-coroutine-users-cannot-access-standard-networking." id="toc-without-task-coroutine-users-cannot-access-standard-networking.">8.4
-  “Without <code>task</code>, coroutine users cannot access standard
-  networking.”</a></li>
-  </ul></li>
+  <li><a href="#faq" id="toc-faq">8. FAQ</a></li>
   <li><a href="#maturity-of-the-coroutine-integration" id="toc-maturity-of-the-coroutine-integration">9. Maturity of the
   Coroutine Integration</a></li>
   <li><a href="#conclusion" id="toc-conclusion">10. Conclusion</a></li>
@@ -991,8 +980,13 @@ Coroutine Task Type”) to C++29, and explore coroutine-native I/O designs
 alongside sender-based designs.</p>
 <hr />
 <h2 id="revision-history">Revision History</h2>
-<h3 id="r0-march-2026-pre-croydon-mailing">R0: March 2026 (pre-Croydon
+<h3 id="r1-march-2026-pre-croydon-mailing">R1: March 2026 (pre-Croydon
 mailing)</h3>
+<ul>
+<li>Replaced Section 8 with FAQ: twelve questions, hardest first.</li>
+</ul>
+<h3 id="r0-february-2026-pre-croydon-mailing">R0: February 2026
+(pre-Croydon mailing)</h3>
 <ul>
 <li>Initial version.</li>
 </ul>
@@ -2135,120 +2129,94 @@ gaps exist at the coroutine boundary and inside the composition
 mechanism. Remove <code>task</code> from C++26, and no production user
 is affected. The cost falls on no one.</p>
 <hr />
-<h2 id="why-wait-to-ship">8. Why Wait To Ship?</h2>
-<p>The cost of shipping is documented above. What is the cost of
-waiting? The cost is real. C++26 ships without a standard task, and the
-committee’s work on coroutine integration does not reach users in this
-cycle. The question is whether that cost exceeds the cost of locking in
-the four gaps documented above.</p>
-<h3 id="c-needs-a-standard-task.-six-years-is-long-enough.">8.1 “C++
-needs a standard task. Six years is long enough.”</h3>
-<p>C++ needs <code>std::task</code>. The question is whether
-<code>std::execution::task</code> is that type.</p>
-<table>
-<colgroup>
-<col style="width: 23%" />
-<col style="width: 38%" />
-<col style="width: 38%" />
-</colgroup>
-<thead>
-<tr>
-<th>Convention</th>
-<th>P3552R3</th>
-<th>Every existing library</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Error signaling</td>
-<td><code>co_yield with_error(ec)</code></td>
-<td><code>co_return</code> or exceptions</td>
-</tr>
-<tr>
-<td>Type signature</td>
-<td><code>task&lt;T, Environment&gt;</code></td>
-<td><code>task&lt;T&gt;</code></td>
-</tr>
-</tbody>
-</table>
-<p>A task bound to one model’s conventions is a task for that model. The
-standard task for C++ has not been written yet.</p>
-<h3 id="the-gaps-are-manageable.-ship-now-iterate-later.">8.2 “The gaps
-are manageable. Ship now, iterate later.”</h3>
-<p>“Fix later” assumes the fix is a minor adjustment.</p>
-<p>Each gap is the cost of a specific design property (Section 7).
-Closing the gap means removing the property. ABI lock-in makes the
-choice permanent (Section 7.5). The committee deferred P2300 from C++23
-for the same pattern of ongoing design changes.</p>
-<p>The committee has been here before.</p>
-<h3 id="a-standard-task-enables-library-interop-that-no-third-party-type-can.">8.3
-“A standard task enables library interop that no third-party type
-can.”</h3>
-<p>Coroutine interop requires the awaitable protocol, not type
-identity.</p>
-<p><a href="https://wg21.link/p3552r3">P3552R3</a><sup>[13]</sup>
-Section 3:</p>
-<ul>
-<li>“different coroutine task implementations can live side by side: not
-all functionality has to be implemented by the same coroutine
-task.”</li>
-<li>“it should be possible to <code>co_await</code> awaitables which
-includes both library provided and user provided ones.”</li>
-</ul>
-<p>Open task types ship in <a href="https://github.com/lewissbaker/cppcoro">cppcoro</a><sup>[42]</sup>,
-<a href="https://www.boost.org/doc/libs/develop/libs/cobalt/doc/html/index.html">Boost.Cobalt</a><sup>[41]</sup>,
-<a href="https://github.com/facebookexperimental/libunifex">libunifex</a><sup>[43]</sup>,
-<a href="https://github.com/facebook/folly/tree/main/folly/experimental/coro">folly::coro</a><sup>[44]</sup>,
-<a href="https://qcoro.dev/">QCoro</a><sup>[45]</sup>, and <a href="https://github.com/petiaccja/asyncpp">asyncpp</a><sup>[46]</sup>.
-Each interoperates through the awaitable protocol.</p>
-<h3 id="without-task-coroutine-users-cannot-access-standard-networking.">8.4
-“Without <code>task</code>, coroutine users cannot access standard
-networking.”</h3>
-<p>No standard networking exists in C++26. Every networking library that
-supports coroutines already ships its own task type:</p>
-<table>
-<colgroup>
-<col style="width: 85%" />
-<col style="width: 14%" />
-</colgroup>
-<thead>
-<tr>
-<th>Library</th>
-<th>Coroutine Type</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><a href="https://www.boost.org/doc/libs/latest/doc/html/boost_asio/overview/composition/cpp20_coroutines.html">Boost.Asio</a></td>
-<td><code>awaitable&lt;T&gt;</code></td>
-</tr>
-<tr>
-<td><a href="https://www.boost.org/doc/libs/develop/libs/cobalt/doc/html/index.html">Boost.Cobalt</a></td>
-<td><code>task</code>, <code>promise</code></td>
-</tr>
-<tr>
-<td><a href="https://github.com/facebook/folly/tree/main/folly/experimental/coro">folly::coro</a></td>
-<td><code>Task&lt;T&gt;</code></td>
-</tr>
-<tr>
-<td><a href="https://github.com/jbaldwin/libcoro">libcoro</a></td>
-<td><code>task&lt;T&gt;</code></td>
-</tr>
-<tr>
-<td><a href="https://coroio.dev/">COROIO</a></td>
-<td><code>TTask</code></td>
-</tr>
-<tr>
-<td><a href="https://github.com/asyncpp/asyncpp-uring">asyncpp</a></td>
-<td><code>task</code></td>
-</tr>
-</tbody>
-</table>
-<p>Coroutine users are not locked out of networking today and will not
-be locked out tomorrow.</p>
-<p>Each argument assumes <code>std::execution::task</code> is the
-standard task C++ needs. The evidence suggests it is the execution
-model’s task - and that the standard task for C++ is still ahead.</p>
+<h2 id="faq">8. FAQ</h2>
+<ol type="1">
+<li><p><strong>Q</strong> The authors developed P4003. Every gap favors
+that design. Disclosure names bias. It does not remove it.</p>
+<p><strong>A</strong> Correct. Disclosure is necessary but not
+sufficient. Every gap in this paper is a compiler output, a
+specification excerpt, or a benchmark number that any reader can
+independently verify. Bias selects which questions to ask. It cannot
+fabricate the answers. If any gap is wrong, name it.</p></li>
+<li><p><strong>Q</strong> P4003: no work graphs, no heterogeneous
+dispatch, cooperative-only, zero users. Senders have Citadel and
+stdexec. Why P4003?</p>
+<p><strong>A</strong> This paper does not propose P4003 for
+standardization and Section 1 says so. The gaps hold regardless of
+whether P4003 is the right design or any design at all. P4003 made the
+gaps visible; it does not need to be the remedy.</p></li>
+<li><p><strong>Q</strong> D4041: empty rows for sender I/O. P4003: zero
+deployments, 1/2 on this paper’s own adoption rubric. The empty rows
+indict async C++, not senders.</p>
+<p><strong>A</strong> The empty rows are the argument. Neither approach
+has production I/O deployments through the standard. When neither path
+has proven the design, the reversible choice is to wait.</p></li>
+<li><p><strong>Q</strong> Name four I/O scenarios where three-channel
+routing beats tuple returns. If none exist, the evidence is
+selected.</p>
+<p><strong>A</strong> The burden runs the other way. This paper
+documents where three-channel routing costs I/O users data (Section 3).
+If three-channel routing serves an I/O scenario better, that scenario
+should appear in the proposal.</p></li>
+<li><p><strong>Q</strong> “Explore alongside” is not a plan. Who writes
+it? When? With what experience beyond P4003? What does not shipping
+cost, and who pays?</p>
+<p><strong>A</strong> Not shipping <code>task</code> costs no one - no
+production user depends on it, every networking library ships its own
+task type, and C++29 forwarding was unanimous (Section 9). Shipping
+costs everyone who hits the four gaps, locked in by ABI. The question
+answers itself.</p></li>
+<li><p><strong>Q</strong> Awaitable protocol interop requires agreement
+on errors, cancellation, allocators - the unsolved problems. Deferring
+task: interop or fragmentation?</p>
+<p><strong>A</strong> Shipping <code>task</code> with unsolved allocator
+propagation, unconventional error delivery, and unreachable symmetric
+transfer does not produce interop - it produces a standard type
+applications cannot rely upon for I/O. Deferral preserves the design
+space. Premature standardization is what fragments.</p></li>
+<li><p><strong>Q</strong> The gaps are tradeoffs, not defects. This
+paper’s words. Ship the tradeoffs. Let users decide.</p>
+<p><strong>A</strong> Users cannot un-ship ABI. Section 7.5 documents
+what becomes permanent: the three-channel model, the
+<code>connect</code>/<code>start</code> protocol, the
+<code>void await_suspend</code> bridge. Tradeoffs that remain open can
+be revisited; tradeoffs locked in by ABI cannot.</p></li>
+<li><p><strong>Q</strong> Name one case where sender ABI prevented a
+fix. Theoretical permanence is not evidence.</p>
+<p><strong>A</strong> <code>std::execution</code> has not shipped, so
+post-shipping ABI evidence cannot exist. Section 7.5 identifies what
+becomes permanent. The time to evaluate that risk is before it is
+irreversible, not after.</p></li>
+<li><p><strong>Q</strong> 3.1x: recycling vs
+<code>std::allocator</code>, MSVC. Mimalloc: 1.3x over recycling.
+jemalloc on Linux: what? If the answer is “use a good allocator,” the
+gap is academic.</p>
+<p><strong>A</strong> The gap is not which allocator is fastest. The gap
+is that <code>task</code> has no mechanism to propagate any frame
+allocator through nested coroutine calls (Section 5.3). Recycling beats
+mimalloc by 1.3x on the same platform because frame-specific allocation
+has structural advantages no general-purpose allocator can
+match.</p></li>
+<li><p><strong>Q</strong> Composed reads are this paper’s strongest
+case. Show fire-and-forget. Show fan-out. Show retry-with-backoff.</p>
+<p><strong>A</strong> Those are sender pipeline strengths, and this
+paper says so (Section 10). The recommendation is to ship
+<code>std::execution</code> for those patterns. The gaps appear at
+sequential connection handlers, composed reads, and request processing -
+the patterns that dominate I/O.</p></li>
+<li><p><strong>Q</strong> Niebler, 2020. Six years ago. Ten revisions
+ago. When does quoting old blog posts become a device?</p>
+<p><strong>A</strong> This paper also quotes Niebler 2024 (Section 7).
+The 2020 assessment and the 2024 assessment say the same thing. Six
+years of iteration did not change the characterization.</p></li>
+<li><p><strong>Q</strong> <code>co_yield with_error</code> breaks
+convention. Error codes instead of exceptions break convention. Show
+user confusion in practice, not in theory.</p>
+<p><strong>A</strong> Six production coroutine libraries use
+<code>co_return</code> for error delivery (Section 4.3). Zero use
+<code>co_yield</code>. The convention is established by independent
+convergence, not assertion.</p></li>
+</ol>
 <hr />
 <h2 id="maturity-of-the-coroutine-integration">9. Maturity of the
 Coroutine Integration</h2>
