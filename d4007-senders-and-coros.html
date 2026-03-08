@@ -2137,35 +2137,37 @@ that design. Disclosure names bias. It does not remove it.</p>
 sufficient. Every gap in this paper is a compiler output, a
 specification excerpt, or a benchmark number that any reader can
 independently verify. Bias selects which questions to ask. It cannot
-fabricate the answers. If any gap is wrong, name it.</p></li>
+fabricate the answers. Every gap is independently verifiable; we welcome
+corrections.</p></li>
 <li><p><strong>Q</strong> P4003: no work graphs, no heterogeneous
 dispatch, cooperative-only, zero users. Senders have Citadel and
 stdexec. Why P4003?</p>
 <p><strong>A</strong> This paper does not propose P4003 for
-standardization and Section 1 says so. The gaps hold regardless of
-whether P4003 is the right design or any design at all. P4003 made the
-gaps visible; it does not need to be the remedy.</p></li>
+standardization (Section 1). The gaps hold regardless of whether P4003
+is the right design or any design at all. P4003 made the gaps visible;
+it does not need to be the remedy.</p></li>
 <li><p><strong>Q</strong> D4041: empty rows for sender I/O. P4003: zero
 deployments, 1/2 on this paper’s own adoption rubric. The empty rows
 indict async C++, not senders.</p>
-<p><strong>A</strong> The empty rows are the argument. Neither approach
-has production I/O deployments through the standard. When neither path
-has proven the design, the reversible choice is to wait.</p></li>
+<p><strong>A</strong> The empty rows illustrate the argument: neither
+approach has production I/O deployments through the standard. When
+neither path has proven the design, the reversible choice is to
+wait.</p></li>
 <li><p><strong>Q</strong> Name four I/O scenarios where three-channel
 routing beats tuple returns. If none exist, the evidence is
 selected.</p>
-<p><strong>A</strong> The burden runs the other way. This paper
-documents where three-channel routing costs I/O users data (Section 3).
-If three-channel routing serves an I/O scenario better, that scenario
-should appear in the proposal.</p></li>
+<p><strong>A</strong> This paper documents where three-channel routing
+costs I/O users data (Section 3). Scenarios where three-channel routing
+serves I/O better would strengthen the case for the current design; we
+are not aware of published examples.</p></li>
 <li><p><strong>Q</strong> “Explore alongside” is not a plan. Who writes
 it? When? With what experience beyond P4003? What does not shipping
 cost, and who pays?</p>
 <p><strong>A</strong> Not shipping <code>task</code> costs no one - no
 production user depends on it, every networking library ships its own
 task type, and C++29 forwarding was unanimous (Section 9). Shipping
-costs everyone who hits the four gaps, locked in by ABI. The question
-answers itself.</p></li>
+costs everyone who hits the four gaps, locked in by ABI. The cost
+asymmetry favors deferral.</p></li>
 <li><p><strong>Q</strong> Awaitable protocol interop requires agreement
 on errors, cancellation, allocators - the unsolved problems. Deferring
 task: interop or fragmentation?</p>
@@ -2173,11 +2175,12 @@ task: interop or fragmentation?</p>
 propagation, unconventional error delivery, and unreachable symmetric
 transfer does not produce interop - it produces a standard type
 applications cannot rely upon for I/O. Deferral preserves the design
-space. Premature standardization is what fragments.</p></li>
+space; shipping a type with known open issues risks the fragmentation it
+aims to prevent.</p></li>
 <li><p><strong>Q</strong> The gaps are tradeoffs, not defects. This
 paper’s words. Ship the tradeoffs. Let users decide.</p>
-<p><strong>A</strong> Users cannot un-ship ABI. Section 7.5 documents
-what becomes permanent: the three-channel model, the
+<p><strong>A</strong> Once shipped, ABI commitments are permanent.
+Section 7.5 documents what becomes fixed: the three-channel model, the
 <code>connect</code>/<code>start</code> protocol, the
 <code>void await_suspend</code> bridge. Tradeoffs that remain open can
 be revisited; tradeoffs locked in by ABI cannot.</p></li>
@@ -2212,10 +2215,10 @@ years of iteration did not change the characterization.</p></li>
 <li><p><strong>Q</strong> <code>co_yield with_error</code> breaks
 convention. Error codes instead of exceptions break convention. Show
 user confusion in practice, not in theory.</p>
-<p><strong>A</strong> Six production coroutine libraries use
-<code>co_return</code> for error delivery (Section 4.3). Zero use
-<code>co_yield</code>. The convention is established by independent
-convergence, not assertion.</p></li>
+<p><strong>A</strong> Six production coroutine libraries independently
+converged on <code>co_return</code> for error delivery (Section 4.3).
+Zero use <code>co_yield</code>. That consistency suggests the convention
+is well-established.</p></li>
 </ol>
 <hr />
 <h2 id="maturity-of-the-coroutine-integration">9. Maturity of the

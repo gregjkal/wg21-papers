@@ -734,31 +734,31 @@ The narrowest remedy is to ship `std::execution` without `task`. The sender pipe
 
 1. **Q** The authors developed P4003. Every gap favors that design. Disclosure names bias. It does not remove it.
 
-    **A** Correct. Disclosure is necessary but not sufficient. Every gap in this paper is a compiler output, a specification excerpt, or a benchmark number that any reader can independently verify. Bias selects which questions to ask. It cannot fabricate the answers. If any gap is wrong, name it.
+    **A** Correct. Disclosure is necessary but not sufficient. Every gap in this paper is a compiler output, a specification excerpt, or a benchmark number that any reader can independently verify. Bias selects which questions to ask. It cannot fabricate the answers. Every gap is independently verifiable; we welcome corrections.
 
 2. **Q** P4003: no work graphs, no heterogeneous dispatch, cooperative-only, zero users. Senders have Citadel and stdexec. Why P4003?
 
-    **A** This paper does not propose P4003 for standardization and Section 1 says so. The gaps hold regardless of whether P4003 is the right design or any design at all. P4003 made the gaps visible; it does not need to be the remedy.
+    **A** This paper does not propose P4003 for standardization (Section 1). The gaps hold regardless of whether P4003 is the right design or any design at all. P4003 made the gaps visible; it does not need to be the remedy.
 
 3. **Q** D4041: empty rows for sender I/O. P4003: zero deployments, 1/2 on this paper's own adoption rubric. The empty rows indict async C++, not senders.
 
-    **A** The empty rows are the argument. Neither approach has production I/O deployments through the standard. When neither path has proven the design, the reversible choice is to wait.
+    **A** The empty rows illustrate the argument: neither approach has production I/O deployments through the standard. When neither path has proven the design, the reversible choice is to wait.
 
 4. **Q** Name four I/O scenarios where three-channel routing beats tuple returns. If none exist, the evidence is selected.
 
-    **A** The burden runs the other way. This paper documents where three-channel routing costs I/O users data (Section 3). If three-channel routing serves an I/O scenario better, that scenario should appear in the proposal.
+    **A** This paper documents where three-channel routing costs I/O users data (Section 3). Scenarios where three-channel routing serves I/O better would strengthen the case for the current design; we are not aware of published examples.
 
 5. **Q** "Explore alongside" is not a plan. Who writes it? When? With what experience beyond P4003? What does not shipping cost, and who pays?
 
-    **A** Not shipping `task` costs no one - no production user depends on it, every networking library ships its own task type, and C++29 forwarding was unanimous (Section 9). Shipping costs everyone who hits the four gaps, locked in by ABI. The question answers itself.
+    **A** Not shipping `task` costs no one - no production user depends on it, every networking library ships its own task type, and C++29 forwarding was unanimous (Section 9). Shipping costs everyone who hits the four gaps, locked in by ABI. The cost asymmetry favors deferral.
 
 6. **Q** Awaitable protocol interop requires agreement on errors, cancellation, allocators - the unsolved problems. Deferring task: interop or fragmentation?
 
-    **A** Shipping `task` with unsolved allocator propagation, unconventional error delivery, and unreachable symmetric transfer does not produce interop - it produces a standard type applications cannot rely upon for I/O. Deferral preserves the design space. Premature standardization is what fragments.
+    **A** Shipping `task` with unsolved allocator propagation, unconventional error delivery, and unreachable symmetric transfer does not produce interop - it produces a standard type applications cannot rely upon for I/O. Deferral preserves the design space; shipping a type with known open issues risks the fragmentation it aims to prevent.
 
 7. **Q** The gaps are tradeoffs, not defects. This paper's words. Ship the tradeoffs. Let users decide.
 
-    **A** Users cannot un-ship ABI. Section 7.5 documents what becomes permanent: the three-channel model, the `connect`/`start` protocol, the `void await_suspend` bridge. Tradeoffs that remain open can be revisited; tradeoffs locked in by ABI cannot.
+    **A** Once shipped, ABI commitments are permanent. Section 7.5 documents what becomes fixed: the three-channel model, the `connect`/`start` protocol, the `void await_suspend` bridge. Tradeoffs that remain open can be revisited; tradeoffs locked in by ABI cannot.
 
 8. **Q** Name one case where sender ABI prevented a fix. Theoretical permanence is not evidence.
 
@@ -778,7 +778,7 @@ The narrowest remedy is to ship `std::execution` without `task`. The sender pipe
 
 12. **Q** `co_yield with_error` breaks convention. Error codes instead of exceptions break convention. Show user confusion in practice, not in theory.
 
-    **A** Six production coroutine libraries use `co_return` for error delivery (Section 4.3). Zero use `co_yield`. The convention is established by independent convergence, not assertion.
+    **A** Six production coroutine libraries independently converged on `co_return` for error delivery (Section 4.3). Zero use `co_yield`. That consistency suggests the convention is well-established.
 
 ---
 
