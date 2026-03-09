@@ -824,7 +824,7 @@ outline: none;
 <!-- Document Metadata -->
 <div class="document-info">
   <p><strong>Document Number:</strong> D4045R0</p>
-  <p><strong>Date:</strong> 2026-03-08</p>
+  <p><strong>Date:</strong> 2026-03-09</p>
   <p><strong>Audience:</strong> EWG</p>
   <p><strong>Reply-to:</strong> Vinnie Falco <a href="mailto:vinnie.falco@gmail.com" class="email">vinnie.falco@gmail.com</a></p>
 </div>
@@ -837,229 +837,324 @@ outline: none;
   <li><a href="#revision-history" id="toc-revision-history">Revision
   History</a>
   <ul>
-  <li><a href="#r0-march-2026-croydon" id="toc-r0-march-2026-croydon">R0: March 2026 (Croydon)</a></li>
+  <li><a href="#r0-march-2026-pre-croydon" id="toc-r0-march-2026-pre-croydon">R0: March 2026
+  (pre-Croydon)</a></li>
   </ul></li>
-  <li><a href="#disclosure" id="toc-disclosure">1. Disclosure</a></li>
-  <li><a href="#the-question" id="toc-the-question">2. The
-  Question</a></li>
-  <li><a href="#the-evidence" id="toc-the-evidence">3. The
-  Evidence</a></li>
-  <li><a href="#the-record" id="toc-the-record">4. The Record</a></li>
-  <li><a href="#framing" id="toc-framing">5. Framing</a></li>
-  <li><a href="#the-paradox" id="toc-the-paradox">6. The
-  Paradox</a></li>
-  <li><a href="#procedure" id="toc-procedure">7. Procedure</a></li>
+  <li><a href="#introduction" id="toc-introduction">1.
+  Introduction</a></li>
+  <li><a href="#design-changes-since-adoption" id="toc-design-changes-since-adoption">2. Design Changes Since
+  Adoption</a>
+  <ul>
+  <li><a href="#routine-nb-comment-resolutions" id="toc-routine-nb-comment-resolutions">2.1 Routine NB Comment
+  Resolutions</a></li>
+  <li><a href="#the-romanian-nb-comment-ro-2-056" id="toc-the-romanian-nb-comment-ro-2-056">2.2 The Romanian NB Comment
+  (RO 2-056)</a></li>
+  <li><a href="#core-design" id="toc-core-design">2.3 Core
+  Design</a></li>
+  <li><a href="#assessment" id="toc-assessment">2.4 Assessment</a></li>
+  </ul></li>
+  <li><a href="#prior-deliberation-on-each-concern" id="toc-prior-deliberation-on-each-concern">3. Prior Deliberation on
+  Each Concern</a></li>
+  <li><a href="#outstanding-nb-comments" id="toc-outstanding-nb-comments">4. Outstanding NB Comments</a></li>
+  <li><a href="#deferral-and-deployment-experience" id="toc-deferral-and-deployment-experience">5. Deferral and Deployment
+  Experience</a></li>
+  <li><a href="#the-committee-record" id="toc-the-committee-record">6.
+  The Committee Record</a></li>
+  <li><a href="#consensus-terminology" id="toc-consensus-terminology">7.
+  Consensus Terminology</a></li>
+  <li><a href="#procedural-concerns" id="toc-procedural-concerns">8.
+  Procedural Concerns</a></li>
+  <li><a href="#conclusion" id="toc-conclusion">9. Conclusion</a></li>
+  <li><a href="#acknowledgements" id="toc-acknowledgements">Acknowledgements</a></li>
   <li><a href="#references" id="toc-references">References</a></li>
   </ul>
 </nav>
 
 <h2 id="abstract">Abstract</h2>
 <p><a href="https://wg21.link/p4043r0">P4043R0</a><sup>[1]</sup> (“Are
-C++ Contracts Ready to Ship in C++26?”) proposes that EWG reconsider the
-shipping vehicle for C++ Contracts. Every paper it cites, every concern
-it raises, and every alternative it suggests was available to the
-committee before the most recent decisions on the topic.</p>
+C++ Contracts Ready to Ship in C++26?”) asks EWG to reconsider the
+shipping vehicle for C++ Contracts. The paper cites 15 prior papers,
+raises no concern the committee has not already deliberated on, and
+proposes deferral as a remedy whose precondition - deployment experience
+- deferral itself prevents. Every argument in <a href="https://wg21.link/p4043r0">P4043R0</a><sup>[1]</sup> was before
+the committee when it adopted <a href="https://wg21.link/p2900r14">P2900R14</a><sup>[2]</sup> with strong
+consensus and when it subsequently rejected every proposal to reverse
+that decision.</p>
 <hr />
 <h2 id="revision-history">Revision History</h2>
-<h3 id="r0-march-2026-croydon">R0: March 2026 (Croydon)</h3>
+<h3 id="r0-march-2026-pre-croydon">R0: March 2026 (pre-Croydon)</h3>
 <ul>
 <li>Initial version.</li>
-<li>Corrected imprecise ballot characterization in Section 4 (“none has
-achieved consensus” replaced with “each was rejected”) and added Section
-5 on the distinction between consensus against and no consensus.</li>
 </ul>
 <hr />
-<h2 id="disclosure">1. Disclosure</h2>
+<h2 id="introduction">1. Introduction</h2>
+<p><a href="https://wg21.link/p4043r0">P4043R0</a><sup>[1]</sup>
+proposes three polls asking EWG to reconsider, defer, or change the
+shipping vehicle for C++ Contracts. The paper was posted on 2026-03-07,
+two weeks before Croydon, outside any official WG21 mailing.</p>
+<p>The question this paper addresses is narrow: does <a href="https://wg21.link/p4043r0">P4043R0</a><sup>[1]</sup> present
+information or analysis that the committee has not already
+considered?</p>
+<p><a href="https://wg21.link/p4043r0">P4043R0</a><sup>[1]</sup>
+advances five claims:</p>
+<ol type="1">
+<li>The Contracts design continues to evolve (“design churn”).</li>
+<li>Papers raising concerns about Contracts have not reached
+consensus.</li>
+<li>NB comments remain unresolved.</li>
+<li>Deferral would allow implementation and deployment experience.</li>
+<li>The committee should reconsider the shipping vehicle.</li>
+</ol>
+<p>Claims 1 through 4 are offered as evidence for claim 5. Sections 2
+through 6 examine each claim in order. Section 7 addresses a recurring
+terminological error. Section 8 addresses procedural concerns.</p>
 <p>The author has no involvement in the C++ Contracts facility and holds
-no position on its design. The question addressed here is narrow: does
-<a href="https://wg21.link/p4043r0">P4043R0</a><sup>[1]</sup> present
-information that the committee has not already considered?</p>
+no position on its design.</p>
 <hr />
-<h2 id="the-question">2. The Question</h2>
-<p><a href="https://wg21.link/p4043r0">P4043R0</a><sup>[1]</sup> asks
-whether EWG should reconsider the shipping vehicle for C++ Contracts.
-The paper asks this question seven times:</p>
+<h2 id="design-changes-since-adoption">2. Design Changes Since
+Adoption</h2>
+<p><strong>Claim 1: The Contracts design continues to
+evolve.</strong></p>
+<p><a href="https://wg21.link/p4043r0">P4043R0</a><sup>[1]</sup>
+characterizes post-adoption activity as evidence that “the design
+continues to evolve.” The changes since adoption fall into three
+categories.</p>
+<h3 id="routine-nb-comment-resolutions">2.1 Routine NB Comment
+Resolutions</h3>
+<p>Two changes have been applied to the Working Draft since <a href="https://wg21.link/p2900r14">P2900R14</a><sup>[2]</sup> was
+adopted:</p>
+<ul>
+<li><a href="https://wg21.link/p3819r0">P3819R0</a><sup>[4]</sup>
+removed <code>evaluation_exception()</code>. Three identical NB comments
+(NL 17.10, US 69-125, GB 04-124) identified the function as syntactic
+sugar that turned out to be unimplementable without significant
+complexity. EWG applied the fix at Kona 2025.</li>
+<li><a href="https://wg21.link/p3886r0">P3886R0</a><sup>[5]</sup> added
+a feature-test macro that was missed. EWG applied the fix at Kona
+2025.</li>
+</ul>
+<p>Both are exactly the kind of fix the NB comment process exists to
+produce. Neither changes the design.</p>
+<h3 id="the-romanian-nb-comment-ro-2-056">2.2 The Romanian NB Comment
+(RO 2-056)</h3>
+<p>NB comment RO 2-056 proposed new design for enforcement semantics.
+Seven of the 15 papers <a href="https://wg21.link/p4043r0">P4043R0</a><sup>[1]</sup> cites are
+entirely about this one comment:</p>
 <table>
 <colgroup>
-<col style="width: 5%" />
-<col style="width: 94%" />
+<col style="width: 50%" />
+<col style="width: 50%" />
 </colgroup>
 <thead>
 <tr>
-<th>Section</th>
-<th>Representative statement</th>
+<th>Paper</th>
+<th>Title</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>1</td>
-<td>“This paper therefore proposes a simple question for EWG: whether
-the C++ Contracts facility, in its current form, is ready to ship in
-C++26.”</td>
+<td><a href="https://wg21.link/p3911r2">P3911R2</a><sup>[6]</sup></td>
+<td>Make Contracts Reliably Non-Ignorable</td>
 </tr>
 <tr>
-<td>2</td>
-<td>“The presence of continuing NB discussion suggests that further
-design exploration may still be beneficial.”</td>
+<td><a href="https://wg21.link/p3912r0">P3912R0</a><sup>[7]</sup></td>
+<td>Design considerations for always-enforced assertions</td>
 </tr>
 <tr>
-<td>3</td>
-<td>“Taken together, this body of work indicates that the design space
-for Contracts continues to be actively discussed.”</td>
+<td><a href="https://wg21.link/p3919r0">P3919R0</a><sup>[8]</sup></td>
+<td>Guaranteed-(quick-)enforced contracts</td>
 </tr>
 <tr>
-<td>4</td>
-<td>“If substantial questions remain open, deferring the feature could
-allow the committee to incorporate additional design insights.”</td>
+<td><a href="https://wg21.link/p3946r0">P3946R0</a><sup>[9]</sup></td>
+<td>Designing enforced assertions</td>
 </tr>
 <tr>
-<td>5</td>
-<td>“If the committee concludes that the C++ Contracts facility would
-benefit from additional design time, several alternative paths could be
-considered.”</td>
+<td><a href="https://wg21.link/p4005r0">P4005R0</a><sup>[10]</sup></td>
+<td>A proposal for guaranteed-(quick-)enforced contracts</td>
 </tr>
 <tr>
-<td>6</td>
-<td>“Do we believe that the C++ Contracts facility is ready to ship in
-C++26?”</td>
+<td><a href="https://wg21.link/p4009r0">P4009R0</a><sup>[11]</sup></td>
+<td>A proposal for solving all of the contracts concerns</td>
 </tr>
 <tr>
-<td>7</td>
-<td>“Deferring the feature could allow WG21 additional time to refine
-the design.”</td>
+<td><a href="https://wg21.link/p4015r0">P4015R0</a><sup>[12]</sup></td>
+<td>Enforcing Contract Conditions with Statements</td>
 </tr>
 </tbody>
 </table>
+<p>The discussion was extensive. No design change resulted. The
+committee rejected each specific proposal; it did not poll against
+guaranteed enforcement as a goal. The outcome reinforced consensus for
+the adopted design.</p>
+<h3 id="core-design">2.3 Core Design</h3>
+<p>Unchanged. <a href="https://wg21.link/p2900r14">P2900R14</a><sup>[2]</sup> (published
+2025-02-13) remains the latest revision. Zero design changes have been
+applied since adoption.</p>
+<h3 id="assessment">2.4 Assessment</h3>
+<p><a href="https://wg21.link/p4043r0">P4043R0</a><sup>[1]</sup>
+conflates two routine NB fixes and one NB comment that generated
+extensive discussion but no design change with design instability. Two
+small fixes and a resolved NB comment are not churn. They are the NB
+comment process working as intended.</p>
 <hr />
-<h2 id="the-evidence">3. The Evidence</h2>
+<h2 id="prior-deliberation-on-each-concern">3. Prior Deliberation on
+Each Concern</h2>
+<p><strong>Claim 2: Papers raising concerns about Contracts have not
+reached consensus.</strong></p>
 <p><a href="https://wg21.link/p4043r0">P4043R0</a><sup>[1]</sup> cites
-15 papers. The following table lists each one with its publication date,
-drawn from the paper’s own reference section:</p>
+15 papers. Every one was published before <a href="https://wg21.link/p4043r0">P4043R0</a><sup>[1]</sup>. The
+arguments they contain were before the committee in EWG telecons and at
+the Kona 2025 and Hagenberg 2025 meetings. The paper does not cite any
+new implementation result, deployment observation, or design
+analysis.</p>
+<p>The following table maps each claim to the prior papers that raised
+it and the committee action that disposed of it:</p>
 <table>
+<colgroup>
+<col style="width: 11%" />
+<col style="width: 49%" />
+<col style="width: 38%" />
+</colgroup>
 <thead>
 <tr>
-<th>Paper</th>
-<th>Published</th>
+<th>Claim</th>
+<th>Raised by</th>
+<th>Disposition</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><a href="https://wg21.link/p2900r14">P2900R14</a></td>
-<td>2025-02-13</td>
+<td>1. Design continues to evolve</td>
+<td><a href="https://wg21.link/p3573r0">P3573R0</a><sup>[13]</sup>, <a href="https://wg21.link/p3829r0">P3829R0</a><sup>[14]</sup>, <a href="https://wg21.link/p3835r0">P3835R0</a><sup>[15]</sup></td>
+<td>See Section 2. Zero design changes since adoption.</td>
 </tr>
 <tr>
-<td><a href="https://wg21.link/p3573r0">P3573R0</a></td>
-<td>2025-01-12</td>
+<td>2. Concern papers lack consensus</td>
+<td><a href="https://wg21.link/p3851r0">P3851R0</a><sup>[16]</sup>, <a href="https://wg21.link/p3853r0">P3853R0</a><sup>[17]</sup>, <a href="https://wg21.link/p3909r0">P3909R0</a><sup>[18]</sup></td>
+<td>Each proposal to modify or remove Contracts was rejected (<a href="https://wg21.link/p3846r0">P3846R0</a><sup>[3]</sup>).</td>
 </tr>
 <tr>
-<td><a href="https://wg21.link/p3829r0">P3829R0</a></td>
-<td>2025-07-15</td>
+<td>3. NB comments remain unresolved</td>
+<td><a href="https://wg21.link/p3911r2">P3911R2</a><sup>[6]</sup>, <a href="https://wg21.link/p3912r0">P3912R0</a><sup>[7]</sup>, <a href="https://wg21.link/p3919r0">P3919R0</a><sup>[8]</sup>, et al.</td>
+<td>RO 2-056 is the one outstanding comment. <a href="https://wg21.link/p4043r0">P4043R0</a><sup>[1]</sup> proposes no
+solution.</td>
 </tr>
 <tr>
-<td><a href="https://wg21.link/p3835r0">P3835R0</a></td>
-<td>2025-09-03</td>
+<td>4. Deferral enables deployment</td>
+<td><a href="https://wg21.link/p3909r0">P3909R0</a><sup>[18]</sup></td>
+<td>See Section 5. Deferral prevents the deployment it claims to
+enable.</td>
 </tr>
 <tr>
-<td><a href="https://wg21.link/p3851r0">P3851R0</a></td>
-<td>2025-09-29</td>
-</tr>
-<tr>
-<td><a href="https://wg21.link/p3853r0">P3853R0</a></td>
-<td>2025-10-05</td>
-</tr>
-<tr>
-<td><a href="https://wg21.link/p3909r0">P3909R0</a></td>
-<td>2025-11-02</td>
-</tr>
-<tr>
-<td><a href="https://wg21.link/p3911r2">P3911R2</a></td>
-<td>2026-01-14</td>
-</tr>
-<tr>
-<td><a href="https://wg21.link/p3912r0">P3912R0</a></td>
-<td>2025-12-15</td>
-</tr>
-<tr>
-<td><a href="https://wg21.link/p3919r0">P3919R0</a></td>
-<td>2025-11-05</td>
-</tr>
-<tr>
-<td><a href="https://wg21.link/p3946r0">P3946R0</a></td>
-<td>2025-12-14</td>
-</tr>
-<tr>
-<td><a href="https://wg21.link/p4005r0">P4005R0</a></td>
-<td>2026-02-02</td>
-</tr>
-<tr>
-<td><a href="https://wg21.link/p4009r0">P4009R0</a></td>
-<td>2026-02-09</td>
-</tr>
-<tr>
-<td><a href="https://wg21.link/p4015r0">P4015R0</a></td>
-<td>2026-02-10</td>
-</tr>
-<tr>
-<td><a href="https://wg21.link/p4020r0">P4020R0</a></td>
-<td>2026-02-23</td>
+<td>5. Reconsider the shipping vehicle</td>
+<td>EWG poll, 2025-02-11</td>
+<td>Consensus against removal (<a href="https://wg21.link/p2899r1">P2899R1</a><sup>[19]</sup>).</td>
 </tr>
 </tbody>
 </table>
-<p>Every paper in this list was published before <a href="https://wg21.link/p4043r0">P4043R0</a><sup>[1]</sup> and was
-available at prior committee meetings. The paper does not cite any new
-implementation result, deployment observation, or design analysis.</p>
+<p><a href="https://wg21.link/p4020r0">P4020R0</a><sup>[20]</sup>
+(“Concerns about contract assertions”) appeared in the 2026-02
+pre-Croydon mailing and has not yet been discussed. It recommends no
+specific action beyond observing that “there are just 2 coherent
+actions” - keep Contracts or remove them. <a href="https://wg21.link/p4043r0">P4043R0</a><sup>[1]</sup> cites it but
+does not engage with its analysis.</p>
 <hr />
-<h2 id="the-record">4. The Record</h2>
-<p>On 2025-02-11, EWG polled on whether to remove <a href="https://wg21.link/p2900r14">P2900</a><sup>[2]</sup> (“Contracts
-for C++”) from consideration for C++26 and find a different shipping
-vehicle. The result was consensus against (<a href="https://wg21.link/p2899r1">P2899R1</a><sup>[3]</sup>).</p>
-<p>On 2025-02-13, LWG forwarded <a href="https://wg21.link/p2900r14">P2900R14</a><sup>[2]</sup> to plenary
-with consensus (<a href="https://wg21.link/p2899r1">P2899R1</a><sup>[3]</sup>).</p>
-<p>On 2025-02-16, plenary adopted <a href="https://wg21.link/p2900r14">P2900R14</a><sup>[2]</sup> into the
-C++26 Working Paper with strong consensus (<a href="https://wg21.link/p2899r1">P2899R1</a><sup>[3]</sup>).</p>
-<p><a href="https://wg21.link/p2900r14">P2900R14</a><sup>[2]</sup>
-(published 2025-02-13) remains the latest revision. The changes applied
-since adoption - the removal of <code>evaluation_exception()</code> via
-<a href="https://wg21.link/p3819r0">P3819R0</a><sup>[9]</sup> and the
-addition of a feature test macro via <a href="https://wg21.link/p3886r0">P3886R0</a><sup>[10]</sup> - are NB
-comment resolutions that narrow or clarify the facility. The core design
-is unchanged. Multiple proposals to modify the design have been
-presented since adoption; each was rejected (<a href="https://wg21.link/p3846r0">P3846R0</a><sup>[4]</sup>).</p>
-<p><code>constexpr</code> shipped as a minimal language feature in C++11
-(<a href="https://open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2235.pdf">N2235</a><sup>[5]</sup>).
-C++14 relaxed its constraints dramatically (<a href="https://open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3652.html">N3652</a><sup>[6]</sup>).
-The MVP model - ship a minimal language feature in one standard, expand
-it in the next - is established WG21 practice.</p>
+<h2 id="outstanding-nb-comments">4. Outstanding NB Comments</h2>
+<p><strong>Claim 3: NB comments remain unresolved.</strong></p>
+<p>Of the NB comments related to Contracts, all have been resolved
+except RO 2-056. Section 2.2 documents the seven papers written in
+response to that comment and the outcome: extensive discussion, no
+design change, consensus for the current design reinforced.</p>
+<p><a href="https://wg21.link/p4043r0">P4043R0</a><sup>[1]</sup> cites
+the outstanding status of RO 2-056 as evidence of instability but
+proposes no solution to it. The paper recommends deferral or a White
+Paper - neither of which addresses the technical question RO 2-056
+raises.</p>
 <hr />
-<h2 id="framing">5. Framing</h2>
-<p>A committee poll produces one of three outcomes: consensus for,
-consensus against, or no consensus. These are not interchangeable.
-Consensus against a proposal is an affirmative decision - the committee
-considered the question and answered it. No consensus means the
-committee did not reach a decision in either direction.</p>
-<p><a href="https://wg21.link/p4043r0">P4043R0</a><sup>[1]</sup>
-describes prior ballot outcomes without distinguishing between these
-cases. The EWG poll on removing Contracts from C++26 was not “no
-consensus.” It was consensus against removal. The proposals to modify
-the adopted design were not merely unsuccessful - they were rejected.
-Characterizing consensus against as the absence of consensus erases the
-committee’s decision.</p>
-<hr />
-<h2 id="the-paradox">6. The Paradox</h2>
+<h2 id="deferral-and-deployment-experience">5. Deferral and Deployment
+Experience</h2>
+<p><strong>Claim 4: Deferral would allow implementation and deployment
+experience.</strong></p>
 <p><a href="https://wg21.link/p4043r0">P4043R0</a><sup>[1]</sup>
 recommends deferral to allow “implementation and deployment experience.”
 Language features do not receive widespread deployment outside
-standards. The Concepts TS (ISO/IEC TS 19217:2015<sup>[7]</sup>)
+standards. The Concepts TS (ISO/IEC TS 19217:2015<sup>[21]</sup>)
 demonstrated this: the TS was withdrawn, and Concepts were redesigned
-and shipped directly in C++20. <a href="https://wg21.link/p4043r0">P4043R0</a><sup>[1]</sup> prescribes
-the condition it claims to remedy.</p>
+and shipped directly in C++20. Deferral does not produce deployment
+experience. Deferral prevents it.</p>
+<p>The question of whether to ship Contracts as a TS rather than in the
+IS has been litigated. <a href="https://wg21.link/p3265r3">P3265R3</a><sup>[22]</sup> (“Ship
+Contracts in a TS”) proposed exactly this. <a href="https://wg21.link/p3276r0">P3276R0</a><sup>[23]</sup> (“P2900 Is
+Superior to a Contracts TS”) responded that no evidence supports the
+claim that a TS would resolve open questions, and that the established
+process for a TS requires listing specific goals, exit criteria, and a
+viable path through which answers will be acquired. The Direction Group
+addressed the same question in <a href="https://wg21.link/p4000r0">P4000R0</a><sup>[24]</sup> (“To TS or
+not to TS: that is the question”). SG21 polled on the question and
+reached consensus against shipping Contracts as a TS (<a href="https://wg21.link/p2899r1">P2899R1</a><sup>[19]</sup>).</p>
+<p><a href="https://wg21.link/p4043r0">P4043R0</a><sup>[1]</sup>
+suggests a White Paper as an alternative vehicle. A White Paper carries
+the same structural requirement as a TS: it must answer a clear set of
+questions through a viable process. <a href="https://wg21.link/p4043r0">P4043R0</a><sup>[1]</sup> identifies no
+such questions and proposes no such process.</p>
+<p><code>constexpr</code> shipped as a minimal language feature in C++11
+(<a href="https://open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2235.pdf">N2235</a><sup>[25]</sup>).
+C++14 relaxed its constraints dramatically (<a href="https://open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3652.html">N3652</a><sup>[26]</sup>).
+The MVP model - ship a minimal feature, expand it in the next standard -
+is established WG21 practice.</p>
 <hr />
-<h2 id="procedure">7. Procedure</h2>
+<h2 id="the-committee-record">6. The Committee Record</h2>
+<p><strong>Claim 5: The committee should reconsider the shipping
+vehicle.</strong></p>
+<p>On 2025-02-11, EWG polled on whether to remove <a href="https://wg21.link/p2900r14">P2900</a><sup>[2]</sup> (“Contracts
+for C++”) from consideration for C++26 and find a different shipping
+vehicle. The result was consensus against removal (<a href="https://wg21.link/p2899r1">P2899R1</a><sup>[19]</sup>).</p>
+<p>On 2025-02-13, LWG forwarded <a href="https://wg21.link/p2900r14">P2900R14</a><sup>[2]</sup> to plenary
+with consensus (<a href="https://wg21.link/p2899r1">P2899R1</a><sup>[19]</sup>).</p>
+<p>On 2025-02-16, plenary adopted <a href="https://wg21.link/p2900r14">P2900R14</a><sup>[2]</sup> into the
+C++26 Working Paper with strong consensus (<a href="https://wg21.link/p2899r1">P2899R1</a><sup>[19]</sup>).</p>
+<p>Since adoption, multiple proposals to modify the design have been
+presented; each was rejected (<a href="https://wg21.link/p3846r0">P3846R0</a><sup>[3]</sup>). The burden
+of proof lies with the paper proposing to reverse a decision taken with
+strong consensus. <a href="https://wg21.link/p4043r0">P4043R0</a><sup>[1]</sup> does not meet
+that burden.</p>
+<hr />
+<h2 id="consensus-terminology">7. Consensus Terminology</h2>
+<p>A committee poll produces one of three outcomes: consensus for,
+consensus against, or no consensus. These are not interchangeable.</p>
+<p>Consensus against a proposal is an affirmative decision - the
+committee considered the question and answered it. No consensus means
+the committee did not reach a decision in either direction.</p>
+<p><a href="https://wg21.link/p4043r0">P4043R0</a><sup>[1]</sup> states
+that proposals “have not yet achieved consensus” and that “none has yet
+reached consensus.” The EWG poll on removing Contracts from C++26 was
+not “no consensus.” It was consensus against removal. The proposals to
+modify the adopted design were not merely unsuccessful - they were
+rejected. Characterizing consensus against as the absence of consensus
+erases the committee’s decision.</p>
+<hr />
+<h2 id="procedural-concerns">8. Procedural Concerns</h2>
 <p><a href="https://wg21.link/p4043r0">P4043R0</a><sup>[1]</sup> (dated
 2026-03-07) does not appear in any official WG21 mailing. The 2026-02
-pre-Croydon mailing (released 2026-02-23) contains papers through <a href="https://wg21.link/p4032r0">P4032R0</a><sup>[8]</sup>. The paper
-presents no proposed solution to the one outstanding NB comment (RO
-2-056).</p>
+pre-Croydon mailing (released 2026-02-23) contains papers through <a href="https://wg21.link/p4032r0">P4032R0</a><sup>[27]</sup>. The paper
+was simultaneously posted to Reddit. The paper presents no proposed
+solution to the one outstanding NB comment (RO 2-056).</p>
+<hr />
+<h2 id="conclusion">9. Conclusion</h2>
+<p><a href="https://wg21.link/p4043r0">P4043R0</a><sup>[1]</sup>
+presents no new implementation result, no new deployment observation,
+and no new design analysis. The two post-adoption changes to the Working
+Draft are routine NB comment resolutions. The extensive discussion
+around RO 2-056 produced no design change and reinforced consensus for
+the adopted design. The alternative vehicles the paper suggests - C++29,
+a TS, a White Paper - have been considered and rejected, and <a href="https://wg21.link/p4043r0">P4043R0</a><sup>[1]</sup> provides no
+new basis for revisiting those decisions. The committee adopted <a href="https://wg21.link/p2900r14">P2900R14</a><sup>[2]</sup> with strong
+consensus. Nothing in <a href="https://wg21.link/p4043r0">P4043R0</a><sup>[1]</sup> warrants
+reversing that decision.</p>
+<hr />
+<h2 id="acknowledgements">Acknowledgements</h2>
+<p>The author thanks Joshua Berne for detailed feedback on the structure
+and content of this paper.</p>
 <hr />
 <h2 id="references">References</h2>
 <ol type="1">
@@ -1069,47 +1164,15 @@ https://wg21.link/p4043r0</li>
 <li><a href="https://wg21.link/p2900r14">P2900R14</a> - “Contracts for
 C++” (Joshua Berne, Timur Doumler, Andrzej Krzemieński, et al., 2025).
 https://wg21.link/p2900r14</li>
-<li><a href="https://wg21.link/p2899r1">P2899R1</a> - “Contracts for C++
-- Rationale” (Timur Doumler, Joshua Berne, Andrzej Krzemieński,
-Rostislav Khlebnikov, 2025). https://wg21.link/p2899r1</li>
 <li><a href="https://wg21.link/p3846r0">P3846R0</a> - “C++26 Contracts,
 reasserted” (Timur Doumler, Joshua Berne, 2025).
 https://wg21.link/p3846r0</li>
-<li><a href="https://open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2235.pdf">N2235</a>
-- “Generalized Constant Expressions” (Gabriel Dos Reis, Bjarne
-Stroustrup, Jens Maurer, 2007).
-https://open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2235.pdf</li>
-<li><a href="https://open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3652.html">N3652</a>
-- “Relaxing constraints on constexpr functions” (Richard Smith, 2013).
-https://open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3652.html</li>
-<li>ISO/IEC TS 19217:2015 - “C++ Extensions for Concepts” (ISO, 2015).
-Withdrawn.</li>
-<li><a href="https://wg21.link/p4032r0">P4032R0</a> - last paper in the
-2026-02 pre-Croydon mailing.</li>
 <li><a href="https://wg21.link/p3819r0">P3819R0</a> - “Remove
 evaluation_exception from Contracts” (Timur Doumler, Joshua Berne,
 2025). https://wg21.link/p3819r0</li>
 <li><a href="https://wg21.link/p3886r0">P3886R0</a> - “Contract
 violation handler replaceability” (Timur Doumler, Joshua Berne, 2025).
 https://wg21.link/p3886r0</li>
-<li><a href="https://wg21.link/p3573r0">P3573R0</a> - “Contract
-concerns” (Michael Hava, J. Daniel Garcia Sanchez, et al., 2025).
-https://wg21.link/p3573r0</li>
-<li><a href="https://wg21.link/p3829r0">P3829R0</a> - “Contracts do not
-belong in the language” (David Chisnall, John Spicer, et al., 2025).
-https://wg21.link/p3829r0</li>
-<li><a href="https://wg21.link/p3835r0">P3835R0</a> - “Contracts make
-C++ less safe - full stop!” (John Spicer, Ville Voutilainen, Jose Daniel
-Garcia Sanchez, 2025). https://wg21.link/p3835r0</li>
-<li><a href="https://wg21.link/p3851r0">P3851R0</a> - “Position on
-contract assertions for C++26” (J. Daniel Garcia, et al., 2025).
-https://wg21.link/p3851r0</li>
-<li><a href="https://wg21.link/p3853r0">P3853R0</a> - “A
-thesis+antithesis=synthesis rumination on Contracts” (Ville Voutilainen,
-2025). https://wg21.link/p3853r0</li>
-<li><a href="https://wg21.link/p3909r0">P3909R0</a> - “Contracts should
-go into a White Paper” (Ville Voutilainen, 2025).
-https://wg21.link/p3909r0</li>
 <li><a href="https://wg21.link/p3911r2">P3911R2</a> - “Make Contracts
 Reliably Non-Ignorable” (Darius Neaţu, Andrei Alexandrescu, et al.,
 2026). https://wg21.link/p3911r2</li>
@@ -1131,9 +1194,50 @@ https://wg21.link/p4009r0</li>
 <li><a href="https://wg21.link/p4015r0">P4015R0</a> - “Enforcing
 Contract Conditions with Statements” (Lisa Lippincott, 2026).
 https://wg21.link/p4015r0</li>
+<li><a href="https://wg21.link/p3573r0">P3573R0</a> - “Contract
+concerns” (Michael Hava, J. Daniel Garcia Sanchez, et al., 2025).
+https://wg21.link/p3573r0</li>
+<li><a href="https://wg21.link/p3829r0">P3829R0</a> - “Contracts do not
+belong in the language” (David Chisnall, John Spicer, et al., 2025).
+https://wg21.link/p3829r0</li>
+<li><a href="https://wg21.link/p3835r0">P3835R0</a> - “Contracts make
+C++ less safe - full stop!” (John Spicer, Ville Voutilainen, Jose Daniel
+Garcia Sanchez, 2025). https://wg21.link/p3835r0</li>
+<li><a href="https://wg21.link/p3851r0">P3851R0</a> - “Position on
+contract assertions for C++26” (J. Daniel Garcia, et al., 2025).
+https://wg21.link/p3851r0</li>
+<li><a href="https://wg21.link/p3853r0">P3853R0</a> - “A
+thesis+antithesis=synthesis rumination on Contracts” (Ville Voutilainen,
+2025). https://wg21.link/p3853r0</li>
+<li><a href="https://wg21.link/p3909r0">P3909R0</a> - “Contracts should
+go into a White Paper” (Ville Voutilainen, 2025).
+https://wg21.link/p3909r0</li>
+<li><a href="https://wg21.link/p2899r1">P2899R1</a> - “Contracts for C++
+- Rationale” (Timur Doumler, Joshua Berne, Andrzej Krzemieński,
+Rostislav Khlebnikov, 2025). https://wg21.link/p2899r1</li>
 <li><a href="https://wg21.link/p4020r0">P4020R0</a> - “Concerns about
 contract assertions” (Andrzej Krzemieński, 2026).
 https://wg21.link/p4020r0</li>
+<li>ISO/IEC TS 19217:2015 - “C++ Extensions for Concepts” (ISO, 2015).
+Withdrawn.</li>
+<li><a href="https://wg21.link/p3265r3">P3265R3</a> - “Ship Contracts in
+a TS” (Ville Voutilainen, 2024). https://wg21.link/p3265r3</li>
+<li><a href="https://wg21.link/p3276r0">P3276R0</a> - “P2900 Is Superior
+to a Contracts TS” (Joshua Berne, Steve Downey, Jake Fevold, Mungo Gill,
+Rostislav Khlebnikov, John Lakos, Alisdair Meredith, 2024).
+https://wg21.link/p3276r0</li>
+<li><a href="https://wg21.link/p4000r0">P4000R0</a> - “To TS or not to
+TS: that is the question” (Michael Wong, H. Hinnant, R. Orr, B.
+Stroustrup, D. Vandevoorde, 2024). https://wg21.link/p4000r0</li>
+<li><a href="https://open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2235.pdf">N2235</a>
+- “Generalized Constant Expressions” (Gabriel Dos Reis, Bjarne
+Stroustrup, Jens Maurer, 2007).
+https://open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2235.pdf</li>
+<li><a href="https://open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3652.html">N3652</a>
+- “Relaxing constraints on constexpr functions” (Richard Smith, 2013).
+https://open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3652.html</li>
+<li><a href="https://wg21.link/p4032r0">P4032R0</a> - last paper in the
+2026-02 pre-Croydon mailing.</li>
 </ol>
 
 </body>
