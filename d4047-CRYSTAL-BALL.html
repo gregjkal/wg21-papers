@@ -3,7 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>D4045R0: Response to P4043R0</title>
+  <title>P4047R0: CRYSTAL BALL: Checking Predictions Against the
+Record</title>
   <style type="text/css">
 
 @font-face {
@@ -819,13 +820,13 @@ outline: none;
   <div class="header-text">WG21 Proposal</div>
 </header>
 
-<h1>Response to P4043R0</h1>
+<h1>CRYSTAL BALL: Checking Predictions Against the Record</h1>
 
 <!-- Document Metadata -->
 <div class="document-info">
-  <p><strong>Document Number:</strong> D4045R0</p>
+  <p><strong>Document Number:</strong> P4047R0</p>
   <p><strong>Date:</strong> 2026-03-08</p>
-  <p><strong>Audience:</strong> EWG</p>
+  <p><strong>Audience:</strong> All of WG21</p>
   <p><strong>Reply-to:</strong> Vinnie Falco <a href="mailto:vinnie.falco@gmail.com" class="email">vinnie.falco@gmail.com</a></p>
 </div>
 
@@ -833,307 +834,615 @@ outline: none;
 <nav class="toc">
   <h2 class="toc-title">Table of Contents</h2>
   <ul>
+  <li><a href="#crystal-ball-checking-predictions-against-the-record" id="toc-crystal-ball-checking-predictions-against-the-record">CRYSTAL
+  BALL: Checking Predictions Against the Record</a>
+  <ul>
   <li><a href="#abstract" id="toc-abstract">Abstract</a></li>
   <li><a href="#revision-history" id="toc-revision-history">Revision
   History</a>
   <ul>
-  <li><a href="#r0-march-2026-croydon" id="toc-r0-march-2026-croydon">R0: March 2026 (Croydon)</a></li>
+  <li><a href="#r0-march-2026" id="toc-r0-march-2026">R0: March
+  2026</a></li>
   </ul></li>
   <li><a href="#disclosure" id="toc-disclosure">1. Disclosure</a></li>
-  <li><a href="#the-question" id="toc-the-question">2. The
-  Question</a></li>
-  <li><a href="#the-evidence" id="toc-the-evidence">3. The
-  Evidence</a></li>
-  <li><a href="#the-record" id="toc-the-record">4. The Record</a></li>
-  <li><a href="#framing" id="toc-framing">5. Framing</a></li>
-  <li><a href="#the-paradox" id="toc-the-paradox">6. The
-  Paradox</a></li>
-  <li><a href="#procedure" id="toc-procedure">7. Procedure</a></li>
+  <li><a href="#method" id="toc-method">2. Method</a></li>
+  <li><a href="#the-predictions" id="toc-the-predictions">3. The
+  Predictions</a>
+  <ul>
+  <li><a href="#timeline" id="toc-timeline">Timeline</a></li>
+  <li><a href="#safety-and-correctness" id="toc-safety-and-correctness">Safety and Correctness</a></li>
+  <li><a href="#customization-mechanism" id="toc-customization-mechanism">Customization Mechanism</a></li>
+  <li><a href="#universality-and-scope" id="toc-universality-and-scope">Universality and Scope</a></li>
+  <li><a href="#domain-viability" id="toc-domain-viability">Domain
+  Viability</a></li>
+  <li><a href="#networking" id="toc-networking">Networking</a></li>
+  <li><a href="#implementation-maturity" id="toc-implementation-maturity">Implementation Maturity</a></li>
+  </ul></li>
+  <li><a href="#scorecard" id="toc-scorecard">4. Scorecard</a></li>
+  <li><a href="#conclusion" id="toc-conclusion">5. Conclusion</a></li>
   <li><a href="#references" id="toc-references">References</a></li>
+  </ul></li>
   </ul>
 </nav>
 
+<h1 id="crystal-ball-checking-predictions-against-the-record">CRYSTAL
+BALL: Checking Predictions Against the Record</h1>
 <h2 id="abstract">Abstract</h2>
-<p><a href="https://wg21.link/p4043r0">P4043R0</a><sup>[1]</sup> (“Are
-C++ Contracts Ready to Ship in C++26?”) proposes that EWG reconsider the
-shipping vehicle for C++ Contracts. Every paper it cites, every concern
-it raises, and every alternative it suggests was available to the
-committee before the most recent decisions on the topic.</p>
+<p>This paper collects dated, public, falsifiable predictions about
+<code>std::execution</code> from proponents and critics alike, and
+checks each against the record.</p>
 <hr />
 <h2 id="revision-history">Revision History</h2>
-<h3 id="r0-march-2026-croydon">R0: March 2026 (Croydon)</h3>
+<h3 id="r0-march-2026">R0: March 2026</h3>
 <ul>
-<li>Initial version.</li>
-<li>Corrected imprecise ballot characterization in Section 4 (“none has
-achieved consensus” replaced with “each was rejected”) and added Section
-5 on the distinction between consensus against and no consensus.</li>
+<li>Initial revision.</li>
 </ul>
 <hr />
 <h2 id="disclosure">1. Disclosure</h2>
-<p>The author has no involvement in the C++ Contracts facility and holds
-no position on its design. The question addressed here is narrow: does
-<a href="https://wg21.link/p4043r0">P4043R0</a><sup>[1]</sup> present
-information that the committee has not already considered?</p>
-<hr />
-<h2 id="the-question">2. The Question</h2>
-<p><a href="https://wg21.link/p4043r0">P4043R0</a><sup>[1]</sup> asks
-whether EWG should reconsider the shipping vehicle for C++ Contracts.
-The paper asks this question seven times:</p>
-<table>
+<p>The author has papers before the committee proposing coroutine-based
+I/O (<a href="https://wg21.link/p4003">P4003</a>) and analyzing
+<code>std::execution</code> (<a href="https://wg21.link/p2583">P2583</a>, <a href="https://wg21.link/p4007">P4007</a>, <a href="https://wg21.link/p4014">P4014</a>). Every prediction and outcome
+cited below is sourced to public committee records, published blog
+posts, or recorded conference talks.</p>
+<p><strong>The author is the intelligence of record.</strong> <a href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2026/p4023r0.pdf">P4023R0</a><sup>[21]</sup>
+(Directions Group, “Strategic Direction for AI in C++”) establishes that
+“the ultimate responsibility for accuracy, logic, and normative quality
+rests entirely with the human author.” This paper follows that
+principle. AI tools assist with research, compilation, and drafting. The
+author curates, verifies, and takes responsibility for every claim.</p>
+<p><strong>This paper uses AI at every stage.</strong> Prediction
+discovery, outcome verification, scorecard organization, and paper
+drafting were all AI-assisted. Every stage involves machine output.
+P4023R0 identifies research, summarization, and consistency checking as
+permitted uses of AI in the committee process<sup>[21]</sup>. This
+paper’s use of AI falls within that scope.</p>
+<p><strong>Human curation is required at every stage.</strong> AI can
+misidentify predictions, misclassify outcomes, or miss relevant public
+statements. The author verified every prediction-outcome pair against
+the cited source.</p>
+<p><strong>Outcome classifications reflect the author’s assessment of
+the cited evidence.</strong> The scorecard is one systematic reading of
+the public record. Each entry cites its source. Readers who disagree
+with a classification can verify against the cited source and reach
+their own conclusion.</p>
+<h2 id="method">2. Method</h2>
+<p>A prediction qualifies if it is (a) dated, (b) public, and (c)
+falsifiable - a claim about a future outcome that can be checked.
+Outcomes are graded: <strong>Confirmed</strong>,
+<strong>Unconfirmed</strong>, <strong>Partially Confirmed</strong>, or
+<strong>Overtaken by Events</strong>. Both sides miss. Both sides hit.
+The table includes all of them.</p>
+<h2 id="the-predictions">3. The Predictions</h2>
+<h3 id="timeline">Timeline</h3>
+<table style="width:100%;">
 <colgroup>
-<col style="width: 5%" />
-<col style="width: 94%" />
+<col style="width: 2%" />
+<col style="width: 40%" />
+<col style="width: 48%" />
+<col style="width: 3%" />
+<col style="width: 4%" />
 </colgroup>
 <thead>
 <tr>
-<th>Section</th>
-<th>Representative statement</th>
+<th>#</th>
+<th>Prediction</th>
+<th>Source</th>
+<th>Date</th>
+<th>Outcome</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>1</td>
-<td>“This paper therefore proposes a simple question for EWG: whether
-the C++ Contracts facility, in its current form, is ready to ship in
-C++26.”</td>
+<td>T1</td>
+<td>P2300 unlikely for C++23 given size of the proposal</td>
+<td>Adelstein Lelbach, CppCon 2021<sup>[1]</sup></td>
+<td>2021</td>
+<td>Confirmed</td>
 </tr>
 <tr>
-<td>2</td>
-<td>“The presence of continuing NB discussion suggests that further
-design exploration may still be beneficial.”</td>
+<td>T2</td>
+<td>“merge most of the foundational bits [P2300] early in the C++26
+cycle”</td>
+<td>Voutilainen <a href="https://wg21.link/p0592r5">P0592R5</a><sup>[2]</sup></td>
+<td>2022</td>
+<td>Confirmed</td>
 </tr>
 <tr>
-<td>3</td>
-<td>“Taken together, this body of work indicates that the design space
-for Contracts continues to be actively discussed.”</td>
+<td>T3</td>
+<td>“not going to be in a timeframe conducive to inclusion in C++23”
+(re: language changes P2300 needs)</td>
+<td><a href="https://wg21.link/p2469">P2469R0</a><sup>[3]</sup></td>
+<td>2021-10</td>
+<td>Confirmed</td>
 </tr>
 <tr>
-<td>4</td>
-<td>“If substantial questions remain open, deferring the feature could
-allow the committee to incorporate additional design insights.”</td>
+<td>T4</td>
+<td>Networking TS should ship for C++23</td>
+<td><a href="https://wg21.link/p2469">P2469R0</a><sup>[3]</sup></td>
+<td>2021-10</td>
+<td>Unconfirmed - neither Net TS nor any networking shipped</td>
 </tr>
 <tr>
-<td>5</td>
-<td>“If the committee concludes that the C++ Contracts facility would
-benefit from additional design time, several alternative paths could be
-considered.”</td>
-</tr>
-<tr>
-<td>6</td>
-<td>“Do we believe that the C++ Contracts facility is ready to ship in
-C++26?”</td>
-</tr>
-<tr>
-<td>7</td>
-<td>“Deferring the feature could allow WG21 additional time to refine
-the design.”</td>
+<td>T5</td>
+<td>Stop Networking TS for C++23, focus on P2300</td>
+<td>Voutilainen <a href="https://wg21.link/p2464">P2464R0</a><sup>[4]</sup></td>
+<td>2021</td>
+<td>Confirmed - Net TS stopped; P2300 proceeded</td>
 </tr>
 </tbody>
 </table>
-<hr />
-<h2 id="the-evidence">3. The Evidence</h2>
-<p><a href="https://wg21.link/p4043r0">P4043R0</a><sup>[1]</sup> cites
-15 papers. The following table lists each one with its publication date,
-drawn from the paper’s own reference section:</p>
+<h3 id="safety-and-correctness">Safety and Correctness</h3>
+<table>
+<colgroup>
+<col style="width: 2%" />
+<col style="width: 53%" />
+<col style="width: 33%" />
+<col style="width: 4%" />
+<col style="width: 5%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Prediction</th>
+<th>Source</th>
+<th>Date</th>
+<th>Outcome</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>S1</td>
+<td>Stack overflow from reentrant completion without executors is
+“user-hostile default behaviour”</td>
+<td><a href="https://wg21.link/p2469">P2469R0</a><sup>[3]</sup></td>
+<td>2021-10</td>
+<td>Confirmed - Müller <a href="https://wg21.link/p3801">P3801R0</a><sup>[5]</sup> (2025), Kühl <a href="https://wg21.link/p3796">P3796R0</a><sup>[6]</sup></td>
+</tr>
+<tr>
+<td>S2</td>
+<td>P2300 design “insufficiently paranoid to be suited to
+internet-facing software development”</td>
+<td><a href="https://wg21.link/p2480">P2480R0</a><sup>[7]</sup></td>
+<td>2021-10</td>
+<td>Partially confirmed - networking deferred to C++29</td>
+</tr>
+<tr>
+<td>S3</td>
+<td><code>set_error</code> channel confusion - scheduling errors vs. I/O
+errors</td>
+<td><a href="https://wg21.link/p2469">P2469R0</a><sup>[3]</sup></td>
+<td>2021-10</td>
+<td>Confirmed - still unresolved</td>
+</tr>
+<tr>
+<td>S4</td>
+<td>“P2300 will likely require language changes to work effectively” -
+tail calls, trampolines</td>
+<td><a href="https://wg21.link/p2469">P2469R0</a><sup>[3]</sup></td>
+<td>2021-10</td>
+<td>Confirmed - <a href="https://wg21.link/p2583">P2583R1</a><sup>[8]</sup> documents
+symmetric transfer gap (2026)</td>
+</tr>
+<tr>
+<td>S5</td>
+<td>Tail call concerns documented before P2300</td>
+<td>Nishanov <a href="https://wg21.link/p1362">P1362R0</a><sup>[9]</sup></td>
+<td>2019</td>
+<td>Confirmed - still open</td>
+</tr>
+</tbody>
+</table>
+<h3 id="customization-mechanism">Customization Mechanism</h3>
+<table>
+<colgroup>
+<col style="width: 2%" />
+<col style="width: 44%" />
+<col style="width: 40%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Prediction</th>
+<th>Source</th>
+<th>Date</th>
+<th>Outcome</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>C1</td>
+<td><code>tag_invoke</code> as the customization mechanism for sender
+algorithms</td>
+<td><a href="https://wg21.link/p2300">P2300R0</a>-R5, <a href="https://wg21.link/p2403">P2403R0</a><sup>[10]</sup></td>
+<td>2020-2022</td>
+<td>Unconfirmed - abandoned; replaced by <code>transform_sender</code>
+(<a href="https://wg21.link/p2999">P2999</a><sup>[11]</sup>)</td>
+</tr>
+<tr>
+<td>C2</td>
+<td><code>transform_sender</code> as the customization mechanism</td>
+<td><a href="https://wg21.link/p2999">P2999R3</a><sup>[11]</sup></td>
+<td>2024</td>
+<td>Unconfirmed - <a href="https://wg21.link/p3303">P3303</a><sup>[12]</sup> “Fixing,” <a href="https://wg21.link/p3718">P3718</a><sup>[13]</sup> “Fixing Again,”
+then <a href="https://wg21.link/p3826">P3826</a><sup>[14]</sup> proposes
+removal</td>
+</tr>
+<tr>
+<td>C3</td>
+<td>“the customization mechanism has seen a fair bit of recent churn” -
+remove for C++26, restore in C++29</td>
+<td>Niebler <a href="https://wg21.link/p3826">P3826R0</a><sup>[14]</sup></td>
+<td>2025-10</td>
+<td>Pending - proposed</td>
+</tr>
+</tbody>
+</table>
+<h3 id="universality-and-scope">Universality and Scope</h3>
+<table>
+<colgroup>
+<col style="width: 2%" />
+<col style="width: 43%" />
+<col style="width: 44%" />
+<col style="width: 4%" />
+<col style="width: 5%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Prediction</th>
+<th>Source</th>
+<th>Date</th>
+<th>Outcome</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>U1</td>
+<td>“&gt;90% of all async code in the future should be coroutines”</td>
+<td>Niebler, “Structured Concurrency”<sup>[15]</sup></td>
+<td>2020-11</td>
+<td>Shifted - by 2024: “returning a sender is a great
+choice”<sup>[16]</sup></td>
+</tr>
+<tr>
+<td>U2</td>
+<td>“senders are like iterators when STL emerged” - universal adoption
+predicted</td>
+<td>Kühl, quoted in <a href="https://wg21.link/p2300">P2300R3</a>-R10</td>
+<td>2021-25</td>
+<td>Unconfirmed - no equivalent adoption curve</td>
+</tr>
+<tr>
+<td>U3</td>
+<td>SG1 “no consensus” that one grand unified model is needed
+(4-9-5-5-1)</td>
+<td><a href="https://wg21.link/p2453">P2453R0</a><sup>[17]</sup></td>
+<td>2021-09</td>
+<td>Confirmed - poll happened; direction proceeded regardless</td>
+</tr>
+<tr>
+<td>U4</td>
+<td>“Networking should be based on sender/receiver model” - weak
+consensus (17-11-10-4-6)</td>
+<td><a href="https://wg21.link/p2453">P2453R0</a><sup>[17]</sup></td>
+<td>2021-10</td>
+<td>Unconfirmed - no sender-based networking exists; deferred to
+C++29</td>
+</tr>
+<tr>
+<td>U5</td>
+<td>Production library chose awaitables over senders for usability</td>
+<td>Prokoptsev, CppCon 2024<sup>[18]</sup></td>
+<td>2024</td>
+<td>Confirmed</td>
+</tr>
+<tr>
+<td>U6</td>
+<td>“C++26 will <em>still</em> not have a standard coroutine task
+type”</td>
+<td>Niebler <a href="https://wg21.link/p3826">P3826R0</a><sup>[14]</sup></td>
+<td>2025-10</td>
+<td>Pending</td>
+</tr>
+</tbody>
+</table>
+<h3 id="domain-viability">Domain Viability</h3>
+<table>
+<colgroup>
+<col style="width: 2%" />
+<col style="width: 50%" />
+<col style="width: 36%" />
+<col style="width: 4%" />
+<col style="width: 5%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Prediction</th>
+<th>Source</th>
+<th>Date</th>
+<th>Outcome</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>D1</td>
+<td>Sender/receiver deployed in shipping Facebook products, “monthly
+users number in the billions”</td>
+<td>Niebler <a href="https://wg21.link/p2470">P2470R0</a><sup>[19]</sup></td>
+<td>2021</td>
+<td>Confirmed</td>
+</tr>
+<tr>
+<td>D2</td>
+<td>NVIDIA “fully invested in P2300… we plan to ship in production
+sometime next year”</td>
+<td>NVIDIA statement in <a href="https://wg21.link/p2470">P2470R0</a><sup>[19]</sup></td>
+<td>2021</td>
+<td>Confirmed - nvexec shipped</td>
+</tr>
+<tr>
+<td>D3</td>
+<td>Bloomberg experimentation with sender/receiver</td>
+<td><a href="https://wg21.link/p2470">P2470R0</a><sup>[19]</sup></td>
+<td>2021</td>
+<td>Confirmed</td>
+</tr>
+</tbody>
+</table>
+<h3 id="networking">Networking</h3>
+<table>
+<colgroup>
+<col style="width: 2%" />
+<col style="width: 48%" />
+<col style="width: 37%" />
+<col style="width: 4%" />
+<col style="width: 5%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Prediction</th>
+<th>Source</th>
+<th>Date</th>
+<th>Outcome</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>N1</td>
+<td>“The C++ Standard can’t access the Internet. This is embarrassing
+and long overdue.”</td>
+<td><a href="https://wg21.link/p2469">P2469R0</a><sup>[3]</sup></td>
+<td>2021-10</td>
+<td>Confirmed - still true</td>
+</tr>
+<tr>
+<td>N2</td>
+<td>“We don’t have a composable approach proposal [for networking] at
+this point”</td>
+<td>Voutilainen <a href="https://wg21.link/p0592r5">P0592R5</a><sup>[2]</sup></td>
+<td>2022</td>
+<td>Confirmed - still true</td>
+</tr>
+<tr>
+<td>N3</td>
+<td>Chair’s note: “In the short term, this poll result doesn’t mean
+much. We don’t have a paper in hand that proposes networking based on
+the P2300 model.”</td>
+<td><a href="https://wg21.link/p2453">P2453R0</a><sup>[17]</sup></td>
+<td>2021-10</td>
+<td>Confirmed - still no such paper</td>
+</tr>
+</tbody>
+</table>
+<h3 id="implementation-maturity">Implementation Maturity</h3>
+<table>
+<colgroup>
+<col style="width: 2%" />
+<col style="width: 45%" />
+<col style="width: 41%" />
+<col style="width: 4%" />
+<col style="width: 5%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Prediction</th>
+<th>Source</th>
+<th>Date</th>
+<th>Outcome</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>M1</td>
+<td>“many algorithms clearly labeled ‘Not yet implemented’ in
+libunifex”</td>
+<td><a href="https://wg21.link/p2469">P2469R0</a><sup>[3]</sup></td>
+<td>2021-10</td>
+<td>Confirmed - libunifex archived; 50+ post-approval items in C++26
+WD<sup>[20]</sup></td>
+</tr>
+<tr>
+<td>M2</td>
+<td>P2300 task type concerns: stack overflow, allocator, error
+handling</td>
+<td>Müller <a href="https://wg21.link/p3801">P3801R0</a><sup>[5]</sup>,
+Kühl <a href="https://wg21.link/p3796">P3796R1</a><sup>[6]</sup></td>
+<td>2025</td>
+<td>Confirmed - 16 open issues documented by task author</td>
+</tr>
+</tbody>
+</table>
+<h2 id="scorecard">4. Scorecard</h2>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 31%" />
+<col style="width: 13%" />
+<col style="width: 11%" />
+<col style="width: 13%" />
+<col style="width: 20%" />
+<col style="width: 9%" />
+</colgroup>
+<thead>
+<tr>
+<th>Category</th>
+<th>Predictions</th>
+<th>Confirmed</th>
+<th>Unconfirmed</th>
+<th>Shifted / Partial</th>
+<th>Pending</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Timeline</td>
+<td>5</td>
+<td>4</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>Safety / Correctness</td>
+<td>5</td>
+<td>4</td>
+<td>0</td>
+<td>1</td>
+<td>0</td>
+</tr>
+<tr>
+<td>Customization Mechanism</td>
+<td>3</td>
+<td>0</td>
+<td>2</td>
+<td>0</td>
+<td>1</td>
+</tr>
+<tr>
+<td>Universality / Scope</td>
+<td>6</td>
+<td>2</td>
+<td>2</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr>
+<td>Domain Viability</td>
+<td>3</td>
+<td>3</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>Networking</td>
+<td>3</td>
+<td>3</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>Implementation Maturity</td>
+<td>2</td>
+<td>2</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td><strong>Total</strong></td>
+<td><strong>27</strong></td>
+<td><strong>18</strong></td>
+<td><strong>5</strong></td>
+<td><strong>2</strong></td>
+<td><strong>2</strong></td>
+</tr>
+</tbody>
+</table>
+<h2 id="conclusion">5. Conclusion</h2>
 <table>
 <thead>
 <tr>
-<th>Paper</th>
-<th>Published</th>
+<th>Predictive</th>
+<th>Not Predictive</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><a href="https://wg21.link/p2900r14">P2900R14</a></td>
-<td>2025-02-13</td>
+<td>Safety and correctness concerns</td>
+<td>Universality claims</td>
 </tr>
 <tr>
-<td><a href="https://wg21.link/p3573r0">P3573R0</a></td>
-<td>2025-01-12</td>
+<td>Domain viability (where deployed)</td>
+<td>Customization mechanism design</td>
 </tr>
 <tr>
-<td><a href="https://wg21.link/p3829r0">P3829R0</a></td>
-<td>2025-07-15</td>
+<td>Networking gap</td>
+<td>Timeline estimates (all sides)</td>
 </tr>
 <tr>
-<td><a href="https://wg21.link/p3835r0">P3835R0</a></td>
-<td>2025-09-03</td>
-</tr>
-<tr>
-<td><a href="https://wg21.link/p3851r0">P3851R0</a></td>
-<td>2025-09-29</td>
-</tr>
-<tr>
-<td><a href="https://wg21.link/p3853r0">P3853R0</a></td>
-<td>2025-10-05</td>
-</tr>
-<tr>
-<td><a href="https://wg21.link/p3909r0">P3909R0</a></td>
-<td>2025-11-02</td>
-</tr>
-<tr>
-<td><a href="https://wg21.link/p3911r2">P3911R2</a></td>
-<td>2026-01-14</td>
-</tr>
-<tr>
-<td><a href="https://wg21.link/p3912r0">P3912R0</a></td>
-<td>2025-12-15</td>
-</tr>
-<tr>
-<td><a href="https://wg21.link/p3919r0">P3919R0</a></td>
-<td>2025-11-05</td>
-</tr>
-<tr>
-<td><a href="https://wg21.link/p3946r0">P3946R0</a></td>
-<td>2025-12-14</td>
-</tr>
-<tr>
-<td><a href="https://wg21.link/p4005r0">P4005R0</a></td>
-<td>2026-02-02</td>
-</tr>
-<tr>
-<td><a href="https://wg21.link/p4009r0">P4009R0</a></td>
-<td>2026-02-09</td>
-</tr>
-<tr>
-<td><a href="https://wg21.link/p4015r0">P4015R0</a></td>
-<td>2026-02-10</td>
-</tr>
-<tr>
-<td><a href="https://wg21.link/p4020r0">P4020R0</a></td>
-<td>2026-02-23</td>
+<td>Implementation maturity concerns</td>
+<td></td>
 </tr>
 </tbody>
 </table>
-<p>Every paper in this list was published before <a href="https://wg21.link/p4043r0">P4043R0</a><sup>[1]</sup> and was
-available at prior committee meetings. The paper does not cite any new
-implementation result, deployment observation, or design analysis.</p>
-<hr />
-<h2 id="the-record">4. The Record</h2>
-<p>On 2025-02-11, EWG polled on whether to remove <a href="https://wg21.link/p2900r14">P2900</a><sup>[2]</sup> (“Contracts
-for C++”) from consideration for C++26 and find a different shipping
-vehicle. The result was consensus against (<a href="https://wg21.link/p2899r1">P2899R1</a><sup>[3]</sup>).</p>
-<p>On 2025-02-13, LWG forwarded <a href="https://wg21.link/p2900r14">P2900R14</a><sup>[2]</sup> to plenary
-with consensus (<a href="https://wg21.link/p2899r1">P2899R1</a><sup>[3]</sup>).</p>
-<p>On 2025-02-16, plenary adopted <a href="https://wg21.link/p2900r14">P2900R14</a><sup>[2]</sup> into the
-C++26 Working Paper with strong consensus (<a href="https://wg21.link/p2899r1">P2899R1</a><sup>[3]</sup>).</p>
-<p><a href="https://wg21.link/p2900r14">P2900R14</a><sup>[2]</sup>
-(published 2025-02-13) remains the latest revision. The changes applied
-since adoption - the removal of <code>evaluation_exception()</code> via
-<a href="https://wg21.link/p3819r0">P3819R0</a><sup>[9]</sup> and the
-addition of a feature test macro via <a href="https://wg21.link/p3886r0">P3886R0</a><sup>[10]</sup> - are NB
-comment resolutions that narrow or clarify the facility. The core design
-is unchanged. Multiple proposals to modify the design have been
-presented since adoption; each was rejected (<a href="https://wg21.link/p3846r0">P3846R0</a><sup>[4]</sup>).</p>
-<p><code>constexpr</code> shipped as a minimal language feature in C++11
-(<a href="https://open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2235.pdf">N2235</a><sup>[5]</sup>).
-C++14 relaxed its constraints dramatically (<a href="https://open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3652.html">N3652</a><sup>[6]</sup>).
-The MVP model - ship a minimal language feature in one standard, expand
-it in the next - is established WG21 practice.</p>
-<hr />
-<h2 id="framing">5. Framing</h2>
-<p>A committee poll produces one of three outcomes: consensus for,
-consensus against, or no consensus. These are not interchangeable.
-Consensus against a proposal is an affirmative decision - the committee
-considered the question and answered it. No consensus means the
-committee did not reach a decision in either direction.</p>
-<p><a href="https://wg21.link/p4043r0">P4043R0</a><sup>[1]</sup>
-describes prior ballot outcomes without distinguishing between these
-cases. The EWG poll on removing Contracts from C++26 was not “no
-consensus.” It was consensus against removal. The proposals to modify
-the adopted design were not merely unsuccessful - they were rejected.
-Characterizing consensus against as the absence of consensus erases the
-committee’s decision.</p>
-<hr />
-<h2 id="the-paradox">6. The Paradox</h2>
-<p><a href="https://wg21.link/p4043r0">P4043R0</a><sup>[1]</sup>
-recommends deferral to allow “implementation and deployment experience.”
-Language features do not receive widespread deployment outside
-standards. The Concepts TS (ISO/IEC TS 19217:2015<sup>[7]</sup>)
-demonstrated this: the TS was withdrawn, and Concepts were redesigned
-and shipped directly in C++20. <a href="https://wg21.link/p4043r0">P4043R0</a><sup>[1]</sup> prescribes
-the condition it claims to remedy.</p>
-<hr />
-<h2 id="procedure">7. Procedure</h2>
-<p><a href="https://wg21.link/p4043r0">P4043R0</a><sup>[1]</sup> (dated
-2026-03-07) does not appear in any official WG21 mailing. The 2026-02
-pre-Croydon mailing (released 2026-02-23) contains papers through <a href="https://wg21.link/p4032r0">P4032R0</a><sup>[8]</sup>. The paper
-presents no proposed solution to the one outstanding NB comment (RO
-2-056).</p>
 <hr />
 <h2 id="references">References</h2>
 <ol type="1">
-<li><a href="https://wg21.link/p4043r0">P4043R0</a> - “Are C++ Contracts
-Ready to Ship in C++26?” (Darius Neaţu, 2026).
-https://wg21.link/p4043r0</li>
-<li><a href="https://wg21.link/p2900r14">P2900R14</a> - “Contracts for
-C++” (Joshua Berne, Timur Doumler, Andrzej Krzemieński, et al., 2025).
-https://wg21.link/p2900r14</li>
-<li><a href="https://wg21.link/p2899r1">P2899R1</a> - “Contracts for C++
-- Rationale” (Timur Doumler, Joshua Berne, Andrzej Krzemieński,
-Rostislav Khlebnikov, 2025). https://wg21.link/p2899r1</li>
-<li><a href="https://wg21.link/p3846r0">P3846R0</a> - “C++26 Contracts,
-reasserted” (Timur Doumler, Joshua Berne, 2025).
-https://wg21.link/p3846r0</li>
-<li><a href="https://open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2235.pdf">N2235</a>
-- “Generalized Constant Expressions” (Gabriel Dos Reis, Bjarne
-Stroustrup, Jens Maurer, 2007).
-https://open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2235.pdf</li>
-<li><a href="https://open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3652.html">N3652</a>
-- “Relaxing constraints on constexpr functions” (Richard Smith, 2013).
-https://open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3652.html</li>
-<li>ISO/IEC TS 19217:2015 - “C++ Extensions for Concepts” (ISO, 2015).
-Withdrawn.</li>
-<li><a href="https://wg21.link/p4032r0">P4032R0</a> - last paper in the
-2026-02 pre-Croydon mailing.</li>
-<li><a href="https://wg21.link/p3819r0">P3819R0</a> - “Remove
-evaluation_exception from Contracts” (Timur Doumler, Joshua Berne,
-2025). https://wg21.link/p3819r0</li>
-<li><a href="https://wg21.link/p3886r0">P3886R0</a> - “Contract
-violation handler replaceability” (Timur Doumler, Joshua Berne, 2025).
-https://wg21.link/p3886r0</li>
-<li><a href="https://wg21.link/p3573r0">P3573R0</a> - “Contract
-concerns” (Michael Hava, J. Daniel Garcia Sanchez, et al., 2025).
-https://wg21.link/p3573r0</li>
-<li><a href="https://wg21.link/p3829r0">P3829R0</a> - “Contracts do not
-belong in the language” (David Chisnall, John Spicer, et al., 2025).
-https://wg21.link/p3829r0</li>
-<li><a href="https://wg21.link/p3835r0">P3835R0</a> - “Contracts make
-C++ less safe - full stop!” (John Spicer, Ville Voutilainen, Jose Daniel
-Garcia Sanchez, 2025). https://wg21.link/p3835r0</li>
-<li><a href="https://wg21.link/p3851r0">P3851R0</a> - “Position on
-contract assertions for C++26” (J. Daniel Garcia, et al., 2025).
-https://wg21.link/p3851r0</li>
-<li><a href="https://wg21.link/p3853r0">P3853R0</a> - “A
-thesis+antithesis=synthesis rumination on Contracts” (Ville Voutilainen,
-2025). https://wg21.link/p3853r0</li>
-<li><a href="https://wg21.link/p3909r0">P3909R0</a> - “Contracts should
-go into a White Paper” (Ville Voutilainen, 2025).
-https://wg21.link/p3909r0</li>
-<li><a href="https://wg21.link/p3911r2">P3911R2</a> - “Make Contracts
-Reliably Non-Ignorable” (Darius Neaţu, Andrei Alexandrescu, et al.,
-2026). https://wg21.link/p3911r2</li>
-<li><a href="https://wg21.link/p3912r0">P3912R0</a> - “Design
-considerations for always-enforced contract assertions” (Timur Doumler,
-et al., 2025). https://wg21.link/p3912r0</li>
-<li><a href="https://wg21.link/p3919r0">P3919R0</a> -
-“Guaranteed-(quick-)enforced contracts” (Ville Voutilainen, 2025).
-https://wg21.link/p3919r0</li>
-<li><a href="https://wg21.link/p3946r0">P3946R0</a> - “Designing
-enforced assertions” (Andrzej Krzemieński, 2025).
-https://wg21.link/p3946r0</li>
-<li><a href="https://wg21.link/p4005r0">P4005R0</a> - “A proposal for
-guaranteed-(quick-)enforced contracts” (Ville Voutilainen, 2026).
-https://wg21.link/p4005r0</li>
-<li><a href="https://wg21.link/p4009r0">P4009R0</a> - “A proposal for
-solving all of the contracts concerns” (Ville Voutilainen, 2026).
-https://wg21.link/p4009r0</li>
-<li><a href="https://wg21.link/p4015r0">P4015R0</a> - “Enforcing
-Contract Conditions with Statements” (Lisa Lippincott, 2026).
-https://wg21.link/p4015r0</li>
-<li><a href="https://wg21.link/p4020r0">P4020R0</a> - “Concerns about
-contract assertions” (Andrzej Krzemieński, 2026).
-https://wg21.link/p4020r0</li>
+<li><p>Bryce Adelstein Lelbach. “C++ Standard Parallelism.” CppCon 2021.
+https://www.youtube.com/watch?v=LW_T2RGXego</p></li>
+<li><p>Ville Voutilainen. P0592R5. “To boldly suggest an overall plan
+for C++26.” WG21. https://wg21.link/p0592r5</p></li>
+<li><p>Christopher Kohlhoff, Jamie Allsop, Vinnie Falco, Richard Hodges,
+Klemens Morgenstern. P2469R0. “Response to P2464: The Networking TS is
+baked, P2300 Sender/Receiver is not.” WG21, 2021.
+https://wg21.link/p2469</p></li>
+<li><p>Ville Voutilainen. P2464R0. “Ruminations on networking and
+executors.” WG21, 2021. https://wg21.link/p2464</p></li>
+<li><p>Jonathan Müller. P3801R0. “Concerns about the design of
+std::execution::task.” WG21, 2025. https://wg21.link/p3801</p></li>
+<li><p>Dietmar Kühl. P3796R1. “Coroutine Task Issues.” WG21, 2025.
+https://wg21.link/p3796</p></li>
+<li><p>Christopher Kohlhoff, Jamie Allsop, Klemens Morgenstern. P2480R0.
+“Response to P2471: corrected and expanded.” WG21, 2021.
+https://wg21.link/p2480</p></li>
+<li><p>Vinnie Falco, Klemens Morgenstern. P2583R1. WG21, 2026.
+https://wg21.link/p2583</p></li>
+<li><p>Gor Nishanov. P1362R0. “Incremental Approach: Coroutine TS + Core
+Coroutines.” WG21, 2019. https://wg21.link/p1362</p></li>
+<li><p>Michael Garland, et al. P2403R0. “Presentation on P2300 -
+std::execution.” WG21. https://wg21.link/p2403</p></li>
+<li><p>Eric Niebler. P2999R3. “Sender Algorithm Customization.” WG21,
+2024. https://wg21.link/p2999</p></li>
+<li><p>Eric Niebler. P3303R1. “Fixing Lazy Sender Algorithm
+Customization.” WG21, 2024. https://wg21.link/p3303</p></li>
+<li><p>Eric Niebler. P3718R0. “Fixing Lazy Sender Algorithm
+Customization, Again.” WG21, 2025. https://wg21.link/p3718</p></li>
+<li><p>Eric Niebler. P3826R0. “Defer Sender Algorithm Customization to
+C++29.” WG21, 2025. https://wg21.link/p3826</p></li>
+<li><p>Eric Niebler. “Structured Concurrency.” 2020.
+https://ericniebler.com/2020/11/08/structured-concurrency/</p></li>
+<li><p>Eric Niebler. “What are Senders Good For, Anyway?” 2024.
+https://ericniebler.com/2024/02/04/what-are-senders-good-for-anyway/</p></li>
+<li><p>Bryce Adelstein Lelbach. P2453R0. “2021 October Library Evolution
+Poll Outcomes.” WG21, 2022. https://wg21.link/p2453</p></li>
+<li><p>Dmitry Prokoptsev. “C++ Coroutines and Structured Concurrency in
+Practice.” CppCon 2024.
+https://www.youtube.com/watch?v=aPqMQ7SXSiw</p></li>
+<li><p>Eric Niebler. P2470R0. “Slides for presentation of P2300R2.”
+WG21, 2021. https://wg21.link/p2470</p></li>
+<li><p>LWG unresolved prioritized list.
+https://cplusplus.github.io/LWG/unresolved-prioritized.html</p></li>
+<li><p>Michael Garland, Andrew McKenney, Roger Orr, Bjarne Stroustrup,
+Daveed Vandevoorde, Michael Wong. <a href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2026/p4023r0.pdf">P4023R0</a>.
+“Strategic Direction for AI in C++: Governance, and Ecosystem”
+(Directions Group, 2026).
+https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2026/p4023r0.pdf</p></li>
 </ol>
 
 </body>

@@ -3,7 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>D4045R0: Response to P4043R0</title>
+  <title>P4041R0: Is <code>std::execution</code> a Universal Async
+Model?</title>
   <style type="text/css">
 
 @font-face {
@@ -819,13 +820,13 @@ outline: none;
   <div class="header-text">WG21 Proposal</div>
 </header>
 
-<h1>Response to P4043R0</h1>
+<h1>Is <code>std::execution</code> a Universal Async Model?</h1>
 
 <!-- Document Metadata -->
 <div class="document-info">
-  <p><strong>Document Number:</strong> D4045R0</p>
-  <p><strong>Date:</strong> 2026-03-08</p>
-  <p><strong>Audience:</strong> EWG</p>
+  <p><strong>Document Number:</strong> P4041R0</p>
+  <p><strong>Date:</strong> 2026-03-01</p>
+  <p><strong>Audience:</strong> LEWG</p>
   <p><strong>Reply-to:</strong> Vinnie Falco <a href="mailto:vinnie.falco@gmail.com" class="email">vinnie.falco@gmail.com</a></p>
 </div>
 
@@ -837,303 +838,741 @@ outline: none;
   <li><a href="#revision-history" id="toc-revision-history">Revision
   History</a>
   <ul>
-  <li><a href="#r0-march-2026-croydon" id="toc-r0-march-2026-croydon">R0: March 2026 (Croydon)</a></li>
+  <li><a href="#r0-march-2026-post-croydon-mailing" id="toc-r0-march-2026-post-croydon-mailing">R0: March 2026
+  (post-Croydon mailing)</a></li>
   </ul></li>
   <li><a href="#disclosure" id="toc-disclosure">1. Disclosure</a></li>
-  <li><a href="#the-question" id="toc-the-question">2. The
+  <li><a href="#two-standard-async-models" id="toc-two-standard-async-models">2. Two Standard Async
+  Models</a></li>
+  <li><a href="#what-stdexecution-does-well" id="toc-what-stdexecution-does-well">3. What
+  <code>std::execution</code> Does Well</a></li>
+  <li><a href="#the-post-adoption-record" id="toc-the-post-adoption-record">4. The Post-Adoption Record</a>
+  <ul>
+  <li><a href="#changes-by-category" id="toc-changes-by-category">4.1
+  Changes by Category</a></li>
+  <li><a href="#direction-of-change" id="toc-direction-of-change">4.2
+  Direction of Change</a></li>
+  </ul></li>
+  <li><a href="#published-findings" id="toc-published-findings">5.
+  Published Findings</a></li>
+  <li><a href="#structural-observations" id="toc-structural-observations">6. Structural Observations</a>
+  <ul>
+  <li><a href="#the-error-channel-timeline" id="toc-the-error-channel-timeline">6.1 The Error Channel
+  Timeline</a></li>
+  </ul></li>
+  <li><a href="#established-practice" id="toc-established-practice">7.
+  Established Practice</a></li>
+  <li><a href="#ecosystem-adoption" id="toc-ecosystem-adoption">8.
+  Ecosystem Adoption</a></li>
+  <li><a href="#open-question" id="toc-open-question">9. Open
   Question</a></li>
-  <li><a href="#the-evidence" id="toc-the-evidence">3. The
-  Evidence</a></li>
-  <li><a href="#the-record" id="toc-the-record">4. The Record</a></li>
-  <li><a href="#framing" id="toc-framing">5. Framing</a></li>
-  <li><a href="#the-paradox" id="toc-the-paradox">6. The
-  Paradox</a></li>
-  <li><a href="#procedure" id="toc-procedure">7. Procedure</a></li>
-  <li><a href="#references" id="toc-references">References</a></li>
+  <li><a href="#acknowledgements" id="toc-acknowledgements">Acknowledgements</a>
+  <ul>
+  <li><a href="#references" id="toc-references">References</a>
+  <ul>
+  <li><a href="#wg21-papers" id="toc-wg21-papers">WG21 Papers</a></li>
+  <li><a href="#lwg-issues" id="toc-lwg-issues">LWG Issues</a></li>
+  <li><a href="#nb-ballot-comments" id="toc-nb-ballot-comments">NB
+  Ballot Comments</a></li>
+  <li><a href="#blog-posts" id="toc-blog-posts">Blog Posts</a></li>
+  <li><a href="#libraries" id="toc-libraries">Libraries</a></li>
+  <li><a href="#platform-documentation" id="toc-platform-documentation">Platform Documentation</a></li>
+  <li><a href="#other" id="toc-other">Other</a></li>
+  </ul></li>
+  </ul></li>
   </ul>
 </nav>
 
 <h2 id="abstract">Abstract</h2>
-<p><a href="https://wg21.link/p4043r0">P4043R0</a><sup>[1]</sup> (“Are
-C++ Contracts Ready to Ship in C++26?”) proposes that EWG reconsider the
-shipping vehicle for C++ Contracts. Every paper it cites, every concern
-it raises, and every alternative it suggests was available to the
-committee before the most recent decisions on the topic.</p>
+<p>C++20 standardized coroutines. C++26 adds
+<code>std::execution</code>. Both are asynchronous models. The question
+is whether the C++26 model subsumes the C++20 model, or whether they
+serve different domains. This paper collects publicly available
+evidence.</p>
 <hr />
 <h2 id="revision-history">Revision History</h2>
-<h3 id="r0-march-2026-croydon">R0: March 2026 (Croydon)</h3>
+<h3 id="r0-march-2026-post-croydon-mailing">R0: March 2026 (post-Croydon
+mailing)</h3>
 <ul>
 <li>Initial version.</li>
-<li>Corrected imprecise ballot characterization in Section 4 (“none has
-achieved consensus” replaced with “each was rejected”) and added Section
-5 on the distinction between consensus against and no consensus.</li>
 </ul>
 <hr />
 <h2 id="disclosure">1. Disclosure</h2>
-<p>The author has no involvement in the C++ Contracts facility and holds
-no position on its design. The question addressed here is narrow: does
-<a href="https://wg21.link/p4043r0">P4043R0</a><sup>[1]</sup> present
-information that the committee has not already considered?</p>
+<p>The author developed <a href="https://wg21.link/p4003r0">P4003R0</a><sup>[36]</sup> (“Coroutines
+for I/O”), <a href="https://wg21.link/p4007r0">P4007R0</a><sup>[33]</sup> (“Senders
+and Coroutines”), <a href="https://wg21.link/p4014r0">P4014R0</a><sup>[34]</sup> (“The Sender
+Sub-Language”), and <a href="https://wg21.link/p2583r1">P2583R1</a><sup>[35]</sup> (“Symmetric
+Transfer and Sender Composition”). The author publishes Capy and
+Corosio, coroutine-native I/O libraries.</p>
+<p>A coroutine-only design cannot express compile-time work graphs, does
+not support heterogeneous dispatch, and assumes cooperative scheduling.
+This paper does not cite those libraries or P4003R0 as evidence for any
+claim. They are disclosed as context for the author’s perspective.</p>
 <hr />
-<h2 id="the-question">2. The Question</h2>
-<p><a href="https://wg21.link/p4043r0">P4043R0</a><sup>[1]</sup> asks
-whether EWG should reconsider the shipping vehicle for C++ Contracts.
-The paper asks this question seven times:</p>
+<h2 id="two-standard-async-models">2. Two Standard Async Models</h2>
+<p>C++20 standardized coroutines (<a href="https://wg21.link/p0912r5">P0912R5</a><sup>[3]</sup>, <a href="https://wg21.link/p0913r1">P0913R1</a><sup>[4]</sup>). They are
+ISO C++.</p>
+<p>C++26 adds <code>std::execution</code> (<a href="https://wg21.link/p2300r10">P2300R10</a><sup>[1]</sup>,
+“std::execution”). Schedulers, senders, receivers, and composable
+algorithms for asynchronous computation.</p>
+<p>Both are standard facilities. Both are async models. The question is
+the relationship between them.</p>
+<p>Eric Niebler wrote in <a href="https://ericniebler.com/2020/11/08/structured-concurrency/">“Structured
+Concurrency”</a><sup>[46]</sup> (2020):</p>
+<blockquote>
+<p><em>“I think that 90% of all async code in the future should be
+coroutines simply for maintainability.”</em></p>
+</blockquote>
+<p>Niebler wrote in <a href="https://ericniebler.com/2024/02/04/what-are-senders-good-for-anyway/">“What
+Are Senders Good For, Anyway?”</a><sup>[47]</sup> (2024):</p>
+<blockquote>
+<p><em>“If your library exposes asynchrony, then returning a sender is a
+great choice: your users can await the sender in a coroutine if they
+like.”</em></p>
+</blockquote>
+<p>The framework’s architect placed 90% of async code in the coroutine
+column.</p>
+<hr />
+<h2 id="what-stdexecution-does-well">3. What <code>std::execution</code>
+Does Well</h2>
+<p><code>std::execution</code> provides zero-allocation sender pipelines
+for compile-time work graphs. The
+<code>connect</code>/<code>start</code> protocol collapses a sender
+chain into a single operation state with no heap allocation and no
+virtual dispatch. Domain customization allows a CUDA scheduler to
+customize <code>bulk</code> to emit a kernel launch instead of a loop.
+Type-level completion signatures enable compile-time routing without
+runtime inspection. NVIDIA’s CUDA compiler does not support C++20
+coroutines in device code<sup>[58]</sup>; <a href="https://github.com/NVIDIA/stdexec">stdexec</a><sup>[49]</sup> -
+the reference implementation - was built at NVIDIA.</p>
+<p>Herb Sutter <a href="https://herbsutter.com/2025/04/23/living-in-the-future-using-c26-at-work">reported</a><sup>[48]</sup>
+that Citadel Securities uses <code>std::execution</code> in production:
+<em>“We already use C++26’s <code>std::execution</code> in production
+for an entire asset class, and as the foundation of our new messaging
+infrastructure.”</em></p>
+<hr />
+<h2 id="the-post-adoption-record">4. The Post-Adoption Record</h2>
+<p><a href="https://wg21.link/p2300r10">P2300R10</a><sup>[1]</sup> was
+adopted into the C++26 working draft at St. Louis in July 2024. The
+following is our attempt at a complete enumeration of post-adoption
+changes, compiled from published WG21 mailings<sup>[61]</sup>, the LWG
+issues list<sup>[60]</sup>, and the C++26 NB ballot
+repository<sup>[62]</sup>.</p>
+<h3 id="changes-by-category">4.1 Changes by Category</h3>
 <table>
 <colgroup>
-<col style="width: 5%" />
-<col style="width: 94%" />
+<col style="width: 7%" />
+<col style="width: 90%" />
+<col style="width: 2%" />
 </colgroup>
 <thead>
 <tr>
-<th>Section</th>
-<th>Representative statement</th>
+<th>Category</th>
+<th>Papers / Issues</th>
+<th style="text-align: right;">Count</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>1</td>
-<td>“This paper therefore proposes a simple question for EWG: whether
-the C++ Contracts facility, in its current form, is ready to ship in
-C++26.”</td>
+<td>Removals</td>
+<td><a href="https://wg21.link/p3682r0">P3682R0</a><sup>[12]</sup>, <a href="https://wg21.link/p3149r11">P3149R11</a><sup>[21]</sup> (replacing
+<code>ensure_started</code>)</td>
+<td style="text-align: right;">2</td>
 </tr>
 <tr>
-<td>2</td>
-<td>“The presence of continuing NB discussion suggests that further
-design exploration may still be beneficial.”</td>
+<td>Rewrites</td>
+<td><a href="https://wg21.link/p3481r5">P3481R5</a><sup>[13]</sup>
+(<code>bulk</code>)</td>
+<td style="text-align: right;">1</td>
 </tr>
 <tr>
-<td>3</td>
-<td>“Taken together, this body of work indicates that the design space
-for Contracts continues to be actively discussed.”</td>
+<td>Architectural fixes</td>
+<td><a href="https://wg21.link/p3887r1">P3887R1</a><sup>[14]</sup>, <a href="https://wg21.link/p3557r3">P3557R3</a><sup>[16]</sup></td>
+<td style="text-align: right;">2</td>
 </tr>
 <tr>
-<td>4</td>
-<td>“If substantial questions remain open, deferring the feature could
-allow the committee to incorporate additional design insights.”</td>
+<td>Wording omnibus</td>
+<td><a href="https://wg21.link/p3396r1">P3396R1</a><sup>[15]</sup></td>
+<td style="text-align: right;">1</td>
 </tr>
 <tr>
-<td>5</td>
-<td>“If the committee concludes that the C++ Contracts facility would
-benefit from additional design time, several alternative paths could be
-considered.”</td>
+<td>Post-adoption adds</td>
+<td><a href="https://wg21.link/p3433r1">P3433R1</a><sup>[17]</sup>, <a href="https://wg21.link/p3284r4">P3284R4</a><sup>[18]</sup>, <a href="https://wg21.link/p3570r2">P3570R2</a><sup>[19]</sup>, <a href="https://wg21.link/p3552r3">P3552R3</a><sup>[6]</sup>, <a href="https://wg21.link/p2079r10">P2079R10</a><sup>[20]</sup>, <a href="https://wg21.link/p3149r11">P3149R11</a><sup>[21]</sup>, <a href="https://wg21.link/p3927r0">P3927R0</a><sup>[22]</sup></td>
+<td style="text-align: right;">7</td>
 </tr>
 <tr>
-<td>6</td>
-<td>“Do we believe that the C++ Contracts facility is ready to ship in
-C++26?”</td>
+<td>LWG defects</td>
+<td><a href="https://cplusplus.github.io/LWG/issue4190">4190</a><sup>[37]</sup>,
+<a href="https://cplusplus.github.io/LWG/issue4206">4206</a><sup>[38]</sup>,
+<a href="https://cplusplus.github.io/LWG/issue4215">4215</a><sup>[39]</sup>,
+<a href="https://cplusplus.github.io/LWG/issue4356">4356</a><sup>[40]</sup>,
+<a href="https://cplusplus.github.io/LWG/issue4368">4368</a><sup>[41]</sup></td>
+<td style="text-align: right;">5</td>
 </tr>
 <tr>
-<td>7</td>
-<td>“Deferring the feature could allow WG21 additional time to refine
-the design.”</td>
+<td>NB ballot</td>
+<td><a href="https://github.com/cplusplus/nbballot/issues/959">US
+255-384</a><sup>[42]</sup>, <a href="https://github.com/cplusplus/nbballot/issues/961">US
+253-386</a><sup>[43]</sup>, <a href="https://github.com/cplusplus/nbballot/issues/960">US
+254-385</a><sup>[44]</sup>, <a href="https://github.com/cplusplus/nbballot/issues/966">US
+261-391</a><sup>[45]</sup></td>
+<td style="text-align: right;">4</td>
 </tr>
 </tbody>
 </table>
-<hr />
-<h2 id="the-evidence">3. The Evidence</h2>
-<p><a href="https://wg21.link/p4043r0">P4043R0</a><sup>[1]</sup> cites
-15 papers. The following table lists each one with its publication date,
-drawn from the paper’s own reference section:</p>
+<h3 id="direction-of-change">4.2 Direction of Change</h3>
+<p>Every post-adoption item falls into one of three categories.</p>
 <table>
+<colgroup>
+<col style="width: 3%" />
+<col style="width: 95%" />
+<col style="width: 0%" />
+</colgroup>
 <thead>
 <tr>
-<th>Paper</th>
-<th>Published</th>
+<th>Origin</th>
+<th>Items</th>
+<th style="text-align: right;">Count</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><a href="https://wg21.link/p2900r14">P2900R14</a></td>
-<td>2025-02-13</td>
+<td>Sender Sub-Language</td>
+<td><a href="https://wg21.link/p2855r1">P2855R1</a>, <a href="https://wg21.link/p2999r3">P2999R3</a>, <a href="https://wg21.link/p3175r3">P3175R3</a>, <a href="https://wg21.link/p3187r1">P3187R1</a>, <a href="https://wg21.link/p3303r1">P3303R1</a>, <a href="https://wg21.link/p3373r2">P3373R2</a>, <a href="https://wg21.link/p3557r3">P3557R3</a>, <a href="https://wg21.link/p3570r2">P3570R2</a>, <a href="https://wg21.link/p3682r0">P3682R0</a>, <a href="https://wg21.link/p3718r0">P3718R0</a>, <a href="https://wg21.link/p3826r3">P3826R3</a>, <a href="https://wg21.link/p3941r1">P3941R1</a>, LWG 4190, 4206, 4215,
+4368</td>
+<td style="text-align: right;">16</td>
 </tr>
 <tr>
-<td><a href="https://wg21.link/p3573r0">P3573R0</a></td>
-<td>2025-01-12</td>
+<td>Sender Integration</td>
+<td><a href="https://wg21.link/p3927r0">P3927R0</a>, <a href="https://wg21.link/p3950r0">P3950R0</a>, <a href="https://isocpp.org/files/papers/D3980R0.html">D3980R0</a>, LWG
+4356, US 255-384, US 253-386, US 254-385, US 261-391</td>
+<td style="text-align: right;">8</td>
 </tr>
 <tr>
-<td><a href="https://wg21.link/p3829r0">P3829R0</a></td>
-<td>2025-07-15</td>
-</tr>
-<tr>
-<td><a href="https://wg21.link/p3835r0">P3835R0</a></td>
-<td>2025-09-03</td>
-</tr>
-<tr>
-<td><a href="https://wg21.link/p3851r0">P3851R0</a></td>
-<td>2025-09-29</td>
-</tr>
-<tr>
-<td><a href="https://wg21.link/p3853r0">P3853R0</a></td>
-<td>2025-10-05</td>
-</tr>
-<tr>
-<td><a href="https://wg21.link/p3909r0">P3909R0</a></td>
-<td>2025-11-02</td>
-</tr>
-<tr>
-<td><a href="https://wg21.link/p3911r2">P3911R2</a></td>
-<td>2026-01-14</td>
-</tr>
-<tr>
-<td><a href="https://wg21.link/p3912r0">P3912R0</a></td>
-<td>2025-12-15</td>
-</tr>
-<tr>
-<td><a href="https://wg21.link/p3919r0">P3919R0</a></td>
-<td>2025-11-05</td>
-</tr>
-<tr>
-<td><a href="https://wg21.link/p3946r0">P3946R0</a></td>
-<td>2025-12-14</td>
-</tr>
-<tr>
-<td><a href="https://wg21.link/p4005r0">P4005R0</a></td>
-<td>2026-02-02</td>
-</tr>
-<tr>
-<td><a href="https://wg21.link/p4009r0">P4009R0</a></td>
-<td>2026-02-09</td>
-</tr>
-<tr>
-<td><a href="https://wg21.link/p4015r0">P4015R0</a></td>
-<td>2026-02-10</td>
-</tr>
-<tr>
-<td><a href="https://wg21.link/p4020r0">P4020R0</a></td>
-<td>2026-02-23</td>
+<td>Coroutine-Intrinsic</td>
+<td>-</td>
+<td style="text-align: right;">0</td>
 </tr>
 </tbody>
 </table>
-<p>Every paper in this list was published before <a href="https://wg21.link/p4043r0">P4043R0</a><sup>[1]</sup> and was
-available at prior committee meetings. The paper does not cite any new
-implementation result, deployment observation, or design analysis.</p>
+<p><strong>Twenty-four post-adoption items modified the sender
+sub-language or its integration. Zero modified coroutines.</strong></p>
 <hr />
-<h2 id="the-record">4. The Record</h2>
-<p>On 2025-02-11, EWG polled on whether to remove <a href="https://wg21.link/p2900r14">P2900</a><sup>[2]</sup> (“Contracts
-for C++”) from consideration for C++26 and find a different shipping
-vehicle. The result was consensus against (<a href="https://wg21.link/p2899r1">P2899R1</a><sup>[3]</sup>).</p>
-<p>On 2025-02-13, LWG forwarded <a href="https://wg21.link/p2900r14">P2900R14</a><sup>[2]</sup> to plenary
-with consensus (<a href="https://wg21.link/p2899r1">P2899R1</a><sup>[3]</sup>).</p>
-<p>On 2025-02-16, plenary adopted <a href="https://wg21.link/p2900r14">P2900R14</a><sup>[2]</sup> into the
-C++26 Working Paper with strong consensus (<a href="https://wg21.link/p2899r1">P2899R1</a><sup>[3]</sup>).</p>
-<p><a href="https://wg21.link/p2900r14">P2900R14</a><sup>[2]</sup>
-(published 2025-02-13) remains the latest revision. The changes applied
-since adoption - the removal of <code>evaluation_exception()</code> via
-<a href="https://wg21.link/p3819r0">P3819R0</a><sup>[9]</sup> and the
-addition of a feature test macro via <a href="https://wg21.link/p3886r0">P3886R0</a><sup>[10]</sup> - are NB
-comment resolutions that narrow or clarify the facility. The core design
-is unchanged. Multiple proposals to modify the design have been
-presented since adoption; each was rejected (<a href="https://wg21.link/p3846r0">P3846R0</a><sup>[4]</sup>).</p>
-<p><code>constexpr</code> shipped as a minimal language feature in C++11
-(<a href="https://open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2235.pdf">N2235</a><sup>[5]</sup>).
-C++14 relaxed its constraints dramatically (<a href="https://open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3652.html">N3652</a><sup>[6]</sup>).
-The MVP model - ship a minimal language feature in one standard, expand
-it in the next - is established WG21 practice.</p>
+<h2 id="published-findings">5. Published Findings</h2>
+<p>Dietmar Kühl catalogued sixteen open concerns with <code>task</code>
+in <a href="https://wg21.link/p3796r1">P3796R1</a><sup>[7]</sup>
+(“Coroutine Task Issues,” 2025). On symmetric transfer:</p>
+<blockquote>
+<p><em>“The specification doesn’t mention any use of symmetric
+transfer.”</em></p>
+</blockquote>
+<p>Kühl reworked the allocator model in <a href="https://isocpp.org/files/papers/D3980R0.html">D3980R0</a><sup>[10]</sup>
+(2026-01-25) - six months after <a href="https://wg21.link/p3552r3">P3552R3</a><sup>[6]</sup>’s adoption at
+Sofia.</p>
+<p>Jonathan Müller identified a stack overflow vulnerability in <a href="https://wg21.link/p3801r0">P3801R0</a><sup>[8]</sup> (“Concerns
+about the design of std::execution::task,” 2025):</p>
+<blockquote>
+<p><em>“Having iterative code that is actually recursive is a potential
+security vulnerability.”</em></p>
+</blockquote>
+<p>Müller confirmed the cause:</p>
+<blockquote>
+<p><em>“The reason <code>co_yield</code> is used, is that a coroutine
+promise can only specify <code>return_void</code> or
+<code>return_value</code>, but not both. If we want to allow
+<code>co_return;</code>, we cannot have
+<code>co_return with_error(error_code);</code>. This is unfortunate, but
+could be fixed by changing the language to drop that
+restriction.”</em></p>
+</blockquote>
+<p>Robert Leahy proposed a core language change in <a href="https://wg21.link/p3950r0">P3950R0</a><sup>[9]</sup> (2025):</p>
+<blockquote>
+<p><em>“Disallowing it either disadvantages coroutines vis-a-vis
+<code>std::execution</code> or necessitates library
+workarounds.”</em></p>
+</blockquote>
+<p>Chris Kohlhoff identified the partial success tension in <a href="https://wg21.link/p2430r0">P2430R0</a><sup>[5]</sup> (“Partial
+success scenarios with P2300,” 2021):</p>
+<blockquote>
+<p><em>“Due to the limitations of the <code>set_error</code> channel
+(which has a single ‘error’ argument) and <code>set_done</code> channel
+(which takes no arguments), partial results must be communicated down
+the <code>set_value</code> channel.”</em></p>
+</blockquote>
 <hr />
-<h2 id="framing">5. Framing</h2>
-<p>A committee poll produces one of three outcomes: consensus for,
-consensus against, or no consensus. These are not interchangeable.
-Consensus against a proposal is an affirmative decision - the committee
-considered the question and answered it. No consensus means the
-committee did not reach a decision in either direction.</p>
-<p><a href="https://wg21.link/p4043r0">P4043R0</a><sup>[1]</sup>
-describes prior ballot outcomes without distinguishing between these
-cases. The EWG poll on removing Contracts from C++26 was not “no
-consensus.” It was consensus against removal. The proposals to modify
-the adopted design were not merely unsuccessful - they were rejected.
-Characterizing consensus against as the absence of consensus erases the
-committee’s decision.</p>
+<h2 id="structural-observations">6. Structural Observations</h2>
+<p>These are not design defects. They are tradeoffs the sender model
+makes for compile-time work graphs. The question is whether those
+tradeoffs should also bind I/O.</p>
+<table>
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 32%" />
+<col style="width: 52%" />
+</colgroup>
+<thead>
+<tr>
+<th>Boundary</th>
+<th>Sender Model Requires</th>
+<th>Coroutine/I/O Cost</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Error channels</td>
+<td>Compile-time channel routing</td>
+<td><code>(error_code, size_t)</code> cannot route through three
+channels</td>
+</tr>
+<tr>
+<td>Error returns</td>
+<td>Separate <code>set_error</code> channel</td>
+<td><code>co_yield with_error(ec);</code> reverses established
+<code>co_yield</code> semantics</td>
+</tr>
+<tr>
+<td>Frame allocator</td>
+<td>Deferred execution via <code>connect</code>/<code>start</code></td>
+<td><code>promise_type::operator new</code> fires before sender
+machinery</td>
+</tr>
+<tr>
+<td>Symmetric transfer</td>
+<td>Struct composition with void completions</td>
+<td><code>coroutine_handle&lt;&gt;</code>-returning
+<code>await_suspend</code> unreachable</td>
+</tr>
+</tbody>
+</table>
+<p>Both <a href="https://wg21.link/p2300r10">P2300R10</a><sup>[1]</sup>
+bridges - <code>sender-awaitable</code> and
+<code>connect-awaitable</code> - use
+<code>void await_suspend</code>.</p>
+<p><strong>Senders get the allocator they do not need. Coroutines need
+the frame allocator they do not get.</strong></p>
+<h3 id="the-error-channel-timeline">6.1 The Error Channel Timeline</h3>
+<table>
+<colgroup>
+<col style="width: 18%" />
+<col style="width: 81%" />
+</colgroup>
+<thead>
+<tr>
+<th>Date</th>
+<th>Event</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>February 2020 (Prague)</td>
+<td>Partial success raised during <a href="https://wg21.link/p1678r2">P1678R2</a><sup>[32]</sup> review. LEWG
+polls SF:7/F:14/N:9/A:3/SA:0. No resolution.</td>
+</tr>
+<tr>
+<td>February 2021 (SG4 telecon)</td>
+<td>Participant states sender/receivers have a loss: no
+success/partial-success.</td>
+</tr>
+<tr>
+<td>July-October 2021 (LEWG)</td>
+<td>Debated across five telecons. LEWG outcome document: <em>“Better
+explain how partial success works with senders/receivers.”</em></td>
+</tr>
+<tr>
+<td>August 2021</td>
+<td>Kohlhoff publishes <a href="https://wg21.link/p2430r0">P2430R0</a><sup>[5]</sup>.</td>
+</tr>
+<tr>
+<td>2022-2024</td>
+<td>Six revisions through <a href="https://wg21.link/p2300r10">P2300R10</a><sup>[1]</sup>.
+Three-channel model unchanged.</td>
+</tr>
+<tr>
+<td>2023</td>
+<td>Kühl’s <a href="https://wg21.link/p2762r2">P2762R2</a><sup>[11]</sup> preserves
+Asio’s <code>(error_code, size_t)</code> convention.</td>
+</tr>
+<tr>
+<td>November 2023 (Kona)</td>
+<td>SG4 polls that networking must use the sender model
+(SF:5/F:5/N:1/A:0/SA:1).</td>
+</tr>
+<tr>
+<td>November 2024 (Wroclaw)</td>
+<td>Channel question resurfaces during P0260 (Concurrent Queues).
+Debated across two face-to-face meetings.</td>
+</tr>
+<tr>
+<td>February 2025 (Hagenberg)</td>
+<td>Concurrent queue channel question remained open. Poll to reopen
+withdrawn.</td>
+</tr>
+<tr>
+<td>2025-2026</td>
+<td><a href="https://wg21.link/p3570r2">P3570R2</a><sup>[19]</sup>
+documents <code>optional&lt;T&gt;</code> / channel model mismatch.</td>
+</tr>
+</tbody>
+</table>
 <hr />
-<h2 id="the-paradox">6. The Paradox</h2>
-<p><a href="https://wg21.link/p4043r0">P4043R0</a><sup>[1]</sup>
-recommends deferral to allow “implementation and deployment experience.”
-Language features do not receive widespread deployment outside
-standards. The Concepts TS (ISO/IEC TS 19217:2015<sup>[7]</sup>)
-demonstrated this: the TS was withdrawn, and Concepts were redesigned
-and shipped directly in C++20. <a href="https://wg21.link/p4043r0">P4043R0</a><sup>[1]</sup> prescribes
-the condition it claims to remedy.</p>
+<h2 id="established-practice">7. Established Practice</h2>
+<table>
+<colgroup>
+<col style="width: 51%" />
+<col style="width: 15%" />
+<col style="width: 19%" />
+<col style="width: 12%" />
+</colgroup>
+<thead>
+<tr>
+<th>Library</th>
+<th>Symmetric Transfer</th>
+<th>Error Delivery</th>
+<th>Async Model</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://github.com/lewissbaker/cppcoro">cppcoro</a><sup>[53]</sup>
+(Baker)</td>
+<td><code>coroutine_handle&lt;&gt;</code></td>
+<td><code>co_return</code> / exceptions</td>
+<td>Coroutine-native</td>
+</tr>
+<tr>
+<td><a href="https://github.com/facebook/folly/tree/main/folly/coro">folly::coro</a><sup>[54]</sup>
+(Meta)</td>
+<td><code>coroutine_handle&lt;&gt;</code></td>
+<td>Exceptions</td>
+<td>Coroutine-native</td>
+</tr>
+<tr>
+<td><a href="https://github.com/boostorg/cobalt">Boost.Cobalt</a><sup>[55]</sup>
+(Morgenstern)</td>
+<td><code>coroutine_handle&lt;&gt;</code></td>
+<td><code>co_return</code> / exceptions</td>
+<td>Coroutine-native</td>
+</tr>
+<tr>
+<td><a href="https://github.com/jbaldwin/libcoro">libcoro</a><sup>[56]</sup>
+(Baldwin)</td>
+<td><code>coroutine_handle&lt;&gt;</code></td>
+<td><code>co_return</code> / exceptions</td>
+<td>Coroutine-native</td>
+</tr>
+<tr>
+<td>Boost.Asio (Kohlhoff)</td>
+<td>N/A</td>
+<td>Error codes via <code>as_tuple</code></td>
+<td>Completion-token</td>
+</tr>
+<tr>
+<td><a href="https://github.com/petiaccja/asyncpp">asyncpp</a><sup>[57]</sup>
+(Kardos)</td>
+<td>Event-based</td>
+<td><code>co_return</code> / exceptions</td>
+<td>Coroutine-native</td>
+</tr>
+</tbody>
+</table>
+<p>SG14 (February 2026 mailing): <em>“SG14 advise that Networking (SG4)
+should not be built on top of P2300. The allocation patterns required by
+P2300 are incompatible with low-latency networking
+requirements.”</em></p>
+<p><strong>Six independent libraries converged on
+<code>coroutine_handle&lt;&gt;</code>-returning
+<code>await_suspend</code>. The standard uses
+<code>void</code>.</strong></p>
 <hr />
-<h2 id="procedure">7. Procedure</h2>
-<p><a href="https://wg21.link/p4043r0">P4043R0</a><sup>[1]</sup> (dated
-2026-03-07) does not appear in any official WG21 mailing. The 2026-02
-pre-Croydon mailing (released 2026-02-23) contains papers through <a href="https://wg21.link/p4032r0">P4032R0</a><sup>[8]</sup>. The paper
-presents no proposed solution to the one outstanding NB comment (RO
-2-056).</p>
+<h2 id="ecosystem-adoption">8. Ecosystem Adoption</h2>
+<p>The sender/receiver model has been public since <a href="https://wg21.link/p2300r0">P2300R0</a><sup>[63]</sup> (2021). <a href="https://github.com/NVIDIA/stdexec">stdexec</a><sup>[49]</sup> has
+existed as a reference implementation throughout. These results may not
+be exhaustive; additions are welcome.</p>
+<table>
+<colgroup>
+<col style="width: 11%" />
+<col style="width: 49%" />
+<col style="width: 39%" />
+</colgroup>
+<thead>
+<tr>
+<th>Domain</th>
+<th>Project</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TCP networking</td>
+<td><a href="https://github.com/maikel/senders-io">senders-io</a><sup>[50]</sup></td>
+<td>19 stars. “Still very experimental.” Requires non-main stdexec
+branch.</td>
+</tr>
+<tr>
+<td>HTTP</td>
+<td><a href="https://github.com/ColdOrange/fuchsia">fuchsia</a><sup>[51]</sup></td>
+<td>2 stars, 0 forks. Last commit August 2023.</td>
+</tr>
+<tr>
+<td>TLS</td>
+<td>(none found)</td>
+<td></td>
+</tr>
+<tr>
+<td>File I/O</td>
+<td><a href="https://github.com/maikel/senders-io">senders-io</a><sup>[50]</sup></td>
+<td>Experimental. Documentation sections empty.</td>
+</tr>
+<tr>
+<td>Database clients</td>
+<td>(none found)</td>
+<td></td>
+</tr>
+<tr>
+<td>DNS resolution</td>
+<td>(none found)</td>
+<td></td>
+</tr>
+<tr>
+<td>Signal handling</td>
+<td>(none found)</td>
+<td></td>
+</tr>
+<tr>
+<td>Bare metal / embedded</td>
+<td><a href="https://github.com/intel/cpp-baremetal-senders-and-receivers">Intel
+cpp-baremetal-senders-and-receivers</a><sup>[52]</sup></td>
+<td>288 stars. P2300 subset. “Coroutines are not considered at
+all.”</td>
+</tr>
+<tr>
+<td>GPU / heterogeneous</td>
+<td><a href="https://github.com/NVIDIA/stdexec">stdexec</a><sup>[49]</sup></td>
+<td>1,300+ stars. Reference implementation. Active.</td>
+</tr>
+<tr>
+<td>HFT / low-latency</td>
+<td>(reported, proprietary)</td>
+<td>Cannot be independently verified.</td>
+</tr>
+</tbody>
+</table>
+<p>Rubén Pérez Hidalgo, author of <a href="https://github.com/boostorg/mysql">Boost.MySQL</a>, offered this
+assessment:</p>
+<blockquote>
+<p><em>“This whole S/R thing is as if someone had seen Asio and said
+‘too simple’.”</em></p>
+</blockquote>
+<p><strong>The reference implementation has 1,300 stars. The I/O
+ecosystem built on it has 21.</strong></p>
+<hr />
+<h2 id="open-question">9. Open Question</h2>
+<p>The domains where sender-based I/O could be publicly verified show no
+production implementations. The domains where deployment is reported are
+proprietary.</p>
+<hr />
+<h1 id="acknowledgements">Acknowledgements</h1>
+<p>The author thanks Dietmar Kühl, Jonathan Müller, Chris Kohlhoff, Eric
+Niebler, and Lewis Baker for their published observations cited in this
+paper.</p>
 <hr />
 <h2 id="references">References</h2>
+<h3 id="wg21-papers">WG21 Papers</h3>
 <ol type="1">
-<li><a href="https://wg21.link/p4043r0">P4043R0</a> - “Are C++ Contracts
-Ready to Ship in C++26?” (Darius Neaţu, 2026).
-https://wg21.link/p4043r0</li>
-<li><a href="https://wg21.link/p2900r14">P2900R14</a> - “Contracts for
-C++” (Joshua Berne, Timur Doumler, Andrzej Krzemieński, et al., 2025).
-https://wg21.link/p2900r14</li>
-<li><a href="https://wg21.link/p2899r1">P2899R1</a> - “Contracts for C++
-- Rationale” (Timur Doumler, Joshua Berne, Andrzej Krzemieński,
-Rostislav Khlebnikov, 2025). https://wg21.link/p2899r1</li>
-<li><a href="https://wg21.link/p3846r0">P3846R0</a> - “C++26 Contracts,
-reasserted” (Timur Doumler, Joshua Berne, 2025).
-https://wg21.link/p3846r0</li>
-<li><a href="https://open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2235.pdf">N2235</a>
-- “Generalized Constant Expressions” (Gabriel Dos Reis, Bjarne
-Stroustrup, Jens Maurer, 2007).
-https://open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2235.pdf</li>
-<li><a href="https://open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3652.html">N3652</a>
-- “Relaxing constraints on constexpr functions” (Richard Smith, 2013).
-https://open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3652.html</li>
-<li>ISO/IEC TS 19217:2015 - “C++ Extensions for Concepts” (ISO, 2015).
-Withdrawn.</li>
-<li><a href="https://wg21.link/p4032r0">P4032R0</a> - last paper in the
-2026-02 pre-Croydon mailing.</li>
-<li><a href="https://wg21.link/p3819r0">P3819R0</a> - “Remove
-evaluation_exception from Contracts” (Timur Doumler, Joshua Berne,
-2025). https://wg21.link/p3819r0</li>
-<li><a href="https://wg21.link/p3886r0">P3886R0</a> - “Contract
-violation handler replaceability” (Timur Doumler, Joshua Berne, 2025).
-https://wg21.link/p3886r0</li>
-<li><a href="https://wg21.link/p3573r0">P3573R0</a> - “Contract
-concerns” (Michael Hava, J. Daniel Garcia Sanchez, et al., 2025).
-https://wg21.link/p3573r0</li>
-<li><a href="https://wg21.link/p3829r0">P3829R0</a> - “Contracts do not
-belong in the language” (David Chisnall, John Spicer, et al., 2025).
-https://wg21.link/p3829r0</li>
-<li><a href="https://wg21.link/p3835r0">P3835R0</a> - “Contracts make
-C++ less safe - full stop!” (John Spicer, Ville Voutilainen, Jose Daniel
-Garcia Sanchez, 2025). https://wg21.link/p3835r0</li>
-<li><a href="https://wg21.link/p3851r0">P3851R0</a> - “Position on
-contract assertions for C++26” (J. Daniel Garcia, et al., 2025).
-https://wg21.link/p3851r0</li>
-<li><a href="https://wg21.link/p3853r0">P3853R0</a> - “A
-thesis+antithesis=synthesis rumination on Contracts” (Ville Voutilainen,
-2025). https://wg21.link/p3853r0</li>
-<li><a href="https://wg21.link/p3909r0">P3909R0</a> - “Contracts should
-go into a White Paper” (Ville Voutilainen, 2025).
-https://wg21.link/p3909r0</li>
-<li><a href="https://wg21.link/p3911r2">P3911R2</a> - “Make Contracts
-Reliably Non-Ignorable” (Darius Neaţu, Andrei Alexandrescu, et al.,
-2026). https://wg21.link/p3911r2</li>
-<li><a href="https://wg21.link/p3912r0">P3912R0</a> - “Design
-considerations for always-enforced contract assertions” (Timur Doumler,
-et al., 2025). https://wg21.link/p3912r0</li>
-<li><a href="https://wg21.link/p3919r0">P3919R0</a> -
-“Guaranteed-(quick-)enforced contracts” (Ville Voutilainen, 2025).
-https://wg21.link/p3919r0</li>
-<li><a href="https://wg21.link/p3946r0">P3946R0</a> - “Designing
-enforced assertions” (Andrzej Krzemieński, 2025).
-https://wg21.link/p3946r0</li>
-<li><a href="https://wg21.link/p4005r0">P4005R0</a> - “A proposal for
-guaranteed-(quick-)enforced contracts” (Ville Voutilainen, 2026).
-https://wg21.link/p4005r0</li>
-<li><a href="https://wg21.link/p4009r0">P4009R0</a> - “A proposal for
-solving all of the contracts concerns” (Ville Voutilainen, 2026).
-https://wg21.link/p4009r0</li>
-<li><a href="https://wg21.link/p4015r0">P4015R0</a> - “Enforcing
-Contract Conditions with Statements” (Lisa Lippincott, 2026).
-https://wg21.link/p4015r0</li>
-<li><a href="https://wg21.link/p4020r0">P4020R0</a> - “Concerns about
-contract assertions” (Andrzej Krzemieński, 2026).
-https://wg21.link/p4020r0</li>
+<li><a href="https://wg21.link/p2300r10">P2300R10</a> - “std::execution”
+(Michał Dominiak, Georgy Evtushenko, Lewis Baker, Lucian Radu
+Teodorescu, Lee Howes, Kirk Shoop, Michael Garland, Eric Niebler, Bryce
+Adelstein Lelbach, 2024). https://wg21.link/p2300r10</li>
+<li><a href="https://wg21.link/p0443r14">P0443R14</a> - “A Unified
+Executors Proposal for C++” (Jared Hoberock, et al., 2020).
+https://wg21.link/p0443r14</li>
+<li><a href="https://wg21.link/p0912r5">P0912R5</a> - “Merge Coroutines
+TS into C++20” (Gor Nishanov, 2018). https://wg21.link/p0912r5</li>
+<li><a href="https://wg21.link/p0913r1">P0913R1</a> - “Add symmetric
+coroutine control transfer” (Gor Nishanov, 2018).
+https://wg21.link/p0913r1</li>
+<li><a href="https://wg21.link/p2430r0">P2430R0</a> - “Partial success
+scenarios with P2300” (Chris Kohlhoff, 2021).
+https://wg21.link/p2430r0</li>
+<li><a href="https://wg21.link/p3552r3">P3552R3</a> - “Add a Coroutine
+Task Type” (Dietmar Kühl, Maikel Nadolski, 2025).
+https://wg21.link/p3552r3</li>
+<li><a href="https://wg21.link/p3796r1">P3796R1</a> - “Coroutine Task
+Issues” (Dietmar Kühl, 2025). https://wg21.link/p3796r1</li>
+<li><a href="https://wg21.link/p3801r0">P3801R0</a> - “Concerns about
+the design of std::execution::task” (Jonathan Müller, 2025).
+https://wg21.link/p3801r0</li>
+<li><a href="https://wg21.link/p3950r0">P3950R0</a> - “return_value
+&amp; return_void Are Not Mutually Exclusive” (Robert Leahy, 2025).
+https://wg21.link/p3950r0</li>
+<li><a href="https://isocpp.org/files/papers/D3980R0.html">D3980R0</a> -
+“Task’s Allocator Use” (Dietmar Kühl, 2026).
+https://isocpp.org/files/papers/D3980R0.html</li>
+<li><a href="https://wg21.link/p2762r2">P2762R2</a> - “Sender/Receiver
+Interface For Networking” (Dietmar Kühl, 2023).
+https://wg21.link/p2762r2</li>
+<li><a href="https://wg21.link/p3682r0">P3682R0</a> - “Remove
+std::execution::split” (Robert Leahy, 2025).
+https://wg21.link/p3682r0</li>
+<li><a href="https://wg21.link/p3481r5">P3481R5</a> - “std::execution
+Concurrent Bulk” (Eric Niebler, 2025). https://wg21.link/p3481r5</li>
+<li><a href="https://wg21.link/p3887r1">P3887R1</a> - “when_all fix” (in
+progress). https://wg21.link/p3887r1</li>
+<li><a href="https://wg21.link/p3396r1">P3396R1</a> - “std::execution
+wording fixes” (Eric Niebler, 2025). https://wg21.link/p3396r1</li>
+<li><a href="https://wg21.link/p3557r3">P3557R3</a> - “High-Quality
+Sender Diagnostics with Constexpr Exceptions” (Eric Niebler, 2025).
+https://wg21.link/p3557r3</li>
+<li><a href="https://wg21.link/p3433r1">P3433R1</a> - “Allocator support
+for std::execution” (2025). https://wg21.link/p3433r1</li>
+<li><a href="https://wg21.link/p3284r4">P3284R4</a> - “write_env and
+unstoppable” (Eric Niebler, 2025). https://wg21.link/p3284r4</li>
+<li><a href="https://wg21.link/p3570r2">P3570R2</a> - “Optional variants
+in sender/receiver” (Fabio Fracassi, 2025).
+https://wg21.link/p3570r2</li>
+<li><a href="https://wg21.link/p2079r10">P2079R10</a> - “System
+execution context” (2025). https://wg21.link/p2079r10</li>
+<li><a href="https://wg21.link/p3149r11">P3149R11</a> - “async_scope”
+(Ian Petersen, Jessica Wong, Kirk Shoop, et al., 2025).
+https://wg21.link/p3149r11</li>
+<li><a href="https://wg21.link/p3927r0">P3927R0</a> - “task_scheduler
+Support for Parallel Bulk Execution” (Lee Howes, 2026).
+https://wg21.link/p3927r0</li>
+<li><a href="https://wg21.link/p2855r1">P2855R1</a> - “Member
+customization points for Senders and Receivers” (Ville Voutilainen,
+2024). https://wg21.link/p2855r1</li>
+<li><a href="https://wg21.link/p2999r3">P2999R3</a> - “Sender Algorithm
+Customization” (Eric Niebler, 2024). https://wg21.link/p2999r3</li>
+<li><a href="https://wg21.link/p3175r3">P3175R3</a> - “Reconsidering the
+std::execution::on algorithm” (Eric Niebler, 2024).
+https://wg21.link/p3175r3</li>
+<li><a href="https://wg21.link/p3187r1">P3187R1</a> - “Remove
+ensure_started and start_detached from P2300” (Kirk Shoop, Lewis Baker,
+2024). https://wg21.link/p3187r1</li>
+<li><a href="https://wg21.link/p3303r1">P3303R1</a> - “Fixing Lazy
+Sender Algorithm Customization” (Eric Niebler, 2024).
+https://wg21.link/p3303r1</li>
+<li><a href="https://wg21.link/p3373r2">P3373R2</a> - “Of Operation
+States and Their Lifetimes” (Robert Leahy, 2025).
+https://wg21.link/p3373r2</li>
+<li><a href="https://wg21.link/p3718r0">P3718R0</a> - “Fixing Lazy
+Sender Algorithm Customization, Again” (Eric Niebler, 2025).
+https://wg21.link/p3718r0</li>
+<li><a href="https://wg21.link/p3826r3">P3826R3</a> - “Fix Sender
+Algorithm Customization” (Eric Niebler, 2026).
+https://wg21.link/p3826r3</li>
+<li><a href="https://wg21.link/p3941r1">P3941R1</a> - “Scheduler
+Affinity” (Dietmar Kühl, 2026). https://wg21.link/p3941r1</li>
+<li><a href="https://wg21.link/p1678r2">P1678R2</a> - “Callbacks and
+Composition” (Kirk Shoop, 2020). https://wg21.link/p1678r2</li>
+<li><a href="https://wg21.link/p4007r0">P4007R0</a> - “Senders and
+Coroutines” (Vinnie Falco, Mungo Gill, 2026).
+https://wg21.link/p4007r0</li>
+<li><a href="https://wg21.link/p4014r0">P4014R0</a> - “The Sender
+Sub-Language” (Vinnie Falco, Mungo Gill, 2026).
+https://wg21.link/p4014r0</li>
+<li><a href="https://wg21.link/p2583r1">P2583R1</a> - “Symmetric
+Transfer and Sender Composition” (Mungo Gill, Vinnie Falco, 2026).
+https://wg21.link/p2583r1</li>
+<li><a href="https://wg21.link/p4003r0">P4003R0</a> - “Coroutines for
+I/O” (Vinnie Falco, Steve Gerbino, Mungo Gill, 2026).
+https://wg21.link/p4003r0</li>
+</ol>
+<h3 id="lwg-issues">LWG Issues</h3>
+<ol start="37" type="1">
+<li><a href="https://cplusplus.github.io/LWG/issue4190">LWG 4190</a> -
+“completion-signatures-for specification is recursive.”
+https://cplusplus.github.io/LWG/issue4190</li>
+<li><a href="https://cplusplus.github.io/LWG/issue4206">LWG 4206</a> -
+“connect_result_t should be constrained with sender_to.”
+https://cplusplus.github.io/LWG/issue4206</li>
+<li><a href="https://cplusplus.github.io/LWG/issue4215">LWG 4215</a> -
+“run_loop::finish should be noexcept.”
+https://cplusplus.github.io/LWG/issue4215</li>
+<li><a href="https://cplusplus.github.io/LWG/issue4356">LWG 4356</a> -
+“connect() should use get_allocator(get_env(rcvr)).”
+https://cplusplus.github.io/LWG/issue4356</li>
+<li><a href="https://cplusplus.github.io/LWG/issue4368">LWG 4368</a> -
+“Potential dangling reference from transform_sender.”
+https://cplusplus.github.io/LWG/issue4368</li>
+</ol>
+<h3 id="nb-ballot-comments">NB Ballot Comments</h3>
+<ol start="42" type="1">
+<li><a href="https://github.com/cplusplus/nbballot/issues/959">US
+255-384</a>. https://github.com/cplusplus/nbballot/issues/959</li>
+<li><a href="https://github.com/cplusplus/nbballot/issues/961">US
+253-386</a>. https://github.com/cplusplus/nbballot/issues/961</li>
+<li><a href="https://github.com/cplusplus/nbballot/issues/960">US
+254-385</a>. https://github.com/cplusplus/nbballot/issues/960</li>
+<li><a href="https://github.com/cplusplus/nbballot/issues/966">US
+261-391</a>. https://github.com/cplusplus/nbballot/issues/966</li>
+</ol>
+<h3 id="blog-posts">Blog Posts</h3>
+<ol start="46" type="1">
+<li>Eric Niebler, <a href="https://ericniebler.com/2020/11/08/structured-concurrency/">“Structured
+Concurrency”</a> (November 2020).
+https://ericniebler.com/2020/11/08/structured-concurrency/</li>
+<li>Eric Niebler, <a href="https://ericniebler.com/2024/02/04/what-are-senders-good-for-anyway/">“What
+Are Senders Good For, Anyway?”</a> (February 2024).
+https://ericniebler.com/2024/02/04/what-are-senders-good-for-anyway/</li>
+<li>Herb Sutter, <a href="https://herbsutter.com/2025/04/23/living-in-the-future-using-c26-at-work">“Living
+in the future: Using C++26 at work”</a> (April 2025).
+https://herbsutter.com/2025/04/23/living-in-the-future-using-c26-at-work</li>
+</ol>
+<h3 id="libraries">Libraries</h3>
+<ol start="49" type="1">
+<li><a href="https://github.com/NVIDIA/stdexec">stdexec</a> - NVIDIA
+reference implementation of std::execution (1,300+ stars).
+https://github.com/NVIDIA/stdexec</li>
+<li><a href="https://github.com/maikel/senders-io">senders-io</a> -
+Sender/receiver adaptation for async I/O (19 stars, “still very
+experimental”). https://github.com/maikel/senders-io</li>
+<li><a href="https://github.com/ColdOrange/fuchsia">fuchsia</a> -
+Experimental async networking on stdexec (2 stars, last commit August
+2023). https://github.com/ColdOrange/fuchsia</li>
+<li><a href="https://github.com/intel/cpp-baremetal-senders-and-receivers">Intel
+cpp-baremetal-senders-and-receivers</a> - P2300 subset for embedded (288
+stars, “coroutines are not considered at all”).
+https://github.com/intel/cpp-baremetal-senders-and-receivers</li>
+<li><a href="https://github.com/lewissbaker/cppcoro">cppcoro</a> - C++
+coroutine abstractions (Lewis Baker).
+https://github.com/lewissbaker/cppcoro</li>
+<li><a href="https://github.com/facebook/folly/tree/main/folly/coro">folly::coro</a>
+- Facebook coroutine library.
+https://github.com/facebook/folly/tree/main/folly/coro</li>
+<li><a href="https://github.com/boostorg/cobalt">Boost.Cobalt</a> -
+Coroutine task types for Boost (Klemens Morgenstern).
+https://github.com/boostorg/cobalt</li>
+<li><a href="https://github.com/jbaldwin/libcoro">libcoro</a> - C++20
+coroutine library (Josh Baldwin).
+https://github.com/jbaldwin/libcoro</li>
+<li><a href="https://github.com/petiaccja/asyncpp">asyncpp</a> - Async
+coroutine library (Péter Kardos).
+https://github.com/petiaccja/asyncpp</li>
+</ol>
+<h3 id="platform-documentation">Platform Documentation</h3>
+<ol start="58" type="1">
+<li><a href="https://docs.nvidia.com/cuda/cuda-programming-guide/05-appendices/cpp-language-support.html">NVIDIA
+CUDA Programming Guide, Section 5.3</a> - “C++ Language Support.”
+Coroutines not listed for device code compilation.
+https://docs.nvidia.com/cuda/cuda-programming-guide/05-appendices/cpp-language-support.html</li>
+</ol>
+<h3 id="other">Other</h3>
+<ol start="59" type="1">
+<li><a href="https://eel.is/c++draft/">C++ Working Draft</a> - (Richard
+Smith, ed.). https://eel.is/c++draft/</li>
+<li><a href="https://cplusplus.github.io/LWG/lwg-toc.html">LWG issues
+list</a> - Library Working Group active issues.
+https://cplusplus.github.io/LWG/lwg-toc.html</li>
+<li><a href="https://open-std.org/jtc1/sc22/wg21/docs/papers/">WG21
+paper mailings</a> - ISO C++ committee papers.
+https://open-std.org/jtc1/sc22/wg21/docs/papers/</li>
+<li><a href="https://github.com/cplusplus/nbballot">C++26 NB ballot
+comments</a> - National body comments repository.
+https://github.com/cplusplus/nbballot</li>
+<li><a href="https://wg21.link/p2300r0">P2300R0</a> - “std::execution”
+(Eric Niebler, Kirk Shoop, Lewis Baker, Lee Howes, 2021).
+https://wg21.link/p2300r0</li>
 </ol>
 
 </body>
