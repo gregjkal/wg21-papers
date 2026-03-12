@@ -1,6 +1,6 @@
 ---
 title: "Open Issues in `std::execution::task`"
-document: D4007R1
+document: P4007R1
 date: 2026-03-12
 reply-to:
   - "Vinnie Falco <vinnie.falco@gmail.com>"

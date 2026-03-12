@@ -3,8 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>D4007R1: Open Issues in
-<code>std::execution::task</code></title>
+  <title>D4054R0: Two Error Models</title>
   <style type="text/css">
 
 @font-face {
@@ -843,15 +842,14 @@ outline: none;
   <div class="header-text">WG21 Proposal</div>
 </header>
 
-<h1>Open Issues in <code>std::execution::task</code></h1>
+<h1>Two Error Models</h1>
 
 <!-- Document Metadata -->
 <div class="document-info">
-  <p><strong>Document Number:</strong> D4007R1</p>
+  <p><strong>Document Number:</strong> D4054R0</p>
   <p><strong>Date:</strong> 2026-03-12</p>
   <p><strong>Audience:</strong> LEWG</p>
-  <p><strong>Reply-to:</strong> Vinnie Falco <a href="mailto:vinnie.falco@gmail.com" class="email">vinnie.falco@gmail.com</a><br><strong></strong> Mungo Gill
-<a href="mailto:mungo.gill@me.com" class="email">mungo.gill@me.com</a></p>
+  <p><strong>Reply-to:</strong> Vinnie Falco <a href="mailto:vinnie.falco@gmail.com" class="email">vinnie.falco@gmail.com</a></p>
 </div>
 
 <!-- Table of Contents -->
@@ -862,228 +860,551 @@ outline: none;
   <li><a href="#revision-history" id="toc-revision-history">Revision
   History</a>
   <ul>
-  <li><a href="#r1-march-2026-prior-to-croydon-meeting" id="toc-r1-march-2026-prior-to-croydon-meeting">R1: March 2026 (prior
-  to Croydon meeting)</a></li>
-  <li><a href="#r0-february-2026-pre-croydon-mailing" id="toc-r0-february-2026-pre-croydon-mailing">R0: February 2026
-  (pre-Croydon mailing)</a></li>
+  <li><a href="#r0-march-2026-post-croydon-mailing" id="toc-r0-march-2026-post-croydon-mailing">R0: March 2026
+  (post-Croydon mailing)</a></li>
   </ul></li>
   <li><a href="#disclosure" id="toc-disclosure">1. Disclosure</a></li>
-  <li><a href="#fixed-after-ship" id="toc-fixed-after-ship">2. Fixed
-  After Ship</a></li>
-  <li><a href="#not-fixable-post-ship" id="toc-not-fixable-post-ship">3.
-  Not Fixable Post-Ship</a></li>
-  <li><a href="#acknowledgements" id="toc-acknowledgements">Acknowledgements</a></li>
-  <li><a href="#references" id="toc-references">References</a>
+  <li><a href="#the-partition" id="toc-the-partition">2. The
+  Partition</a>
   <ul>
-  <li><a href="#wg21-papers" id="toc-wg21-papers">WG21 Papers</a></li>
-  <li><a href="#other" id="toc-other">Other</a></li>
+  <li><a href="#infrastructure-operations" id="toc-infrastructure-operations">2.1 Infrastructure
+  Operations</a></li>
+  <li><a href="#io-operations" id="toc-io-operations">2.2 I/O
+  Operations</a></li>
+  <li><a href="#the-os-delivers-pairs" id="toc-the-os-delivers-pairs">2.3 The OS Delivers Pairs</a></li>
   </ul></li>
+  <li><a href="#the-infrastructure-error-model" id="toc-the-infrastructure-error-model">3. The Infrastructure Error
+  Model</a></li>
+  <li><a href="#the-io-error-model" id="toc-the-io-error-model">4. The
+  I/O Error Model</a></li>
+  <li><a href="#the-channel-split" id="toc-the-channel-split">5. The
+  Channel Split</a>
+  <ul>
+  <li><a href="#known-mappings" id="toc-known-mappings">5.1 Known
+  Mappings</a></li>
+  </ul></li>
+  <li><a href="#three-defenses-three-concessions" id="toc-three-defenses-three-concessions">6. Three Defenses, Three
+  Concessions</a>
+  <ul>
+  <li><a href="#accept-the-information-loss" id="toc-accept-the-information-loss">6.1 Accept the Information
+  Loss</a></li>
+  <li><a href="#route-everything-through-set_value" id="toc-route-everything-through-set_value">6.2 Route Everything
+  Through <code>set_value</code></a></li>
+  <li><a href="#classify-errors-into-channels" id="toc-classify-errors-into-channels">6.3 Classify Errors Into
+  Channels</a></li>
+  <li><a href="#the-fork" id="toc-the-fork">6.4 The Fork</a></li>
+  </ul></li>
+  <li><a href="#domain-boundary" id="toc-domain-boundary">7. Domain
+  Boundary</a></li>
+  <li><a href="#conclusion" id="toc-conclusion">8. Conclusion</a></li>
+  <li><a href="#references" id="toc-references">References</a></li>
   </ul>
 </nav>
 
 <h2 id="abstract">Abstract</h2>
-<p><code>std::execution::task</code> (<a href="https://wg21.link/p3552r3">P3552R3</a><sup>[1]</sup>) has open
-issues identified by national ballot comments, LWG issues, and published
-papers. This paper classifies each issue by whether it can be resolved
-after C++26 ships or whether shipping forecloses the fix.</p>
+<p>Asynchronous operations partition naturally into two classes based on
+their error semantics. Infrastructure operations have binary outcomes:
+the operation executed or it did not. I/O operations produce compound
+results: a status classification and associated data, always paired.
+This paper identifies the partition and examines the sender
+three-channel model against it. This paper is informational and proposes
+no action.</p>
 <hr />
 <h2 id="revision-history">Revision History</h2>
-<h3 id="r1-march-2026-prior-to-croydon-meeting">R1: March 2026 (prior to
-Croydon meeting)</h3>
+<h3 id="r0-march-2026-post-croydon-mailing">R0: March 2026 (post-Croydon
+mailing)</h3>
 <ul>
-<li>Complete rewrite as an informational classification of open
-issues.</li>
-</ul>
-<h3 id="r0-february-2026-pre-croydon-mailing">R0: February 2026
-(pre-Croydon mailing)</h3>
-<ul>
-<li>Original analysis of structural gaps. See <a href="https://wg21.link/p4007r0">P4007R0</a><sup>[2]</sup>.</li>
+<li>Initial version.</li>
 </ul>
 <hr />
 <h2 id="disclosure">1. Disclosure</h2>
-<p>The authors developed <a href="https://wg21.link/p4007r0">P4007R0</a><sup>[2]</sup> (“Senders and
-Coroutines”). The classification below holds regardless of whether any
-alternative design exists.</p>
+<p>The author developed <a href="https://wg21.link/p4007r0">P4007R0</a><sup>[6]</sup> (“Senders and
+Coroutines”) and publishes coroutine-native I/O libraries. The analysis
+below holds regardless of whether any alternative design exists. Every
+claim is sourced to published committee papers, OS specifications, or
+cited implementations.</p>
 <hr />
-<h2 id="fixed-after-ship">2. Fixed After Ship</h2>
-<p><code>task</code>’s <code>promise_type</code> is a class template
-instantiated in user code. Its <code>operator new</code>, allocator
-selection, stop token storage, environment forwarding, and destruction
-ordering can change between standard revisions without binary
-incompatibility. These issues are fixable post-ship: <a href="https://wg21.link/p3796r1">Unusual Allocator
-Customisation</a><sup>[3]</sup>, <a href="https://wg21.link/p3796r1">Flexible Allocator
-Position</a><sup>[3]</sup>, <a href="https://wg21.link/p3796r1">Shadowing The Environment
-Allocator</a><sup>[3]</sup>, <a href="https://wg21.link/p3796r1">Stop
-Source Always Created</a><sup>[3]</sup>, <a href="https://wg21.link/p3796r1">Stop Token Default
-Constructible</a><sup>[3]</sup>, <a href="https://wg21.link/p3796r1">Task Not Actually Lazily
-Started</a><sup>[3]</sup>, <a href="https://wg21.link/p3796r1">Frame
-Destroyed Too Late</a><sup>[3]</sup>, <a href="https://wg21.link/p3796r1">No Default Arguments</a><sup>[3]</sup>,
-<a href="https://wg21.link/p3796r1"><code>unhandled_stopped</code> Not
-<code>noexcept</code></a><sup>[3]</sup>, <a href="https://wg21.link/p3796r1">Environment Design
-Inefficient</a><sup>[3]</sup>, <a href="https://wg21.link/p3796r1">Non-Sender Awaitables
-Unsupported</a><sup>[3]</sup>, <a href="https://wg21.link/p3796r1">Future Language Feature Could Avoid
-<code>co_yield</code></a><sup>[3]</sup>, <a href="https://wg21.link/p3796r1">No TLS Capture/Restore
-Hook</a><sup>[3]</sup>, <a href="https://wg21.link/p3796r1"><code>return_value</code>/<code>return_void</code>
-Have No Specification</a><sup>[3]</sup>, <a href="https://wg21.link/p3796r1"><code>co_return { args... }</code>
-Unsupported</a><sup>[3]</sup>, <a href="https://wg21.link/p3796r1"><code>change_coroutine_scheduler</code>
-Requires Assignable Scheduler</a><sup>[3]</sup>, <a href="https://wg21.link/p3796r1">Sender-Unaware Coroutines Cannot
-<code>co_await</code> a <code>task</code></a><sup>[3]</sup>, <a href="https://wg21.link/p3796r1">Missing Rvalue
-Qualification</a><sup>[3]</sup>, <a href="https://wg21.link/p3801r0">Parameter Lifetime Is
-Surprising</a><sup>[4]</sup>, <a href="https://wg21.link/p3801r0">No
-Protection Against Dangling References</a><sup>[4]</sup>, <a href="https://wg21.link/p3801r0"><code>co_yield with_error</code> Is
-Clunky</a><sup>[4]</sup>, <a href="https://wg21.link/p3801r0"><code>co_await schedule(sch)</code> Is
-an Expensive No-Op</a><sup>[4]</sup>, <a href="https://wg21.link/p3801r0">Coroutine Cancellation Is
-Ad-Hoc</a><sup>[4]</sup>.</p>
-<p><code>affine_on</code> semantics, rescheduling behavior, and
-algorithm customisation are specification-level concerns. Tightening
-requirements or adding default implementations does not change any
-published interface. These issues are fixable post-ship: <a href="https://wg21.link/p3796r1"><code>affine_on</code> Default
-Implementation Lacks Specification</a><sup>[3]</sup>, <a href="https://wg21.link/p3796r1"><code>affine_on</code> Semantics Not
-Clear</a><sup>[3]</sup>, <a href="https://wg21.link/p3796r1"><code>affine_on</code> Shape May Not Be
-Correct</a><sup>[3]</sup>, <a href="https://wg21.link/p3796r1"><code>affine_on</code> Shouldn’t
-Forward Stop Requests</a><sup>[3]</sup>, <a href="https://wg21.link/p3796r1"><code>affine_on</code> Customisation
-For Other Senders</a><sup>[3]</sup>, <a href="https://wg21.link/p3796r1">Starting a <code>task</code>
-Reschedules Unconditionally</a><sup>[3]</sup>, <a href="https://wg21.link/p3796r1">Resuming After a <code>task</code>
-Reschedules Unnecessarily</a><sup>[3]</sup>, <a href="https://wg21.link/p3796r1"><code>bulk</code>
-vs. <code>task_scheduler</code></a><sup>[3]</sup>, <a href="https://wg21.link/p3796r1">No Completion
-Scheduler</a><sup>[3]</sup>, <a href="https://wg21.link/p3796r1"><code>with_awaitable_senders</code>
-Unused</a><sup>[3]</sup>.</p>
-<hr />
-<h2 id="not-fixable-post-ship">3. Not Fixable Post-Ship</h2>
-<p>The issues in this section are items where shipping forecloses the
-fix.</p>
+<h2 id="the-partition">2. The Partition</h2>
+<p>Asynchronous operations fall into two classes based on what their
+errors mean.</p>
+<h3 id="infrastructure-operations">2.1 Infrastructure Operations</h3>
+<p>Launch, schedule, dispatch, allocate, enqueue. The operation either
+executes or it does not. An error means the postcondition was
+violated.</p>
 <table>
 <colgroup>
-<col style="width: 7%" />
-<col style="width: 89%" />
-<col style="width: 2%" />
+<col style="width: 28%" />
+<col style="width: 34%" />
+<col style="width: 37%" />
 </colgroup>
 <thead>
 <tr>
-<th>Issue</th>
-<th>References</th>
-<th style="text-align: center;">Fixed</th>
+<th>Operation</th>
+<th>Success</th>
+<th>Failure</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Allocator Timing</td>
-<td><a href="https://isocpp.org/files/papers/P3980R0.html">P3980R0</a><sup>[5]</sup>,
-<a href="https://wg21.link/p3796r1">P3796R1</a><sup>[3]</sup>, <a href="https://cplusplus.github.io/LWG/issue4356">LWG
-4356</a><sup>[6]</sup>, <a href="https://github.com/cplusplus/nbballot/issues/960">US
-254-385</a><sup>[7]</sup></td>
-<td style="text-align: center;">no</td>
+<td>GPU kernel launch</td>
+<td>Kernel running</td>
+<td>Launch failed</td>
 </tr>
 <tr>
-<td>Allocator Propagation</td>
-<td><a href="https://isocpp.org/files/papers/P3980R0.html">P3980R0</a><sup>[5]</sup>,
-<a href="https://wg21.link/p3796r1">P3796R1</a><sup>[3]</sup></td>
-<td style="text-align: center;">no</td>
+<td>Thread pool submit</td>
+<td>Task queued</td>
+<td>Pool exhausted</td>
 </tr>
 <tr>
-<td>Error Return</td>
-<td><a href="https://wg21.link/p3950r0">P3950R0</a><sup>[8]</sup>, <a href="https://wg21.link/p3801r0">P3801R0</a><sup>[4]</sup>, <a href="https://wg21.link/p1713r0">P1713R0</a><sup>[9]</sup></td>
-<td style="text-align: center;">no</td>
+<td>Timer arm</td>
+<td>Timer armed</td>
+<td>Resource limit</td>
 </tr>
 <tr>
-<td>Symmetric Transfer</td>
-<td><a href="https://isocpp.org/files/papers/P2583R3.pdf">P2583R3</a><sup>[10]</sup>,
-<a href="https://github.com/cplusplus/nbballot/issues/948">US
-246-373</a><sup>[11]</sup>, <a href="https://cplusplus.github.io/LWG/issue4348">LWG
-4348</a><sup>[12]</sup>, <a href="https://wg21.link/p3801r0">P3801R0</a><sup>[4]</sup>, <a href="https://wg21.link/p3796r1">P3796R1</a><sup>[3]</sup></td>
-<td style="text-align: center;">no</td>
+<td>Memory allocate</td>
+<td>Block returned</td>
+<td>Allocation failed</td>
+</tr>
+<tr>
+<td>Mutex acquire</td>
+<td>Lock held</td>
+<td>Deadlock / timeout</td>
 </tr>
 </tbody>
 </table>
+<p>Every row is binary. Success is one thing. Failure is another. There
+is no middle ground, no partial outcome, no compound result. The
+operation either satisfied its postcondition or it did not.</p>
+<h3 id="io-operations">2.2 I/O Operations</h3>
+<p>Read, write, connect, accept, send, receive. The operation always
+completes. The result is a classification of what happened, paired with
+associated data.</p>
+<table>
+<thead>
+<tr>
+<th>Operation</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Read</td>
+<td><code>(status, bytes_transferred)</code></td>
+</tr>
+<tr>
+<td>Write</td>
+<td><code>(status, bytes_written)</code></td>
+</tr>
+<tr>
+<td>Connect</td>
+<td><code>(status)</code></td>
+</tr>
+<tr>
+<td>Accept</td>
+<td><code>(status, peer_socket)</code></td>
+</tr>
+</tbody>
+</table>
+<p>The status code is not evidence of a postcondition violation. It is
+the postcondition. <code>read(fd, buf, n)</code> promises to report what
+happened on the descriptor. Every status code fulfills that promise:</p>
+<table>
+<thead>
+<tr>
+<th>error_code</th>
+<th>bytes</th>
+<th>What happened</th>
+<th>Postcondition violated?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>success</td>
+<td>N</td>
+<td>Full read</td>
+<td>No</td>
+</tr>
+<tr>
+<td>success</td>
+<td>M &lt; N</td>
+<td>Partial read</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>EOF</code></td>
+<td>0</td>
+<td>Peer closed</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>ECONNRESET</code></td>
+<td>0</td>
+<td>Peer reset</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>EWOULDBLOCK</code></td>
+<td>0</td>
+<td>Try again</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>EBADF</code></td>
+<td>0</td>
+<td>Invalid fd</td>
+<td><strong>Yes</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Only <code>EBADF</code>-class errors - invalid file descriptor, bad
+address, not a socket - are postcondition violations. Every other
+outcome is the operation correctly reporting the state of the world.</p>
+<h3 id="the-os-delivers-pairs">2.3 The OS Delivers Pairs</h3>
+<p>This is not a design preference. It is how operating systems report
+I/O completions:</p>
 <ul>
-<li><p><strong>Allocator Timing.</strong> <code>task</code> does not
-allow the user to specify an allocator at the launch site for coroutine
-frame allocation. The coroutine frame is allocated by
-<code>operator new</code> at the call site, before any sender
-<code>connect</code>/<code>start</code> machinery runs. The receiver’s
-environment - which carries the allocator - is not yet available at that
-point. The <code>allocator_arg</code> mechanism in <a href="https://wg21.link/p3552r3">P3552R3</a><sup>[1]</sup> works around
-this by requiring the allocator in the coroutine’s parameter list, but
-that locks in a caller-specified approach and forecloses
-environment-based injection.</p></li>
-<li><p><strong>Allocator Propagation.</strong> <code>task</code> does
-not propagate the frame allocator to child tasks. Each child task
-allocates its frame independently. Shipping without propagation locks in
-a design where every launch site must specify its allocator explicitly,
-foreclosing transparent propagation through the coroutine call
-tree.</p></li>
-<li><p><strong>Error Return.</strong> <code>task</code> requires
-<code>co_yield with_error(e)</code> to propagate an error to the caller.
-<code>co_return</code> cannot carry an error value because
-<code>return_value</code> and <code>return_void</code> are mutually
-exclusive in the current coroutine specification. Shipping this
-interface locks in the <code>co_yield</code> mechanism and forecloses
-<code>co_return</code>-based error propagation, which would require a
-language change.</p></li>
-<li><p><strong>Symmetric Transfer.</strong> The completion functions
-(<code>set_value</code>, <code>set_error</code>,
-<code>set_stopped</code>) and <code>start()</code> return
-<code>void</code>, providing no channel to propagate a
-<code>coroutine_handle&lt;&gt;</code>. When a sender completes
-synchronously, the receiver calls <code>handle.resume()</code> on the
-caller’s stack, adding a frame per completion with no upper bound.
-Shipping this protocol forecloses the
-<code>coroutine_handle&lt;&gt;</code>-returning completion protocol that
-would enable symmetric transfer.</p></li>
+<li><p><strong>io_uring.</strong> Each completion queue entry (CQE)
+carries <code>res</code> (byte count or negative errno) and
+<code>flags</code>. One structure. One dequeue. The kernel does not
+route success and failure to different queues.</p></li>
+<li><p><strong>IOCP.</strong> <code>GetQueuedCompletionStatus</code>
+returns a <code>BOOL</code>, an <code>lpNumberOfBytesTransferred</code>,
+and an <code>lpOverlapped</code>. The error and the byte count arrive
+together in one call.</p></li>
+<li><p><strong>POSIX.</strong> <code>read()</code> returns
+<code>ssize_t</code>. On success, the byte count. On failure,
+<code>-1</code> with <code>errno</code> set. Both values are available
+at the same call site.</p></li>
 </ul>
+<p>Three OS families, three different APIs, the same shape: status and
+data arrive as a pair because they are a single result.</p>
 <hr />
-<h2 id="acknowledgements">Acknowledgements</h2>
-<p>The authors thank Andrzej Krzemieński for feedback that sharpened the
-scope of this revision. Thanks are also due to Dietmar Kühl, Michael
-Hava, Mark Hoemmen, Ian Petersen, and Ville Voutilainen for technical
-discussion that informed the analysis.</p>
+<h2 id="the-infrastructure-error-model">3. The Infrastructure Error
+Model</h2>
+<p>The sender three-channel model assigns semantic meaning to each
+channel:</p>
+<ul>
+<li><code>set_value(args...)</code> - the postcondition was satisfied;
+here are the results</li>
+<li><code>set_error(err)</code> - the postcondition was violated; here
+is why</li>
+<li><code>set_stopped()</code> - the operation was cancelled before
+attempting the postcondition</li>
+</ul>
+<p>For infrastructure operations, this mapping is unambiguous:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Timer sender: binary outcome</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> timer_sender <span class="op">=</span> schedule_at<span class="op">(</span>scheduler<span class="op">,</span> deadline<span class="op">);</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co">// Success: set_value()       - timer expired</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co">// Failure: set_error(ec)     - resource exhaustion</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co">// Cancel:  set_stopped()     - cancelled before expiry</span></span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Thread pool submit: binary outcome</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> submit_sender <span class="op">=</span> on<span class="op">(</span>pool<span class="op">.</span>get_scheduler<span class="op">(),</span> work<span class="op">);</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co">// Success: set_value(result) - work executed</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co">// Failure: set_error(ec)     - pool rejected</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co">// Cancel:  set_stopped()     - cancelled before dispatch</span></span></code></pre></div>
+<p>Channel assignment is deterministic. No information is lost. No
+adaptation is required. <code>then</code> sees the result.
+<code>upon_error</code> sees the error. <code>upon_stopped</code> sees
+the cancellation. The channels compose with generic algorithms:
+<code>retry</code> retries on <code>set_error</code>,
+<code>when_all</code> cancels siblings on failure,
+<code>upon_error</code> routes errors to handlers.</p>
+<p>The three-channel model is correct for this class.
+<code>std::execution</code> serves it well.</p>
+<hr />
+<h2 id="the-io-error-model">4. The I/O Error Model</h2>
+<p>For I/O operations, the postcondition is: “return the outcome
+classification and associated data.” This postcondition is always
+satisfied. The operation always reports what happened.</p>
+<p>The status code is not a failure signal. It is a vocabulary:</p>
+<ul>
+<li><code>ECONNRESET</code> - the peer reset the connection</li>
+<li><code>EPIPE</code> - the write end is closed</li>
+<li><code>ETIMEDOUT</code> - the peer did not respond within the
+timeout</li>
+<li><code>EWOULDBLOCK</code> - nothing available now; try again</li>
+<li><code>EOF</code> - the peer closed the connection gracefully</li>
+</ul>
+<p>Each requires different application handling. None indicates that the
+operation failed to operate. <code>ECONNRESET</code> means “fatal, abort
+the transaction” in an HTTP request handler, but “done, expected
+closure” in a long-polling connection that the server intentionally
+drops. The same error code, classified differently depending on the
+protocol state the application holds.</p>
+<p>Partial results are normal. A <code>write</code> that sends 500 of
+1,000 bytes before <code>ECONNRESET</code> produces
+<code>(ECONNRESET, 500)</code>. Both values are needed. The 500 tells
+the application how much of the message was acknowledged. The status
+tells it why the rest was not.</p>
+<p>Chris Kohlhoff identified this in <a href="https://wg21.link/p2430r0">P2430R0</a><sup>[2]</sup> (“Partial
+success scenarios with P2300,” 2021):</p>
+<blockquote>
+<p>“Due to the limitations of the <code>set_error</code> channel (which
+has a single ‘error’ argument) and <code>set_done</code> channel (which
+takes no arguments), partial results must be communicated down the
+<code>set_value</code> channel.”</p>
+</blockquote>
+<p>POSIX has modeled I/O this way since 1988<sup>[9]</sup>. Asio has
+modeled it this way since 2003. Every language runtime that provides
+async I/O - Go, Rust, Python, C#, Java - delivers compound results. This
+is not a novel observation. It is forty years of convergent
+practice.</p>
+<hr />
+<h2 id="the-channel-split">5. The Channel Split</h2>
+<p>When a sender-based I/O operation completes, it must choose a
+channel. The byte count and the status code - which the OS delivered as
+a pair - are now split:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>async_read<span class="op">(</span>socket<span class="op">,</span> buffer<span class="op">)</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="op">|</span> then<span class="op">([](</span><span class="dt">size_t</span> n<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>          <span class="co">// byte count visible</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>          <span class="co">// error_code invisible</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>      <span class="op">})</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">|</span> upon_error<span class="op">([](</span><span class="bu">std::</span>error_code ec<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>          <span class="co">// error_code visible</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>          <span class="co">// byte count invisible</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>      <span class="op">});</span></span></code></pre></div>
+<p><code>then</code> and <code>upon_error</code> are mutually exclusive
+execution paths. The programmer cannot inspect both values at the same
+call site. The I/O result was a pair. The model split it.</p>
+<p>To recover the pair, the programmer must defeat the channels:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>async_read<span class="op">(</span>socket<span class="op">,</span> buffer<span class="op">)</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="op">|</span> into_expected</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">|</span> then<span class="op">([](</span><span class="bu">std::</span>expected<span class="op">&lt;</span><span class="dt">size_t</span><span class="op">,</span> <span class="bu">std::</span>error_code<span class="op">&gt;</span> result<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>          <span class="co">// both visible again</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>      <span class="op">});</span></span></code></pre></div>
+<p>This works. But the programmer paid the cost of the channel model -
+the split, the adaptor, the wrapping - to undo the channel model. The
+channels are not helping. They are an obstacle being worked around.
+<code>let_error</code> is the same pattern: catch the error, re-emit
+through <code>set_value</code>. Channel laundering.</p>
+<p>Consider a partial write. The application asks to write 1,000 bytes.
+The kernel accepts 500 before the connection dies.
+<code>set_error(ECONNRESET)</code> discards the 500. The application
+needs that number to know what was acknowledged by the peer - whether to
+retry, what offset to resume from, whether the transaction can be
+salvaged. The channel model destroyed it.</p>
+<h3 id="known-mappings">5.1 Known Mappings</h3>
+<p>Two known attempts to solve the channel assignment problem for I/O
+illustrate the structural difficulty. Neither involves coroutines. Both
+operate at the receiver level: which of <code>set_value</code>,
+<code>set_error</code>, <code>set_stopped</code> does the I/O sender
+call when the kernel completion arrives?</p>
+<p><strong>The default mapping.</strong> <a href="https://github.com/bemanproject/net">beman.net</a><sup>[7]</sup>,
+the reference sender-based networking implementation:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(!</span>ec<span class="op">)</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    set_value<span class="op">(</span><span class="bu">std::</span>move<span class="op">(</span>rcvr<span class="op">),</span> n<span class="op">);</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    set_error<span class="op">(</span><span class="bu">std::</span>move<span class="op">(</span>rcvr<span class="op">),</span> ec<span class="op">);</span></span></code></pre></div>
+<p>All non-zero error codes go to <code>set_error</code>. The byte count
+is discarded unconditionally. Total information loss on any error.</p>
+<p><strong>The refined mapping.</strong> Peter Dimov proposed a
+convention in <a href="https://wg21.link/p4007r0">P4007R0</a><sup>[6]</sup> (Section 3.6)
+that preserves partial results by discriminating the channel based on
+the byte count and error code category:</p>
+<table>
+<thead>
+<tr>
+<th>Completion</th>
+<th>Channel</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>(eof, n)</code> for any n</td>
+<td><code>set_value(eof, n)</code></td>
+</tr>
+<tr>
+<td><code>(canceled, n)</code> for any n</td>
+<td><code>set_stopped()</code></td>
+</tr>
+<tr>
+<td><code>(ec, 0)</code> where ec is not eof</td>
+<td><code>set_error(ec)</code></td>
+</tr>
+<tr>
+<td><code>(ec, n)</code> where n &gt; 0</td>
+<td><code>set_value(ec, n)</code></td>
+</tr>
+</tbody>
+</table>
+<p>This is the only known mapping that preserves partial results on the
+error path. Dimov characterized it as “ad hoc.”<sup>[6]</sup> The
+mapping requires semantic knowledge of specific error conditions: EOF is
+distinguished from cancellation, which is distinguished from all other
+errors. It is domain-specific I/O logic embedded in the channel
+routing.</p>
+<p>Even this mapping has costs. Zero-byte errors lose data - they go to
+<code>set_error</code> with no byte count. The classification is
+context-free: the I/O layer decides which channel before the application
+can inspect the result. <code>ECONNRESET</code> is classified
+irrevocably at the I/O layer, before the protocol handler - the only
+code that knows whether <code>ECONNRESET</code> is fatal or expected -
+has a chance to see it.</p>
+<p>Both mappings demonstrate the same structural problem: any function
+from <code>(error_code, size_t)</code> to
+<code>{set_value, set_error, set_stopped}</code> must either lose data,
+embed domain-specific classification at the wrong layer, or bypass the
+channels entirely. The problem is not the mapping. The problem is that
+the mapping is required at all.</p>
+<hr />
+<h2 id="three-defenses-three-concessions">6. Three Defenses, Three
+Concessions</h2>
+<p>Three positions are available to defend the three-channel model for
+I/O. Each concedes the thesis.</p>
+<h3 id="accept-the-information-loss">6.1 Accept the Information
+Loss</h3>
+<p>Argue that the byte count does not matter when an error occurs.
+<code>set_error(ECONNRESET)</code> is sufficient; the partial transfer
+count is unneeded.</p>
+<p>This contradicts POSIX semantics, where <code>write()</code> returns
+the number of bytes written even when a subsequent call would fail. It
+contradicts Asio’s <code>(error_code, size_t)</code> convention, which
+has delivered both values for twenty years. It contradicts network
+programming practice across every language and framework. Partial writes
+are normal. The byte count is how the application knows what was
+acknowledged.</p>
+<h3 id="route-everything-through-set_value">6.2 Route Everything Through
+<code>set_value</code></h3>
+<p>Call <code>set_value(error_code, bytes)</code> for all outcomes. The
+pair stays intact. No information loss.</p>
+<p>But <code>set_error</code> and <code>set_stopped</code> now serve no
+purpose for I/O senders. Generic algorithms that dispatch on channels -
+<code>retry</code>, <code>when_all</code>, <code>upon_error</code> -
+cannot distinguish I/O success from I/O failure because both arrive
+through <code>set_value</code>. The three-channel model reduces to one
+channel with a structured result. The channels are not wrong. They are
+irrelevant.</p>
+<h3 id="classify-errors-into-channels">6.3 Classify Errors Into
+Channels</h3>
+<p>Route “routine” errors like <code>ECONNRESET</code> through
+<code>set_value</code> and “exceptional” errors like <code>ENOMEM</code>
+through <code>set_error</code>. This is the refined mapping from Section
+5.1 taken further.</p>
+<p>This requires a taxonomy of error codes that does not exist in POSIX,
+Windows, or any OS API. It redefines <code>set_value</code> from “the
+operation succeeded” to “here is a result that might contain an error.”
+And the classification must happen at the I/O layer, before the
+application - the only code with enough context to classify correctly -
+has seen the result. <code>ECONNRESET</code> is fatal in one protocol
+and expected in another. No context-free classification can get this
+right.</p>
+<h3 id="the-fork">6.4 The Fork</h3>
+<p>Each position concedes the thesis:</p>
+<ul>
+<li><strong>(a)</strong> loses I/O data that applications need</li>
+<li><strong>(b)</strong> makes the channels irrelevant for I/O</li>
+<li><strong>(c)</strong> redefines what the channels mean and classifies
+at the wrong layer</li>
+</ul>
+<p>There is no fourth position. The three-channel model either loses
+data, becomes unused, or changes its semantics when applied to I/O.</p>
+<hr />
+<h2 id="domain-boundary">7. Domain Boundary</h2>
+<p>The finding is not that the three-channel model is wrong. It is that
+the model has a domain.</p>
+<table>
+<thead>
+<tr>
+<th>Domain</th>
+<th>Error model</th>
+<th>Three-channel model fits?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GPU dispatch</td>
+<td>Infrastructure</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Thread pool</td>
+<td>Infrastructure</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Timer</td>
+<td>Infrastructure</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Allocator</td>
+<td>Infrastructure</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Read / Write</td>
+<td>I/O</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Connect/Accept</td>
+<td>I/O</td>
+<td>No</td>
+</tr>
+<tr>
+<td>DNS resolve</td>
+<td>I/O</td>
+<td>No</td>
+</tr>
+</tbody>
+</table>
+<p><code>std::execution</code> was built at NVIDIA for compile-time work
+graphs and GPU dispatch<sup>[8]</sup>. Those are infrastructure
+operations with binary outcomes. The model is correct for its design
+domain.</p>
+<p>Dietmar Kühl - the author of <a href="https://wg21.link/p3552r3">P3552R3</a><sup>[5]</sup>
+(<code>std::execution::task</code>) and <a href="https://wg21.link/p2762r2">P2762R2</a><sup>[3]</sup>
+(sender/receiver networking) - described his own I/O error dispatch
+mechanism on the LEWG reflector (March 12, 2026): “My answer does
+somewhat appall me, especially having created this - er - solution!” He
+was demonstrating the four different syntactic mechanisms required to
+dispatch to the three channels from a coroutine. The task author’s own
+assessment of what happens when the infrastructure error model meets
+I/O.</p>
+<hr />
+<h2 id="conclusion">8. Conclusion</h2>
+<p>Two error models exist. They are not a matter of taste. They follow
+from the structure of the operations.</p>
+<p>Infrastructure operations have binary postconditions. The
+three-channel model maps them cleanly. I/O operations produce compound
+results where the status code and the associated data are inseparable.
+The three-channel model cannot represent them without losing data,
+bypassing the channels, or redefining what the channels mean.</p>
+<p>The partition is the same one Chris Kohlhoff identified in
+2021<sup>[2]</sup>. It is the same one every OS kernel enforces by
+delivering status and byte count as a single completion. It is the
+reason Asio delivers <code>(error_code, size_t)</code> as a pair. It is
+not new. It is forty years old.</p>
 <hr />
 <h2 id="references">References</h2>
-<p>Papers, issues, and ballot comments referenced in this document.</p>
-<h3 id="wg21-papers">WG21 Papers</h3>
 <ol type="1">
-<li><a href="https://wg21.link/p3552r3">P3552R3</a> - “Add a Coroutine
-Task Type” (Dietmar Kühl, Maikel Nadolski, 2025).
-https://wg21.link/p3552r3</li>
-<li><a href="https://wg21.link/p4007r0">P4007R0</a> - “Senders and
+<li><p><a href="https://wg21.link/p2300r10">P2300R10</a> -
+“std::execution” (Michał Dominiak et al., 2024).
+https://wg21.link/p2300r10</p></li>
+<li><p><a href="https://wg21.link/p2430r0">P2430R0</a> - “Partial
+success scenarios with P2300” (Chris Kohlhoff, 2021).
+https://wg21.link/p2430r0</p></li>
+<li><p><a href="https://wg21.link/p2762r2">P2762R2</a> -
+“Sender/Receiver Interface For Networking” (Dietmar Kühl, 2023).
+https://wg21.link/p2762r2</p></li>
+<li><p><a href="https://wg21.link/p3570r2">P3570R2</a> - “Optional
+variants in sender/receiver” (Fabio Fracassi, 2025).
+https://wg21.link/p3570r2</p></li>
+<li><p><a href="https://wg21.link/p3552r3">P3552R3</a> - “Add a
+Coroutine Task Type” (Dietmar Kühl, Maikel Nadolski, 2025).
+https://wg21.link/p3552r3</p></li>
+<li><p><a href="https://wg21.link/p4007r0">P4007R0</a> - “Senders and
 Coroutines” (Vinnie Falco, Mungo Gill, 2026).
-https://wg21.link/p4007r0</li>
-<li><a href="https://wg21.link/p3796r1">P3796R1</a> - “Coroutine Task
-Issues” (Dietmar Kühl, 2025). https://wg21.link/p3796r1</li>
-<li><a href="https://wg21.link/p3801r0">P3801R0</a> - “Concerns about
-the design of std::execution::task” (Jonathan Müller, 2025).
-https://wg21.link/p3801r0</li>
-<li><a href="https://isocpp.org/files/papers/P3980R0.html">P3980R0</a> -
-“Task’s Allocator Use” (Dietmar Kühl, 2026).
-https://isocpp.org/files/papers/P3980R0.html</li>
-<li><a href="https://cplusplus.github.io/LWG/issue4356">LWG 4356</a> -
-“connect() should use get_allocator(get_env(rcvr))”.
-https://cplusplus.github.io/LWG/issue4356</li>
-<li><a href="https://github.com/cplusplus/nbballot/issues/960">US
-254-385</a> - C++26 NB ballot comment.
-https://github.com/cplusplus/nbballot/issues/960</li>
-<li><a href="https://wg21.link/p3950r0">P3950R0</a> - “return_value
-&amp; return_void Are Not Mutually Exclusive” (Robert Leahy, 2025).
-https://wg21.link/p3950r0</li>
-<li><a href="https://wg21.link/p1713r0">P1713R0</a> - “Allowing both
-co_return; and co_return value; in the same coroutine” (Lewis Baker,
-2019). https://wg21.link/p1713r0</li>
-<li><a href="https://isocpp.org/files/papers/P2583R3.pdf">P2583R3</a> -
-“Symmetric Transfer and Sender Composition” (Mungo Gill, Vinnie Falco,
-2026). https://isocpp.org/files/papers/P2583R3.pdf</li>
-<li><a href="https://github.com/cplusplus/nbballot/issues/948">US
-246-373</a> - C++26 NB ballot comment.
-https://github.com/cplusplus/nbballot/issues/948</li>
-<li><a href="https://cplusplus.github.io/LWG/issue4348">LWG 4348</a> -
-“task doesn’t support symmetric transfer”.
-https://cplusplus.github.io/LWG/issue4348</li>
-<li><a href="https://wg21.link/p2300r10">P2300R10</a> - “std::execution”
-(Michał Dominiak et al., 2024). https://wg21.link/p2300r10</li>
-</ol>
-<h3 id="other">Other</h3>
-<ol start="14" type="1">
-<li><a href="https://eel.is/c++draft/">C++ Working Draft</a> - (Richard
-Smith, ed.). https://eel.is/c++draft/</li>
+https://wg21.link/p4007r0</p></li>
+<li><p><a href="https://github.com/bemanproject/net">bemanproject/net</a> -
+Sender/receiver networking library.
+https://github.com/bemanproject/net</p></li>
+<li><p><a href="https://github.com/NVIDIA/stdexec">stdexec</a> - NVIDIA
+reference implementation of std::execution.
+https://github.com/NVIDIA/stdexec</p></li>
+<li><p>IEEE Std 1003.1 - POSIX <code>read()</code> /
+<code>write()</code> specification.
+https://pubs.opengroup.org/onlinepubs/9799919799/</p></li>
 </ol>
 
 </body>
