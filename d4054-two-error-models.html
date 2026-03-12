@@ -1453,15 +1453,6 @@ graphs and GPU dispatch. Those are infrastructure operations with binary
 outcomes. The model is correct for its design domain. The
 compound-result operations - whether synchronous or asynchronous - are
 outside that domain.</p>
-<p>Dietmar Kühl - the author of <a href="https://wg21.link/p3552r3">P3552R3</a><sup>[5]</sup>
-(<code>std::execution::task</code>) and <a href="https://wg21.link/p2762r2">P2762R2</a><sup>[3]</sup>
-(sender/receiver networking) - described his own I/O error dispatch
-mechanism on the LEWG reflector (March 12, 2026): “My answer does
-somewhat appall me, especially having created this - er - solution!” He
-was demonstrating the four different syntactic mechanisms required to
-dispatch to the three channels from a coroutine. The task author’s own
-assessment of what happens when the infrastructure error model meets
-I/O.</p>
 <hr />
 <h2 id="conclusion">8. Conclusion</h2>
 <p>Two error models exist. They are not a matter of taste. They follow

@@ -273,8 +273,6 @@ The finding is not that the three-channel model is wrong. It is that the model h
 
 The reference implementation of `std::execution`<sup>[8]</sup> targets compile-time work graphs and GPU dispatch. Those are infrastructure operations with binary outcomes. The model is correct for its design domain. The compound-result operations - whether synchronous or asynchronous - are outside that domain.
 
-Dietmar K&uuml;hl - the author of [P3552R3](https://wg21.link/p3552r3)<sup>[5]</sup> (`std::execution::task`) and [P2762R2](https://wg21.link/p2762r2)<sup>[3]</sup> (sender/receiver networking) - described his own I/O error dispatch mechanism on the LEWG reflector (March 12, 2026): "My answer does somewhat appall me, especially having created this - er - solution!" He was demonstrating the four different syntactic mechanisms required to dispatch to the three channels from a coroutine. The task author's own assessment of what happens when the infrastructure error model meets I/O.
-
 ---
 
 ## 8. Conclusion
