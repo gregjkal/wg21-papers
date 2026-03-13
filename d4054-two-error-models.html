@@ -885,6 +885,8 @@ outline: none;
   <ul>
   <li><a href="#known-mappings" id="toc-known-mappings">5.1 Known
   Mappings</a></li>
+  <li><a href="#prior-engagement" id="toc-prior-engagement">5.2 Prior
+  Engagement</a></li>
   </ul></li>
   <li><a href="#three-defenses-three-concessions" id="toc-three-defenses-three-concessions">6. Three Defenses, Three
   Concessions</a>
@@ -895,11 +897,14 @@ outline: none;
   Through <code>set_value</code></a></li>
   <li><a href="#classify-errors-into-channels" id="toc-classify-errors-into-channels">6.3 Classify Errors Into
   Channels</a></li>
-  <li><a href="#the-fork" id="toc-the-fork">6.4 The Fork</a></li>
+  <li><a href="#the-observable-tradeoffs" id="toc-the-observable-tradeoffs">6.4 The Observable
+  Tradeoffs</a></li>
   </ul></li>
   <li><a href="#domain-boundary" id="toc-domain-boundary">7. Domain
   Boundary</a></li>
   <li><a href="#conclusion" id="toc-conclusion">8. Conclusion</a></li>
+  <li><a href="#acknowledgments" id="toc-acknowledgments">9.
+  Acknowledgments</a></li>
   <li><a href="#references" id="toc-references">References</a></li>
   </ul>
 </nav>
@@ -914,8 +919,7 @@ paired. The partition is not specific to asynchronous programming -
 same split. The partition becomes a concrete problem when the sender
 three-channel model forces a routing decision that synchronous return
 values do not face. This paper identifies the partition and examines the
-three-channel model against it. This paper is informational and proposes
-no action.</p>
+three-channel model against it.</p>
 <hr />
 <h2 id="revision-history">Revision History</h2>
 <h3 id="r0-march-2026-post-croydon-mailing">R0: March 2026 (post-Croydon
@@ -926,10 +930,15 @@ mailing)</h3>
 <hr />
 <h2 id="disclosure">1. Disclosure</h2>
 <p>The author developed <a href="https://wg21.link/p4007r0">P4007R0</a><sup>[6]</sup> (“Senders and
-Coroutines”) and publishes coroutine-native I/O libraries. The analysis
-below holds regardless of whether any alternative design exists. Every
-claim is sourced to published committee papers, OS specifications, or
-cited implementations.</p>
+Coroutines”) and believes coroutine-native I/O is the correct foundation
+for networking in C++. The findings in this paper are structural and
+hold regardless of which library implements the coroutine-native layer.
+This paper is one of a suite of four that examines the relationship
+between compound I/O results and the sender three-channel model. The
+author provides information, asks nothing, and serves at the pleasure of
+the chair. The analysis below holds regardless of whether any
+alternative design exists. Every claim is sourced to published committee
+papers, OS specifications, or cited implementations.</p>
 <hr />
 <h2 id="the-partition">2. The Partition</h2>
 <p>Operations fall into two classes based on their postcondition
@@ -996,8 +1005,8 @@ operation either satisfied its postcondition or it did not. This is true
 whether the operation is synchronous (<code>malloc</code>,
 <code>fopen</code>) or asynchronous (GPU launch, timer arm).</p>
 <h3 id="compound-result-operations">2.2 Compound-Result Operations</h3>
-<p>Read, write, connect, accept, parse, convert. The operation completes
-and returns a classification of what happened, paired with associated
+<p>Read, write, accept, parse, convert. The operation completes and
+returns a classification of what happened, paired with associated
 data.</p>
 <table>
 <thead>
@@ -1029,6 +1038,17 @@ data.</p>
 </tr>
 </tbody>
 </table>
+<p>Some operations straddle the boundary. <code>connect</code> returns
+only a status code - no associated data. It is structurally a binary
+outcome: the connection was established or it was not. Windows
+<code>ConnectEx</code> accepts an optional send buffer, but the send
+byte count is available only through a separate
+<code>GetOverlappedResult</code> query - it is not part of the
+completion result. The completion itself delivers a status code. A
+bridge that recognizes status-only results can route
+<code>connect</code> through three channels without loss.
+<code>accept</code> cannot be reduced this way because the peer socket
+is associated data that would be destroyed on the error path.</p>
 <p><code>std::from_chars</code> is synchronous. <code>read</code> may be
 synchronous or asynchronous. Both return compound results where the
 status and the associated data are inseparable. The partition follows
@@ -1135,13 +1155,13 @@ channel - <code>throw</code> - is reserved for genuine postcondition
 violations: <code>EBADF</code>, bad address, not a socket. Everything
 else goes through the value channel, keeping the pair intact. The reason
 is not performance. It is information preservation.</p>
-<p>The sender three-channel model reintroduced the problem the industry
-had already learned to avoid - and extended it from two channels to
-three. <code>set_value</code>, <code>set_error</code>, and
-<code>set_stopped</code> are mutually exclusive execution paths. A
-compound result that was a single return value must now be split across
-channels. The remaining sections examine what happens when the
-three-channel model meets each side of the partition.</p>
+<p>The sender three-channel model presents the same structural
+challenge, now across three mutually exclusive execution paths instead
+of two. <code>set_value</code>, <code>set_error</code>, and
+<code>set_stopped</code> are mutually exclusive. A compound result that
+was a single return value must now be split across channels. The
+remaining sections examine what happens when the three-channel model
+meets each side of the partition.</p>
 <hr />
 <h2 id="the-infrastructure-error-model">3. The Infrastructure Error
 Model</h2>
@@ -1237,11 +1257,16 @@ call site. The I/O result was a pair. The model split it.</p>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">|</span> then<span class="op">([](</span><span class="bu">std::</span>expected<span class="op">&lt;</span><span class="dt">size_t</span><span class="op">,</span> <span class="bu">std::</span>error_code<span class="op">&gt;</span> result<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>          <span class="co">// both visible again</span></span>
 <span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>      <span class="op">});</span></span></code></pre></div>
-<p>This works. But the programmer paid the cost of the channel model -
-the split, the adaptor, the wrapping - to undo the channel model. The
-channels are not helping. They are an obstacle being worked around.
-<code>let_error</code> is the same pattern: catch the error, re-emit
-through <code>set_value</code>. Channel laundering.</p>
+<p>This works. But the result is now
+<code>set_value(expected&lt;size_t, error_code&gt;)</code>. The error
+code is inside the <code>expected</code>, invisible to
+<code>when_all</code>, <code>upon_error</code>, and <code>retry</code>.
+This is Approach A1 (<a href="https://wg21.link/d4053r1">D4053R1</a>
+Section 5) with the pair wrapped in <code>std::expected</code> instead
+of delivered as two arguments. The channel-based composition algebra is
+bypassed. <code>let_error</code> is the same pattern in reverse: catch
+the error, re-emit through <code>set_value</code>. Both recover the pair
+by routing everything through <code>set_value</code>.</p>
 <p>Consider a partial write. The application asks to write 1,000 bytes.
 The kernel accepts 500 before the connection dies.
 <code>set_error(ECONNRESET)</code> discards the 500. The application
@@ -1311,6 +1336,38 @@ from <code>(error_code, size_t)</code> to
 embed domain-specific classification at the wrong layer, or bypass the
 channels entirely. The problem is not the mapping. The problem is that
 the mapping is required at all.</p>
+<h3 id="prior-engagement">5.2 Prior Engagement</h3>
+<p>Dietmar Kühl enumerated five channel-routing options for I/O in <a href="https://wg21.link/p2762r2">P2762R2</a><sup>[3]</sup> (Section
+4.2), including fused <code>set_value(error_code, n)</code>, multiple
+<code>set_value</code> overloads, <code>set_error</code> routing, hybrid
+severity-based classification, and an <code>error_code</code> reference
+argument. Kühl acknowledged the partial-success problem directly: “some
+of the error cases may have been partial successes. In that case, using
+the set_error channel taking just one argument is somewhat limiting.” He
+did not resolve it, noting that “when substantial work is done and
+partial successes become reasonable, it is likely that intermediate
+results are to be produced and algorithms of a different shape are used
+anyway.” P2762R2 chose <code>set_error</code> routing (Approach B in <a href="https://wg21.link/d4053r1">D4053R1</a>) for its examples.</p>
+<p>Kirk Shoop identified the same heuristic difficulty in <a href="https://wg21.link/p2471r1">P2471R1</a><sup>[10]</sup> (“NetTS,
+ASIO and Sender Library Design Comparison,” 2021), observing that
+completion tokens translating to senders “must use a heuristic to
+type-match the first arg” and that the mapping creates “many different
+implementations of asSender.”</p>
+<p><a href="https://wg21.link/p3570r2">P3570R2</a><sup>[4]</sup>
+(“Optional variants in sender/receiver,” Fabio Fracassi, 2025) provides
+a mechanism for senders to present different completion types to
+coroutines than to direct receivers. The concrete use case is concurrent
+queues (<a href="https://wg21.link/p0260">P0260</a><sup>[11]</sup>):
+<code>set_error(conqueue_errc)</code> for receivers,
+<code>optional&lt;T&gt;</code> for coroutines. P3570 transforms
+<em>which channel</em> the coroutine sees, not the channel routing
+itself. It does not address compound I/O results: a sender completing
+with <code>set_error(ECONNRESET)</code> still discards the byte count
+regardless of how the coroutine receives the error.</p>
+<p>To the authors’ knowledge, no published paper resolves the
+compound-result channel-routing problem identified in <a href="https://wg21.link/p2430r0">P2430R0</a><sup>[2]</sup>. The problem
+has been identified by Kohlhoff (2021), Kühl (2023), and Shoop (2021).
+It remains open.</p>
 <hr />
 <h2 id="three-defenses-three-concessions">6. Three Defenses, Three
 Concessions</h2>
@@ -1353,16 +1410,21 @@ application - the only code with enough context to classify correctly -
 has seen the result. <code>ECONNRESET</code> is fatal in one protocol
 and expected in another. No context-free classification can get this
 right.</p>
-<h3 id="the-fork">6.4 The Fork</h3>
-<p>Each position concedes the thesis:</p>
+<h3 id="the-observable-tradeoffs">6.4 The Observable Tradeoffs</h3>
+<p>Each position trades something the compound-result model
+preserves:</p>
 <ul>
-<li><strong>(a)</strong> loses I/O data that applications need</li>
-<li><strong>(b)</strong> makes the channels irrelevant for I/O</li>
-<li><strong>(c)</strong> redefines what the channels mean and classifies
-at the wrong layer</li>
+<li><strong>(a)</strong> trades I/O data for channel simplicity</li>
+<li><strong>(b)</strong> trades channel relevance for data
+preservation</li>
+<li><strong>(c)</strong> trades fixed channel semantics for a
+domain-specific classification</li>
 </ul>
-<p>There is no fourth position. The three-channel model either loses
-data, becomes unused, or changes its semantics when applied to I/O.</p>
+<p>The authors are not aware of a fourth position. The three observable
+outcomes when the three-channel model meets compound I/O results are
+data loss, channel bypass, or semantic redefinition. The authors welcome
+counterexamples (see <a href="https://wg21.link/d4053r1">D4053R1</a>
+Section 9).</p>
 <hr />
 <h2 id="domain-boundary">7. Domain Boundary</h2>
 <p>The finding is not that the three-channel model is wrong. It is that
@@ -1416,6 +1478,12 @@ decision.</p>
 <td>Yes</td>
 </tr>
 <tr>
+<td>Connect</td>
+<td>Either</td>
+<td>Infrastructure</td>
+<td>Yes</td>
+</tr>
+<tr>
 <td><code>from_chars</code></td>
 <td>Sync</td>
 <td>Compound-result</td>
@@ -1434,7 +1502,7 @@ decision.</p>
 <td>No</td>
 </tr>
 <tr>
-<td>Connect / Accept</td>
+<td>Accept</td>
 <td>Either</td>
 <td>Compound-result</td>
 <td>No</td>
@@ -1479,6 +1547,19 @@ reason <code>std::from_chars</code> returns a struct with two fields. It
 is the reason Asio delivers <code>(error_code, size_t)</code> as a pair.
 It is not new. It is forty years old.</p>
 <hr />
+<h2 id="acknowledgments">9. Acknowledgments</h2>
+<p>The author thanks Chris Kohlhoff for identifying the partial-success
+problem in <a href="https://wg21.link/p2430r0">P2430R0</a><sup>[2]</sup>, Dietmar Kühl
+for the channel-routing enumeration in <a href="https://wg21.link/p2762r2">P2762R2</a><sup>[3]</sup> and for
+<code>beman::execution</code>, Kirk Shoop for the completion-token
+heuristic analysis in <a href="https://wg21.link/p2471r1">P2471R1</a><sup>[10]</sup>, Fabio
+Fracassi for <a href="https://wg21.link/p3570r2">P3570R2</a><sup>[4]</sup>, Peter Dimov
+for the refined channel mapping, Michał Dominiak, Eric Niebler, and
+Lewis Baker for <code>std::execution</code>, Maikel Nadolski for work on
+<code>execution::task</code>, Steve Gerbino for co-developing the
+constructed comparison, and Ville Voutilainen for reflector discussion
+on the partition.</p>
+<hr />
 <h2 id="references">References</h2>
 <ol type="1">
 <li><p><a href="https://wg21.link/p2300r10">P2300R10</a> -
@@ -1508,6 +1589,12 @@ https://github.com/NVIDIA/stdexec</p></li>
 <li><p>IEEE Std 1003.1 - POSIX <code>read()</code> /
 <code>write()</code> specification.
 https://pubs.opengroup.org/onlinepubs/9799919799/</p></li>
+<li><p><a href="https://wg21.link/p2471r1">P2471R1</a> - “NetTS, ASIO
+and Sender Library Design Comparison” (Kirk Shoop, 2021).
+https://wg21.link/p2471r1</p></li>
+<li><p><a href="https://wg21.link/p0260r19">P0260R19</a> - “C++
+Concurrent Queues” (Detlef Vollmann, Lawrence Crowl, Chris Mysen, Gor
+Nishanov, 2025). https://wg21.link/p0260r19</p></li>
 </ol>
 
 </body>
