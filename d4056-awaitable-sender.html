@@ -911,20 +911,24 @@ mailing)</h3>
 </ul>
 <hr />
 <h2 id="disclosure">1. Disclosure</h2>
-<p>The authors developed and maintain <a href="https://github.com/cppalliance/capy">Capy</a><sup>[3]</sup> and <a href="https://github.com/cppalliance/corosio">Corosio</a><sup>[5]</sup>
+<p>The authors developed and maintain <a href="https://github.com/cppalliance/capy/tree/f0466466e63baf0cc3d6034bc35eec24694f5d16">Capy</a><sup>[3]</sup>
+and <a href="https://github.com/cppalliance/corosio">Corosio</a><sup>[5]</sup>
 and believe coroutine-native I/O is the correct foundation for
 networking in C++. The findings in this paper are structural and hold
 regardless of which library implements the coroutine-native layer. This
 paper is one of a suite of four that examines the relationship between
-compound I/O results and the sender three-channel model. The authors
-provide information, ask nothing, and serve at the pleasure of the
-chair. <a href="https://github.com/cppalliance/capy">Capy</a><sup>[3]</sup> is a
-coroutine primitives library. <a href="https://wg21.link/d4055r0">D4055R0</a><sup>[6]</sup> showed the
+compound I/O results and the sender three-channel model. The companion
+papers are <a href="https://wg21.link/d4053r0">D4053R0</a><sup>[7]</sup>, “Sender I/O:
+A Constructed Comparison”; <a href="https://wg21.link/d4054r0">D4054R0</a><sup>[13]</sup>, “Two Error
+Models”; and <a href="https://wg21.link/d4055r0">D4055R0</a><sup>[6]</sup>, “Consuming
+Senders from Coroutine-Native Code.” The authors provide information,
+ask nothing, and serve at the pleasure of the chair. <a href="https://github.com/cppalliance/capy/tree/f0466466e63baf0cc3d6034bc35eec24694f5d16">Capy</a><sup>[3]</sup>
+is a coroutine primitives library. <a href="https://wg21.link/d4055r0">D4055R0</a><sup>[6]</sup> showed the
 sender-to-awaitable direction. This paper shows the reverse. The bridge
-depends on <a href="https://github.com/cppalliance/capy">Capy</a><sup>[3]</sup> and
-<code>beman::execution</code><sup>[4]</sup>, a community implementation
-of <code>std::execution</code> (<a href="https://wg21.link/p2300r10">P2300R10</a><sup>[1]</sup>). Source
-code links refer to pinned commit <a href="https://github.com/cppalliance/capy/tree/f0466466e63baf0cc3d6034bc35eec24694f5d16">60bf781</a><sup>[3]</sup>.
+depends on <a href="https://github.com/cppalliance/capy/tree/f0466466e63baf0cc3d6034bc35eec24694f5d16">Capy</a><sup>[3]</sup>
+and <code>beman::execution</code><sup>[4]</sup>, a community
+implementation of <code>std::execution</code> (<a href="https://wg21.link/p2300r10">P2300R10</a><sup>[1]</sup>). Source
+code links refer to pinned commit <a href="https://github.com/cppalliance/capy/tree/f0466466e63baf0cc3d6034bc35eec24694f5d16">f046646</a><sup>[3]</sup>.
 The complete implementation is in Appendix A.</p>
 <hr />
 <h2 id="the-bridge">2. The Bridge</h2>
@@ -960,7 +964,7 @@ zero bytes beyond the coroutine frame.</p>
 <code>read_some</code>?</p>
 <p><code>read_some</code> returns <code>io_result&lt;size_t&gt;</code> -
 an <code>(error_code, size_t)</code> pair. The adapter must route this
-through three channels. <a href="https://wg21.link/d4053r1">D4053R1</a><sup>[7]</sup> documented
+through three channels. <a href="https://wg21.link/d4053r0">D4053R0</a><sup>[7]</sup> documented
 the trade-off for sender-based I/O. The same trade-off appears here:</p>
 <ul>
 <li><p><strong>Route the whole <code>io_result</code> through
@@ -977,7 +981,7 @@ before <code>ECONNRESET</code> produces
 <code>set_error(ECONNRESET)</code>. The 500 is gone.</p></li>
 </ul>
 <p>Neither option preserves both values and retains composition. This is
-the same finding as <a href="https://wg21.link/d4053r1">D4053R1</a><sup>[7]</sup>, now
+the same finding as <a href="https://wg21.link/d4053r0">D4053R0</a><sup>[7]</sup>, now
 appearing inside the bridge adapter itself.</p>
 <hr />
 <h2 id="the-abstraction-floor">4. The Abstraction Floor</h2>
@@ -1149,7 +1153,7 @@ defines <code>std::execution::task&lt;T&gt;</code>, a coroutine type
 that is also a sender. Its completion signature is
 <code>set_value_t(T)</code>. When <code>T</code> is
 <code>std::pair&lt;error_code, size_t&gt;</code>, the compound result
-lands on the value channel. This is Approach A1 from <a href="https://wg21.link/d4053r1">D4053R1</a><sup>[7]</sup>:
+lands on the value channel. This is Approach A1 from <a href="https://wg21.link/d4053r0">D4053R0</a><sup>[7]</sup>:
 <code>upon_error</code> is unreachable, <code>when_all</code> does not
 cancel siblings on I/O failure, <code>retry</code> does not fire. The
 programmer who writes
@@ -1180,13 +1184,14 @@ complete with <code>set_value(error_code)</code>, reject compound
 results at compile time, and map the binary outcome onto the channels:
 <code>set_value()</code> when the code is zero,
 <code>set_error(ec)</code> otherwise. The usage would look like:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>do_read<span class="op">(</span>sock<span class="op">,</span> buf<span class="op">)</span>           <span class="co">// task&lt;error_code&gt;</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="op">|</span> split_ec<span class="op">()</span>             <span class="co">// set_value() or</span></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>                             <span class="co">//   set_error(ec)</span></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">|</span> ex<span class="op">::</span>upon_error<span class="op">(</span></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>        <span class="op">[](</span><span class="bu">std::</span>error_code ec<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>            <span class="co">// reachable, no exceptions</span></span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>        <span class="op">});</span></span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>do_read<span class="op">(</span>sock<span class="op">,</span> buf<span class="op">)</span>           <span class="co">// sender completing with</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>                             <span class="co">//   set_value(error_code)</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">|</span> split_ec<span class="op">()</span>             <span class="co">// set_value() or</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>                             <span class="co">//   set_error(ec)</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">|</span> ex<span class="op">::</span>upon_error<span class="op">(</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>        <span class="op">[](</span><span class="bu">std::</span>error_code ec<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>            <span class="co">// reachable, no exceptions</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>        <span class="op">});</span></span></code></pre></div>
 <p>Implementing <code>split_ec</code> as a proper sender adapter has
 complications due to the return type variance - the adapter must
 advertise both <code>set_value_t()</code> and
@@ -1241,8 +1246,9 @@ discussion on the abstraction floor.</p>
 <li><p><a href="https://wg21.link/p2300r10">P2300R10</a> -
 “std::execution” (Michał Dominiak et al., 2024).
 https://wg21.link/p2300r10</p></li>
-<li><p><a href="https://wg21.link/p4003r0">P4003R0</a> - “IoAwaitable”
-(Vinnie Falco, 2026). https://wg21.link/p4003r0</p></li>
+<li><p><a href="https://wg21.link/p4003r0">P4003R0</a> - “Coroutines for
+I/O” (Vinnie Falco, Steve Gerbino, Mungo Gill, 2026).
+https://wg21.link/p4003r0</p></li>
 <li><p><a href="https://github.com/cppalliance/capy/tree/f0466466e63baf0cc3d6034bc35eec24694f5d16">cppalliance/capy</a>
 - Coroutine primitives library. Commit f046646.
 https://github.com/cppalliance/capy/tree/f0466466e63baf0cc3d6034bc35eec24694f5d16</p></li>
@@ -1255,9 +1261,9 @@ https://github.com/cppalliance/corosio</p></li>
 <li><p><a href="https://wg21.link/d4055r0">D4055R0</a> - “Consuming
 Senders from Coroutine-Native Code” (Vinnie Falco, Steve Gerbino, 2026).
 https://wg21.link/d4055r0</p></li>
-<li><p><a href="https://wg21.link/d4053r1">D4053R1</a> - “Sender I/O: A
+<li><p><a href="https://wg21.link/d4053r0">D4053R0</a> - “Sender I/O: A
 Constructed Comparison” (Vinnie Falco, Steve Gerbino, 2026).
-https://wg21.link/d4053r1</p></li>
+https://wg21.link/d4053r0</p></li>
 <li><p><a href="https://wg21.link/p2762r2">P2762R2</a> -
 “Sender/Receiver Interface For Networking” (Dietmar Kühl, 2023).
 https://wg21.link/p2762r2</p></li>
@@ -1273,6 +1279,8 @@ https://wg21.link/p3570r2</p></li>
 <li><p><a href="https://wg21.link/p3552r3">P3552R3</a> - “Add a
 Coroutine Task Type” (Dietmar Kühl, Maikel Nadolski, 2025).
 https://wg21.link/p3552r3</p></li>
+<li><p><a href="https://wg21.link/d4054r0">D4054R0</a> - “Two Error
+Models” (Vinnie Falco, 2026). https://wg21.link/d4054r0</p></li>
 </ol>
 <hr />
 <h2 id="appendix-a.-bridge-implementation">Appendix A. Bridge

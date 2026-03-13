@@ -899,7 +899,7 @@ Gerbino <a href="mailto:steve@gerbino.co" class="email">steve@gerbino.co</a></p>
 
 <h2 id="abstract">Abstract</h2>
 <p>Three sender-based TCP echo servers are constructed from the C++26
-specification and compared against a coroutine-native echo server (<a href="https://github.com/cppalliance/corosio">Corosio</a><sup>[3]</sup>).
+specification and compared against a coroutine-native echo server (<a href="https://github.com/cppalliance/corosio/tree/ce1c43e623fb7b0e198ffac52be9267eccf04ecb">Corosio</a><sup>[3]</sup>).
 Approach A1 routes I/O results through <code>set_value</code>, matching
 coroutine-native ergonomics but bypassing the channel-based composition
 algebra. Approach A2 routes the error code through
@@ -924,22 +924,26 @@ mailing)</h3>
 </ul>
 <hr />
 <h2 id="disclosure">1. Disclosure</h2>
-<p>The authors developed and maintain <a href="https://github.com/cppalliance/corosio">Corosio</a><sup>[3]</sup>
+<p>The authors developed and maintain <a href="https://github.com/cppalliance/corosio/tree/ce1c43e623fb7b0e198ffac52be9267eccf04ecb">Corosio</a><sup>[3]</sup>
 and <a href="https://github.com/cppalliance/capy">Capy</a><sup>[4]</sup>
 and believe coroutine-native I/O is the correct foundation for
 networking in C++. The findings in this paper are structural and hold
 regardless of which library implements the coroutine-native layer. This
 paper is one of a suite of four that examines the relationship between
-compound I/O results and the sender three-channel model. The authors
-provide information, ask nothing, and serve at the pleasure of the
-chair. This paper constructs the best sender-based echo server the
-authors can build from the C++26 specification, places it next to a
-coroutine-native echo server, and shows what each approach costs. The
-authors invite improvements to the sender construction (Section 10).</p>
+compound I/O results and the sender three-channel model. The companion
+papers are <a href="https://wg21.link/d4054r0">D4054R0</a><sup>[7]</sup>, “Two Error
+Models”; <a href="https://wg21.link/d4055r0">D4055R0</a><sup>[13]</sup>,
+“Consuming Senders from Coroutine-Native Code”; and <a href="https://wg21.link/d4056r0">D4056R0</a><sup>[14]</sup>, “Producing
+Senders from Coroutine-Native Code.” The authors provide information,
+ask nothing, and serve at the pleasure of the chair. This paper
+constructs the best sender-based echo server the authors can build from
+the C++26 specification, places it next to a coroutine-native echo
+server, and shows what each approach costs. The authors invite
+improvements to the sender construction (Section 10).</p>
 <hr />
 <h2 id="the-coroutine-native-echo-server">2. The Coroutine-Native Echo
 Server</h2>
-<p><a href="https://github.com/cppalliance/corosio">Corosio</a><sup>[3]</sup>
+<p><a href="https://github.com/cppalliance/corosio/tree/ce1c43e623fb7b0e198ffac52be9267eccf04ecb">Corosio</a><sup>[3]</sup>
 <code>do_session</code>:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>capy<span class="op">::</span>task<span class="op">&lt;&gt;</span> do_session<span class="op">()</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
@@ -1023,12 +1027,12 @@ The three-channel model is correct for this class.
 </tr>
 </tbody>
 </table>
-<p>Status and data, always paired. Both values are always present. Every
-OS delivers them together. io_uring carries <code>res</code> and
-<code>flags</code> in one CQE. IOCP returns a <code>BOOL</code> and
+<p>Status and data, always paired. Both values are available at the call
+site. Every OS delivers them together. io_uring carries <code>res</code>
+and <code>flags</code> in one CQE. IOCP returns a <code>BOOL</code> and
 <code>lpNumberOfBytesTransferred</code> in one call. POSIX
-<code>read()</code> returns <code>ssize_t</code> with <code>errno</code>
-set.</p>
+<code>read()</code> returns <code>ssize_t</code>, and on error reports
+additional detail through <code>errno</code>.<sup>[8]</sup></p>
 <p>Chris Kohlhoff identified this in <a href="https://wg21.link/p2430r0">P2430R0</a><sup>[5]</sup> (“Partial
 success scenarios with P2300,” 2021):</p>
 <blockquote>
@@ -1048,19 +1052,23 @@ three-channel model. Approach A1 routes everything through
 <code>set_error</code> while capturing the byte count in shared state.
 Approach B routes errors through <code>set_error</code> and discards the
 byte count. We construct the best version of each from the C++26
-specification (<a href="https://wg21.link/p2300r10">P2300R10</a><sup>[1]</sup>, <a href="https://wg21.link/p3552r3">P3552R3</a><sup>[2]</sup>).</p>
-<p>Dietmar Kühl enumerated five channel-routing options for I/O in <a href="https://wg21.link/p2762r2">P2762R2</a><sup>[10]</sup> (Section
-4.2), including fused <code>set_value(error_code, n)</code>, multiple
+specification (<a href="https://wg21.link/p2300r10">P2300R10</a><sup>[1]</sup>,
+“std::execution”; <a href="https://wg21.link/p3552r3">P3552R3</a><sup>[2]</sup>, “Add a
+Coroutine Task Type”).</p>
+<p>Dietmar Kühl enumerated five channel-routing options for I/O in <a href="https://wg21.link/p2762r2">P2762R2</a><sup>[10]</sup>,
+“Sender/Receiver Interface For Networking” (Section 4.2), including
+fused <code>set_value(error_code, n)</code>, multiple
 <code>set_value</code> overloads, <code>set_error</code> routing, hybrid
 severity-based classification, and an <code>error_code</code> reference
 argument. Kühl noted that “some of the error cases may have been partial
 successes” and that “using the set_error channel taking just one
 argument is somewhat limiting.” Kirk Shoop identified the same heuristic
-difficulty in <a href="https://wg21.link/p2471r1">P2471R1</a><sup>[11]</sup>, observing
-that completion tokens translating to senders “must use a heuristic to
-type-match the first arg” to distinguish errors from values. The
-approaches below correspond to Kühl’s options 1, 3, and a shared-state
-variant not in his enumeration.</p>
+difficulty in <a href="https://wg21.link/p2471r1">P2471R1</a><sup>[11]</sup>, “NetTS,
+ASIO and Sender Library Design Comparison,” observing that completion
+tokens translating to senders “must use a heuristic to type-match the
+first arg” to distinguish errors from values. The approaches below
+correspond to Kühl’s options 1, 3, and a shared-state variant not in his
+enumeration.</p>
 <hr />
 <h2 id="approach-a1-route-through-set_value">5. Approach A1: Route
 Through <code>set_value</code></h2>
@@ -1114,8 +1122,8 @@ role.)</p>
 A2: Split Across Channels and Shared State</h2>
 <p>A variation of Approach A1 routes the error code through
 <code>set_error</code> while capturing the byte count into shared state
-before the channel split. A <code>let_error</code> handler recovers both
-values:</p>
+before the channel split. An <code>upon_error</code> handler sees the
+error code while the byte count remains in side state:</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> do_session<span class="op">(</span><span class="kw">auto</span><span class="op">&amp;</span> sock<span class="op">,</span> <span class="kw">auto</span><span class="op">&amp;</span> buf<span class="op">)</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="op">-&gt;</span> <span class="bu">std::</span>execution::task<span class="op">&lt;</span><span class="dt">void</span><span class="op">&gt;</span></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
@@ -1171,8 +1179,8 @@ eliminate.</p></li>
 <p>Approach A2 uses all three channels, but the byte count bypasses
 them. The composition algebra operates on the error code alone. The
 compound result is still split - one half in a channel, the other in a
-side variable. This is Approach A1 with the error code moved to
-<code>set_error</code> and the byte count moved to shared state.</p>
+side variable. That arrangement is Approach A1 with the error code moved
+to <code>set_error</code> and the byte count moved to shared state.</p>
 <hr />
 <h2 id="approach-b-route-through-set_error">7. Approach B: Route Through
 <code>set_error</code></h2>
@@ -1366,7 +1374,9 @@ the call site),</li>
 <li>retains channel-based composition (<code>when_all</code>,
 <code>upon_error</code> fire on I/O errors),</li>
 <li>avoids exception round-trips for routine error codes, and</li>
-<li>uses only facilities in C++26 or in-progress proposals (<a href="https://wg21.link/p3552r3">P3552R3</a><sup>[2]</sup>, <a href="https://wg21.link/p3149">P3149</a><sup>[6]</sup>).</li>
+<li>uses only facilities in C++26 or in-progress proposals (<a href="https://wg21.link/p3552r3">P3552R3</a><sup>[2]</sup>, <a href="https://wg21.link/p3149r9">P3149R9</a><sup>[6]</sup>,
+“<code>async_scope</code> - Creating scopes for non-sequential
+concurrency”).</li>
 </ul>
 <p>The authors will incorporate any such construction into a future
 revision and re-evaluate every finding in this paper. If the sender
@@ -1379,12 +1389,13 @@ this paper will say so.</p>
 <code>beman::execution</code>, Chris Kohlhoff for identifying the
 partial-success problem in <a href="https://wg21.link/p2430r0">P2430R0</a><sup>[5]</sup>, Kirk Shoop
 for the completion-token heuristic analysis in <a href="https://wg21.link/p2471r1">P2471R1</a><sup>[11]</sup>, Peter Dimov
-for the refined channel mapping in <a href="https://wg21.link/p4007r0">P4007R0</a><sup>[9]</sup>, Michał
-Dominiak, Eric Niebler, and Lewis Baker for <code>std::execution</code>,
-Ian Petersen, Jessica Wong, and Kirk Shoop for <code>async_scope</code>,
-Fabio Fracassi for <a href="https://wg21.link/p3570r2">P3570R2</a><sup>[12]</sup>, Ville
-Voutilainen and Jens Maurer for reflector discussion, and Herb Sutter
-for identifying the need for constructed comparisons.</p>
+for the refined channel mapping in <a href="https://wg21.link/p4007r0">P4007R0</a><sup>[9]</sup>, “Senders and
+Coroutines,” Michał Dominiak, Eric Niebler, and Lewis Baker for
+<code>std::execution</code>, Ian Petersen, Jessica Wong, and Kirk Shoop
+for <code>async_scope</code>, and Fabio Fracassi for <a href="https://wg21.link/p3570r2">P3570R2</a><sup>[12]</sup>, “Optional
+variants in sender/receiver.” The authors also thank Ville Voutilainen
+and Jens Maurer for reflector discussion, and Herb Sutter for
+identifying the need for constructed comparisons.</p>
 <hr />
 <h2 id="references">References</h2>
 <ol type="1">
@@ -1403,12 +1414,13 @@ https://github.com/cppalliance/capy</p></li>
 <li><p><a href="https://wg21.link/p2430r0">P2430R0</a> - “Partial
 success scenarios with P2300” (Chris Kohlhoff, 2021).
 https://wg21.link/p2430r0</p></li>
-<li><p><a href="https://wg21.link/p3149">P3149</a> - “async_scope -
-Creating scopes for non-sequential concurrency” (Ian Petersen, Jessica
-Wong, Kirk Shoop, et al., 2024). https://wg21.link/p3149</p></li>
+<li><p><a href="https://wg21.link/p3149r9">P3149R9</a> -
+“<code>async_scope</code> - Creating scopes for non-sequential
+concurrency” (Ian Petersen, Jessica Wong, Kirk Shoop, et al., 2025).
+https://wg21.link/p3149r9</p></li>
 <li><p><a href="https://wg21.link/d4054r0">D4054R0</a> - “Two Error
 Models” (Vinnie Falco, 2026). https://wg21.link/d4054r0</p></li>
-<li><p>IEEE Std 1003.1 - POSIX <code>read()</code> /
+<li><p>IEEE Std 1003.1-2024 - POSIX <code>read()</code> /
 <code>write()</code> specification.
 https://pubs.opengroup.org/onlinepubs/9799919799/</p></li>
 <li><p><a href="https://wg21.link/p4007r0">P4007R0</a> - “Senders and
@@ -1423,6 +1435,12 @@ https://wg21.link/p2471r1</p></li>
 <li><p><a href="https://wg21.link/p3570r2">P3570R2</a> - “Optional
 variants in sender/receiver” (Fabio Fracassi, 2025).
 https://wg21.link/p3570r2</p></li>
+<li><p><a href="https://wg21.link/d4055r0">D4055R0</a> - “Consuming
+Senders from Coroutine-Native Code” (Vinnie Falco, Steve Gerbino, 2026).
+https://wg21.link/d4055r0</p></li>
+<li><p><a href="https://wg21.link/d4056r0">D4056R0</a> - “Producing
+Senders from Coroutine-Native Code” (Vinnie Falco, Steve Gerbino, 2026).
+https://wg21.link/d4056r0</p></li>
 </ol>
 
 </body>
