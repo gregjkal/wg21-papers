@@ -1,6 +1,6 @@
 ---
 title: "Sender I/O: A Constructed Comparison"
-document: D4053R1
+document: D4053R0
 date: 2026-03-13
 reply-to:
   - "Vinnie Falco <vinnie.falco@gmail.com>"

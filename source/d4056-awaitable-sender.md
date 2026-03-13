@@ -10,7 +10,7 @@ audience: LEWG
 
 ## Abstract
 
-An `IoAwaitable` ([P4003R0](https://wg21.link/p4003r0)<sup>[2]</sup>) can be wrapped as a `std::execution` sender. The adapter routes the awaitable's result through sender channels based on its type. Awaitables returning `void` or a single value map to `set_value`. Awaitables returning `error_code` map to `set_value()` on success and `set_error(ec)` on failure - no exceptions. Awaitables returning compound I/O results - a tuple-like whose first element is `error_code` with additional elements - are rejected at compile time. The constraint is structural, not nominal: any type that destructures into `(error_code, ...)` is rejected, regardless of its name. The coroutine body is the translation layer. It inspects the compound result with full access to both the error code and the data, reduces it to an `error_code`, and returns that. The bridge routes the `error_code` through the three channels without exceptions.
+An `IoAwaitable` ([P4003R0](https://wg21.link/p4003r0)<sup>[2]</sup>) can be wrapped as a `std::execution` sender. The adapter routes the awaitable's result through sender channels based on its type. Awaitables returning `void` or a single value map to `set_value`. Awaitables returning `error_code` map to `set_value()` on success and `set_error(ec)` on failure - no exceptions. Awaitables returning compound I/O results - a tuple-like whose first element is `error_code` with additional elements - are rejected at compile time. The constraint is structural, not nominal: any tuple-like whose first element is `error_code` with additional elements is rejected, regardless of its name. The coroutine body is the translation layer. It inspects the compound result with full access to both the error code and the data, reduces it to an `error_code`, and returns that. The bridge routes the `error_code` through the three channels without exceptions.
 
 ---
 
@@ -88,8 +88,10 @@ auto as_sender(IoAw&& aw)
         !detail::is_compound_ec_result_v<
             std::decay_t<R>>,
         "as_sender does not accept awaitables "
-        "whose result destructures into "
-        "(error_code, ...). Wrap the operation "
+        "whose result is a tuple-like whose "
+        "first element is error_code and that "
+        "has additional elements. Wrap the "
+        "operation "
         "in a task<error_code> that inspects "
         "the compound result and returns "
         "the error code.");
@@ -157,7 +159,48 @@ The compiler enforces the boundary. A programmer who forgets the wrapping step a
 
 ---
 
-## 7. Conclusion
+## 7. P3552R3 Analysis
+
+[P3552R3](https://wg21.link/p3552r3)<sup>[12]</sup> defines `std::execution::task<T>`, a coroutine type that is also a sender. Its completion signature is `set_value_t(T)`. When `T` is `std::pair<error_code, size_t>`, the compound result lands on the value channel. This is Approach A1 from [D4053R1](https://wg21.link/d4053r1)<sup>[7]</sup>: `upon_error` is unreachable, `when_all` does not cancel siblings on I/O failure, `retry` does not fire. The programmer who writes `task<std::pair<error_code, size_t>>` has silently opted into Approach A1:
+
+```cpp
+std::execution::task<
+    std::pair<std::error_code, std::size_t>>
+read_some_task(auto& stream, auto buf)
+{
+    auto [ec, n] = co_await stream.read_some(
+        buf);
+    co_return std::pair{ec, n};
+}
+
+auto sndr = read_some_task(stream, buf)
+    | ex::upon_error(
+        [](std::error_code ec) {
+            // unreachable
+        });
+```
+
+`task` is general-purpose. Legitimate uses for returning compound types exist outside I/O. A `static_assert` inside `task` rejecting compound `error_code` results would be too broad. The constraint belongs at a bridge point with I/O intent, not on the general-purpose coroutine type.
+
+A sender adapter - call it `split_ec` - could enforce the floor inside the pipeline. It would constrain its predecessor to complete with `set_value(error_code)`, reject compound results at compile time, and map the binary outcome onto the channels: `set_value()` when the code is zero, `set_error(ec)` otherwise. The usage would look like:
+
+```cpp
+do_read(sock, buf)           // task<error_code>
+    | split_ec()             // set_value() or
+                             //   set_error(ec)
+    | ex::upon_error(
+        [](std::error_code ec) {
+            // reachable, no exceptions
+        });
+```
+
+Implementing `split_ec` as a proper sender adapter has complications due to the return type variance - the adapter must advertise both `set_value_t()` and `set_error_t(std::error_code)` in its completion signatures while selecting between them at runtime - and a full implementation is outside the scope of this paper.
+
+[P3552R3](https://wg21.link/p3552r3)<sup>[12]</sup> specifies that unhandled `set_error` is converted to an exception via `AS-EXCEPT-PTR` ([exec.general] p8). How `task` handles `set_error` internally is a design choice made by `task`'s authors and is outside the scope of this paper. The observation here is architectural: `as_sender` enforces the abstraction floor at the IoAwaitable-to-sender boundary. A sender adapter like `split_ec` could enforce the same floor inside the pipeline. `task` does not enforce it. The programmer must choose where the floor is enforced.
+
+---
+
+## 8. Conclusion
 
 The three-channel problem is not a defect of the sender model. It is a consequence of bridging at the wrong abstraction level. Compound I/O results - `(error_code, size_t)` - do not fit three channels without loss. Binary outcomes - `error_code` alone - fit perfectly.
 
@@ -169,7 +212,7 @@ When the bridge respects the abstraction floor, the three-channel problem vanish
 
 ---
 
-## 8. Acknowledgments
+## 9. Acknowledgments
 
 The authors thank Dietmar K&uuml;hl for `beman::execution`<sup>[4]</sup> and for the channel-routing enumeration in [P2762R2](https://wg21.link/p2762r2)<sup>[8]</sup>, Micha&lstrok; Dominiak, Eric Niebler, and Lewis Baker for `std::execution`, Chris Kohlhoff for identifying the partial-success problem in [P2430R0](https://wg21.link/p2430r0)<sup>[9]</sup>, Kirk Shoop for the completion-token heuristic analysis in [P2471R1](https://wg21.link/p2471r1)<sup>[10]</sup>, Fabio Fracassi for [P3570R2](https://wg21.link/p3570r2)<sup>[11]</sup>, Peter Dimov for the refined channel mapping, and Ville Voutilainen for reflector discussion on the abstraction floor.
 
@@ -198,6 +241,8 @@ The authors thank Dietmar K&uuml;hl for `beman::execution`<sup>[4]</sup> and for
 10. [P2471R1](https://wg21.link/p2471r1) - "NetTS, ASIO and Sender Library Design Comparison" (Kirk Shoop, 2021). https://wg21.link/p2471r1
 
 11. [P3570R2](https://wg21.link/p3570r2) - "Optional variants in sender/receiver" (Fabio Fracassi, 2025). https://wg21.link/p3570r2
+
+12. [P3552R3](https://wg21.link/p3552r3) - "Add a Coroutine Task Type" (Dietmar K&uuml;hl, Maikel Nadolski, 2025). https://wg21.link/p3552r3
 
 ---
 
@@ -616,8 +661,10 @@ auto as_sender(IoAw&& aw)
         !detail::is_compound_ec_result_v<
             std::decay_t<R>>,
         "as_sender does not accept awaitables "
-        "whose result destructures into "
-        "(error_code, ...). Wrap the operation "
+        "whose result is a tuple-like whose "
+        "first element is error_code and that "
+        "has additional elements. Wrap the "
+        "operation "
         "in a task<error_code> that inspects "
         "the compound result and returns "
         "the error code.");
