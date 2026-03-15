@@ -925,15 +925,14 @@ deep coroutine chains. The synergy is not in any single property. It is
 in what the five produce together. This paper shows each property in
 working code, traces the causal chain from language mechanism to library
 design, and states the price.</p>
-<p>This paper is one of a suite of seven that examines the relationship
+<p>This paper is one of a suite of six that examines the relationship
 between compound I/O results and the sender three-channel model. The
 companion papers are <a href="https://wg21.link/p4050r0">P4050R0</a><sup>[1]</sup>, “On Task
 Type Diversity”; <a href="https://wg21.link/p4053r0">P4053R0</a><sup>[2]</sup>, “Sender I/O:
 A Constructed Comparison”; <a href="https://wg21.link/p4054r0">P4054R0</a><sup>[3]</sup>, “Two Error
 Models”; <a href="https://wg21.link/p4055r0">P4055R0</a><sup>[4]</sup>,
-“Consuming Senders from Coroutine-Native Code”; <a href="https://wg21.link/p4056r0">P4056R0</a><sup>[5]</sup>, “Producing
-Senders from Coroutine-Native Code”; and <a href="https://wg21.link/p4062r0">P4062R0</a><sup>[6]</sup>, “Coroutine
-Executors and P2464R0.”</p>
+“Consuming Senders from Coroutine-Native Code”; and <a href="https://wg21.link/p4056r0">P4056R0</a><sup>[5]</sup>, “Producing
+Senders from Coroutine-Native Code.”</p>
 <hr />
 <h2 id="revision-history">Revision History</h2>
 <h3 id="r0-march-2026-post-croydon-mailing">R0: March 2026 (post-Croydon
@@ -943,8 +942,8 @@ mailing)</h3>
 </ul>
 <hr />
 <h2 id="disclosure">1. Disclosure</h2>
-<p>The author developed and maintains <a href="https://github.com/cppalliance/corosio">Corosio</a><sup>[7]</sup>
-and <a href="https://github.com/cppalliance/capy">Capy</a><sup>[8]</sup>
+<p>The author developed and maintains <a href="https://github.com/cppalliance/corosio">Corosio</a><sup>[6]</sup>
+and <a href="https://github.com/cppalliance/capy">Capy</a><sup>[7]</sup>
 and believes coroutine-native I/O is the correct foundation for
 networking in C++. The author provides information, asks nothing, and
 serves at the pleasure of the chair.</p>
@@ -962,7 +961,7 @@ correct for its domain, is a stronger standard than one model asked to
 serve both.</p>
 <hr />
 <h2 id="two-models">2. Two Models</h2>
-<p><a href="https://wg21.link/p3552r3">P3552R3</a><sup>[9]</sup> Section
+<p><a href="https://wg21.link/p3552r3">P3552R3</a><sup>[8]</sup> Section
 9.4.1 defines the result:</p>
 <blockquote>
 <p>“The <code>task</code> class template represents a sender that can be
@@ -974,8 +973,8 @@ of two async models in the C++ standard. The committee has already paid
 for two models.</p>
 <p>On September 28, 2020, LEWG polled: “We must have a single async
 model for the C++ Standard Library.” The result was no consensus. In
-October 2021, <a href="https://wg21.link/p2453r0">P2453R0</a><sup>[10]</sup> published
-the outcomes of an electronic poll with 56 participants:</p>
+October 2021, <a href="https://wg21.link/p2453r0">P2453R0</a><sup>[9]</sup> published the
+outcomes of an electronic poll with 56 participants:</p>
 <blockquote>
 <p>“We believe we need one grand unified model for asynchronous
 execution in the C++ Standard Library, that covers structured
@@ -994,7 +993,7 @@ Excels</h2>
 <p>The sender/receiver model is an achievement. The people who built it
 and deployed it have said so in their own words.</p>
 <p>Eric Niebler described the philosophical foundation in
-2020<sup>[11]</sup>:</p>
+2020<sup>[10]</sup>:</p>
 <blockquote>
 <p>“Structured concurrency brings the Modern C++ style to our async
 programs by making async lifetimes correspond to ordinary C++ lexical
@@ -1006,7 +1005,7 @@ async lifetimes. The same discipline that makes synchronous C++ safe -
 RAII, deterministic destruction, nested scopes - extends to asynchronous
 code. This is the sender model’s deepest conviction.</p>
 <p>The practical motivation is equally clear. Niebler wrote in
-2024<sup>[12]</sup>:</p>
+2024<sup>[11]</sup>:</p>
 <blockquote>
 <p>“Every library that exposes asynchrony uses a slightly different
 callback API. If you want to chain two async operations from two
@@ -1017,7 +1016,7 @@ of Babel problem.”</p>
 <p>One standard async abstraction solves the interoperability problem.
 Senders provide the common vocabulary.</p>
 <p>Senders and coroutines are not either/or. Niebler framed this
-directly<sup>[12]</sup>:</p>
+directly<sup>[11]</sup>:</p>
 <blockquote>
 <p>“Returning a sender is a great choice: your users can await the
 sender in a coroutine if they like, or they can avoid the coroutine
@@ -1028,7 +1027,7 @@ makes senders an especially good choice for embedded developers.”</p>
 <p>The sender model provides zero-allocation pipelines through a
 specific design choice: <code>connect(sender, receiver)</code> produces
 an operation state that aggregates all data before <code>start()</code>
-is called. Niebler described the consequence<sup>[12]</sup>:</p>
+is called. Niebler described the consequence<sup>[11]</sup>:</p>
 <blockquote>
 <p>“We can launch lots of async work with complex dependencies with only
 a single dynamic allocation or, in some cases, no allocations at
@@ -1045,7 +1044,7 @@ pipeline stages is a compile error. The three-channel model -
 - routes results by channel, and generic algorithms like
 <code>retry</code>, <code>when_all</code>, and <code>upon_error</code>
 dispatch on the channel without knowing the concrete sender type.</p>
-<p>These are deployed at scale. <a href="https://wg21.link/p2470r0">P2470R0</a><sup>[13]</sup> documented
+<p>These are deployed at scale. <a href="https://wg21.link/p2470r0">P2470R0</a><sup>[12]</sup> documented
 the deployments: Facebook (“monthly users number in the billions”),
 NVIDIA (“fully invested in P2300… we plan to ship in production”), and
 Bloomberg (experimentation). GPU dispatch, infrastructure, HPC - the
@@ -1062,10 +1061,10 @@ that manages resumption - into a heap-allocated block called the
 coroutine frame. Every coroutine that suspends must allocate this frame
 through <code>operator new</code>. The frame size is determined by the
 compiler. The caller cannot <code>sizeof</code> it, cannot
-stack-allocate it, cannot embed it in a struct. HALO (<a href="https://wg21.link/p0981r0">P0981R0</a><sup>[14]</sup>) can elide
+stack-allocate it, cannot embed it in a struct. HALO (<a href="https://wg21.link/p0981r0">P0981R0</a><sup>[13]</sup>) can elide
 the allocation when the compiler proves the frame’s lifetime is bounded
 by the caller’s scope, but no compiler guarantees HALO. The recycling
-allocator (<a href="https://github.com/cppalliance/capy/blob/p4058r0/include/boost/capy/ex/recycling_memory_resource.hpp">recycling_memory_resource</a><sup>[8]</sup>)
+allocator (<a href="https://github.com/cppalliance/capy/blob/p4058r0/include/boost/capy/ex/recycling_memory_resource.hpp">recycling_memory_resource</a><sup>[7]</sup>)
 amortizes the cost to a thread-local pool lookup - nanoseconds instead
 of microseconds - but the allocation still happens. Senders do not pay
 this cost. Sender operation states can be stack-allocated or embedded in
@@ -1084,7 +1083,7 @@ parameter stores the reference in the frame. If the caller’s string goes
 out of scope before the first suspension point, the reference dangles.
 Lambda captures by reference have the same hazard. This is a correctness
 cost, not a performance cost. Google built <code>Co&lt;T&gt;</code> as
-immovable and prvalue-only specifically to prevent it (<a href="https://wg21.link/p3801r0">P3801R0</a><sup>[15]</sup>). Senders do
+immovable and prvalue-only specifically to prevent it (<a href="https://wg21.link/p3801r0">P3801R0</a><sup>[14]</sup>). Senders do
 not share this hazard in the same way - the operation state owns copies
 of everything passed through <code>connect</code>.</p>
 <p>You pay the price once. A coroutine that does fifty reads pays one
@@ -1097,12 +1096,12 @@ operation states. The price subsidizes everything in Section 6.</p>
 <hr />
 <h2 id="what-c-has-been-waiting-for">5. What C++ Has Been Waiting
 For</h2>
-<p>The committee has been trying to standardize networking since <a href="https://wg21.link/n1925">N1925</a><sup>[16]</sup> (2005). The
+<p>The committee has been trying to standardize networking since <a href="https://wg21.link/n1925">N1925</a><sup>[15]</sup> (2005). The
 contract that every attempt has been built on comes from Asio.</p>
 <h3 id="asios-asyncreadstream">5.1 Asio’s
 <code>AsyncReadStream</code></h3>
 <p>The <a href="https://www.boost.org/doc/libs/1_87_0/doc/html/boost_asio/reference/AsyncReadStream.html">Boost.Asio
-documentation</a><sup>[17]</sup> defines <code>AsyncReadStream</code> as
+documentation</a><sup>[16]</sup> defines <code>AsyncReadStream</code> as
 a named requirement with two operations:</p>
 <table>
 <colgroup>
@@ -1134,7 +1133,7 @@ a named requirement with two operations:</p>
 Networking TS formalized it. The committee could not ship it. But the
 contract survived because it is correct.</p>
 <h3 id="the-c20-concept">5.2 The C++20 Concept</h3>
-<p><a href="https://github.com/cppalliance/capy/blob/p4058r0/include/boost/capy/concept/read_stream.hpp">ReadStream</a><sup>[8]</sup>
+<p><a href="https://github.com/cppalliance/capy/blob/p4058r0/include/boost/capy/concept/read_stream.hpp">ReadStream</a><sup>[7]</sup>
 formalizes the same contract as a C++20 concept:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">concept</span> ReadStream <span class="op">=</span></span>
@@ -1287,8 +1286,8 @@ state. The sender model cannot enter it.</p>
 <p>From here forward, the paper walks the coroutine chain alone.</p>
 <h3 id="the-operation-state-is-not-a-template">6.2 The Operation State
 Is Not a Template</h3>
-<p>Windows (IOCP). <a href="https://github.com/cppalliance/corosio/blob/p4058r0/include/boost/corosio/native/detail/iocp/win_overlapped_op.hpp">overlapped_op</a><sup>[7]</sup>
-and <a href="https://github.com/cppalliance/corosio/blob/p4058r0/include/boost/corosio/native/detail/iocp/win_socket.hpp">read_op</a><sup>[7]</sup>:</p>
+<p>Windows (IOCP). <a href="https://github.com/cppalliance/corosio/blob/p4058r0/include/boost/corosio/native/detail/iocp/win_overlapped_op.hpp">overlapped_op</a><sup>[6]</sup>
+and <a href="https://github.com/cppalliance/corosio/blob/p4058r0/include/boost/corosio/native/detail/iocp/win_socket.hpp">read_op</a><sup>[6]</sup>:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> overlapped_op <span class="op">:</span> OVERLAPPED</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>coroutine_handle<span class="op">&lt;&gt;</span> h<span class="op">;</span></span>
@@ -1305,7 +1304,7 @@ and <a href="https://github.com/cppalliance/corosio/blob/p4058r0/include/boost/c
 <span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>    DWORD  flags<span class="op">;</span></span>
 <span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>    win_socket_internal<span class="op">&amp;</span> internal<span class="op">;</span></span>
 <span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
-<p>Linux (epoll). <a href="https://github.com/cppalliance/corosio/blob/p4058r0/include/boost/corosio/native/detail/epoll/epoll_op.hpp">epoll_op.hpp</a><sup>[7]</sup>:</p>
+<p>Linux (epoll). <a href="https://github.com/cppalliance/corosio/blob/p4058r0/include/boost/corosio/native/detail/epoll/epoll_op.hpp">epoll_op.hpp</a><sup>[6]</sup>:</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> epoll_read_op <span class="kw">final</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="op">:</span> reactor_read_op<span class="op">&lt;</span>epoll_op<span class="op">&gt;</span> <span class="op">{};</span></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -1317,7 +1316,7 @@ library-build time. The same <code>read_op</code> serves every coroutine
 that reads from the socket, regardless of the caller’s type.</p>
 <h3 id="the-operation-state-lives-in-the-socket">6.3 The Operation State
 Lives in the Socket</h3>
-<p><a href="https://github.com/cppalliance/corosio/blob/p4058r0/include/boost/corosio/native/detail/iocp/win_socket.hpp">win_socket_internal</a><sup>[7]</sup>:</p>
+<p><a href="https://github.com/cppalliance/corosio/blob/p4058r0/include/boost/corosio/native/detail/iocp/win_socket.hpp">win_socket_internal</a><sup>[6]</sup>:</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> win_socket_internal</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    connect_op <span class="va">conn_</span><span class="op">;</span></span>
@@ -1332,9 +1331,9 @@ socket is created. Not allocated per-operation. 10,000 sockets means
 reused for every read.</p>
 <h3 id="the-stream-can-be-type-erased">6.4 The Stream Can Be
 Type-Erased</h3>
-<p><a href="https://github.com/cppalliance/capy/blob/p4058r0/include/boost/capy/io/any_read_stream.hpp">any_read_stream</a><sup>[8]</sup>
+<p><a href="https://github.com/cppalliance/capy/blob/p4058r0/include/boost/capy/io/any_read_stream.hpp">any_read_stream</a><sup>[7]</sup>
 type-erases any <code>ReadStream</code>. The erasure is on the
-awaitable, not the stream. The <a href="https://github.com/cppalliance/capy/blob/p4058r0/include/boost/capy/io/any_read_stream.hpp">vtable</a><sup>[8]</sup>
+awaitable, not the stream. The <a href="https://github.com/cppalliance/capy/blob/p4058r0/include/boost/capy/io/any_read_stream.hpp">vtable</a><sup>[7]</sup>
 dispatches <code>await_ready</code>, <code>await_suspend</code>,
 <code>await_resume</code> through function pointers:</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> vtable</span>
@@ -1383,13 +1382,13 @@ file:</p>
 <span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>        <span class="bu">std::</span>cout<span class="op">.</span>write<span class="op">(</span>buf<span class="op">,</span> n<span class="op">);</span></span>
 <span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
 <span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
-<p>The header includes only <a href="https://github.com/cppalliance/capy">Capy</a><sup>[8]</sup>. No
-platform headers. No <a href="https://github.com/cppalliance/corosio">Corosio</a><sup>[7]</sup>.
+<p>The header includes only <a href="https://github.com/cppalliance/capy">Capy</a><sup>[7]</sup>. No
+platform headers. No <a href="https://github.com/cppalliance/corosio">Corosio</a><sup>[6]</sup>.
 No sockets. The <code>.cpp</code> compiles once. Consumers include the
 header and link. The stream behind <code>any_read_stream</code> could be
 a TCP socket, a TLS session, a file, or a test mock. Nothing
 recompiles.</p>
-<p>This is also the <a href="https://github.com/cppalliance/capy">Capy</a><sup>[8]</sup>/<a href="https://github.com/cppalliance/corosio">Corosio</a><sup>[7]</sup>
+<p>This is also the <a href="https://github.com/cppalliance/capy">Capy</a><sup>[7]</sup>/<a href="https://github.com/cppalliance/corosio">Corosio</a><sup>[6]</sup>
 split point. Capy delivers the abstract layer:
 <code>task&lt;T&gt;</code>, <code>any_read_stream</code>,
 <code>any_write_stream</code>, <code>any_stream</code>, buffer concepts,
@@ -1427,9 +1426,9 @@ that was compiled against the old transport. No recompilation. No
 relinking. The forty-year-old contract - <code>read_some</code> takes a
 buffer, returns <code>(error_code, size_t)</code> - is the ABI.</p>
 <h3 id="the-three-layers-emerge">6.8 The Three Layers Emerge</h3>
-<p>The user chooses the trade-off. <a href="https://github.com/cppalliance/corosio/blob/p4058r0/include/boost/corosio/io/io_stream.hpp">io_stream</a><sup>[7]</sup>,
-<a href="https://github.com/cppalliance/corosio/blob/p4058r0/include/boost/corosio/tcp_socket.hpp">tcp_socket</a><sup>[7]</sup>,
-<a href="https://github.com/cppalliance/corosio/blob/p4058r0/include/boost/corosio/native/native_tcp_socket.hpp">native_tcp_socket</a><sup>[7]</sup>:</p>
+<p>The user chooses the trade-off. <a href="https://github.com/cppalliance/corosio/blob/p4058r0/include/boost/corosio/io/io_stream.hpp">io_stream</a><sup>[6]</sup>,
+<a href="https://github.com/cppalliance/corosio/blob/p4058r0/include/boost/corosio/tcp_socket.hpp">tcp_socket</a><sup>[6]</sup>,
+<a href="https://github.com/cppalliance/corosio/blob/p4058r0/include/boost/corosio/native/native_tcp_socket.hpp">native_tcp_socket</a><sup>[6]</sup>:</p>
 <pre><code>io_stream                        // abstract (Layer 3)
     |
 tcp_socket                       // concrete (Layer 2)
@@ -1477,7 +1476,7 @@ because it buys compile-time enforcement: any awaitable that does not
 accept <code>io_env const*</code> is a type error inside an I/O task.
 Foreign awaitables that do not speak the I/O protocol are rejected by
 the compiler, not by a runtime mismatch. The pointer is the cost. The
-domain gate is the benefit. <a href="https://github.com/cppalliance/capy/blob/p4058r0/include/boost/capy/concept/io_awaitable.hpp">IoAwaitable</a><sup>[8]</sup>.</p></li>
+domain gate is the benefit. <a href="https://github.com/cppalliance/capy/blob/p4058r0/include/boost/capy/concept/io_awaitable.hpp">IoAwaitable</a><sup>[7]</sup>.</p></li>
 <li><p><strong>Compound result preservation.</strong>
 <code>auto [ec, n] = co_await sock.read_some(buf)</code>. Both values
 visible. No channel split. No data loss. The three-channel model routes
@@ -1486,11 +1485,11 @@ on the error path (<a href="https://wg21.link/p4053r0">P4053R0</a><sup>[2]</sup>
 <li><p><strong>Symmetric transfer.</strong> <code>await_suspend</code>
 returns <code>coroutine_handle&lt;&gt;</code>. O(1) stack depth
 regardless of chain length.</p></li>
-<li><p><strong>One-parameter <code>task&lt;T&gt;</code>.</strong> <a href="https://github.com/cppalliance/capy/blob/p4058r0/include/boost/capy/task.hpp">task.hpp</a><sup>[8]</sup>:
+<li><p><strong>One-parameter <code>task&lt;T&gt;</code>.</strong> <a href="https://github.com/cppalliance/capy/blob/p4058r0/include/boost/capy/task.hpp">task.hpp</a><sup>[7]</sup>:
 <code>template&lt;typename T = void&gt; struct task</code>. One
 parameter. No Environment. The promise carries the environment.</p></li>
-<li><p><strong>Structured concurrency.</strong> <a href="https://github.com/cppalliance/capy/blob/p4058r0/include/boost/capy/when_all.hpp">when_all</a><sup>[8]</sup>
-and <a href="https://github.com/cppalliance/capy/blob/p4058r0/include/boost/capy/when_any.hpp">when_any</a><sup>[8]</sup>.
+<li><p><strong>Structured concurrency.</strong> <a href="https://github.com/cppalliance/capy/blob/p4058r0/include/boost/capy/when_all.hpp">when_all</a><sup>[7]</sup>
+and <a href="https://github.com/cppalliance/capy/blob/p4058r0/include/boost/capy/when_any.hpp">when_any</a><sup>[7]</sup>.
 Both return <code>task&lt;&gt;</code>. Stop tokens propagate through
 <code>io_env</code>. Children complete before the parent
 resumes.</p></li>
@@ -1594,9 +1593,6 @@ https://wg21.link/p4055r0</p></li>
 <li><p><a href="https://wg21.link/p4056r0">P4056R0</a> - “Producing
 Senders from Coroutine-Native Code” (Vinnie Falco, Steve Gerbino, 2026).
 https://wg21.link/p4056r0</p></li>
-<li><p><a href="https://wg21.link/p4062r0">P4062R0</a> - “Coroutine
-Executors and P2464R0” (Vinnie Falco, 2026).
-https://wg21.link/p4062r0</p></li>
 <li><p><a href="https://github.com/cppalliance/corosio">cppalliance/corosio</a> -
 Coroutine-native networking library.
 https://github.com/cppalliance/corosio</p></li>
