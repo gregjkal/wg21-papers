@@ -899,6 +899,8 @@ Gerbino <a href="mailto:steve@gerbino.co" class="email">steve@gerbino.co</a></p>
   <ul>
   <li><a href="#when-the-byte-count-determines-correctness" id="toc-when-the-byte-count-determines-correctness">When the Byte
   Count Determines Correctness</a></li>
+  <li><a href="#where-the-composition-algebra-does-apply" id="toc-where-the-composition-algebra-does-apply">Where the
+  Composition Algebra Does Apply</a></li>
   </ul></li>
   <li><a href="#qt-sender-vs.-coroutine" id="toc-qt-sender-vs.-coroutine">10. Qt Sender vs. Coroutine</a></li>
   <li><a href="#structured-concurrency" id="toc-structured-concurrency">11. Structured Concurrency</a></li>
@@ -935,6 +937,8 @@ Gerbino <a href="mailto:steve@gerbino.co" class="email">steve@gerbino.co</a></p>
   <li><a href="#q13-does-the-composition-algebra-apply-to-protocol-layer-decisions" id="toc-q13-does-the-composition-algebra-apply-to-protocol-layer-decisions">Q13:
   Does the composition algebra apply to protocol-layer
   decisions?</a></li>
+  <li><a href="#q14-could-the-sender-model-be-extended-for-compound-results" id="toc-q14-could-the-sender-model-be-extended-for-compound-results">Q14:
+  Could the sender model be extended for compound results?</a></li>
   </ul></li>
   <li><a href="#invitation" id="toc-invitation">13. Invitation</a></li>
   <li><a href="#acknowledgments" id="toc-acknowledgments">14.
@@ -944,41 +948,46 @@ Gerbino <a href="mailto:steve@gerbino.co" class="email">steve@gerbino.co</a></p>
 </nav>
 
 <h2 id="abstract">Abstract</h2>
-<p>The sender composition algebra - <code>when_all</code> cancellation,
-<code>upon_error</code>, <code>retry</code> - does not apply to compound
-I/O results without losing data, requiring shared state, or converting
-routine errors to exceptions. Four sender-based TCP echo servers are
-constructed from <a href="https://wg21.link/p2300r10">P2300R10</a><sup>[1]</sup> and <a href="https://wg21.link/p3552r3">P3552R3</a><sup>[2]</sup> and compared
-against a coroutine-native echo server. One construction - “just use
-<code>set_value</code>” - preserves all data by bypassing the
-composition algebra entirely, producing code nearly identical to the
-coroutine version. Both paradigms are equivalent when compound results
-stay on the value channel. The composition algebra is the sender model’s
-value proposition over coroutines. If it does not apply to compound I/O
-results, the two models are equivalent for this domain. The finding is
-about domain, not defect.</p>
+<p>Four sender-based TCP echo servers are constructed from <a href="https://wg21.link/p2300r10">P2300R10</a><sup>[1]</sup> and <a href="https://wg21.link/p3552r3">P3552R3</a><sup>[2]</sup> and compared
+against a coroutine-native echo server. The sender composition algebra -
+<code>when_all</code> cancellation, <code>upon_error</code>,
+<code>retry</code> - does not apply to compound I/O results without
+losing data, requiring shared state, or converting routine errors to
+exceptions. One construction - “just use <code>set_value</code>” -
+preserves all data by bypassing the composition algebra entirely,
+producing code nearly identical to the coroutine version. Both paradigms
+are equivalent when compound results stay on the value channel. The
+composition algebra is the sender model’s value proposition over
+coroutines - the reason to accept its additional complexity. If it does
+not apply to compound I/O results, the programmer pays the cost of the
+sender model and receives the coroutine model’s behavior. The finding is
+about cost, not defect.</p>
 <p>This paper is one of a suite of six that examines the relationship
 between compound I/O results and the sender three-channel model. The
 companion papers are <a href="https://wg21.link/p4050r0">P4050R0</a><sup>[15]</sup>, “On Task
 Type Diversity”; <a href="https://wg21.link/p4054r0">P4054R0</a><sup>[7]</sup>, “Two Error
 Models”; <a href="https://wg21.link/p4055r0">P4055R0</a><sup>[13]</sup>,
 “Consuming Senders from Coroutine-Native Code”; <a href="https://wg21.link/p4056r0">P4056R0</a><sup>[14]</sup>, “Producing
-Senders from Coroutine-Native Code”; and <a href="https://wg21.link/p4058r0">P4058R0</a><sup>[17]</sup>, “The Case
-Against <code>std::execution</code> For Networking.”</p>
+Senders from Coroutine-Native Code”; and <a href="https://wg21.link/p4058r0">P4058R0</a><sup>[17]</sup>, “The Cost
+of <code>std::execution</code> For Networking.”</p>
 <hr />
 <h2 id="revision-history">Revision History</h2>
 <h3 id="r0-march-2026-post-croydon-mailing">R0: March 2026 (post-Croydon
 mailing)</h3>
 <ul>
 <li>Initial version.</li>
-<li>Revised prior to publication to eliminate a double standard
-identified by Ian Petersen: an earlier draft measured coroutines by
-their natural idiom (value-based error handling) but measured senders
-against channel-based composition the coroutine baseline does not use.
-Reframed “just use <code>set_value</code>” as the sender equivalent of
-the coroutine idiom. Added Section 5.1, Q11, Q12. Reframed the
-invitation. Incorporated reflector discussion with direct quotations
-from Petersen and Voutilainen.</li>
+<li>Revised prior to publication to incorporate reflector discussion
+with Petersen and Voutilainen. Renamed approaches A1/A2/B/C to “just use
+<code>set_value</code>” / “just split the result” / “just use
+<code>set_error</code>” / “just decompose it.” Reframed Section 5 to
+acknowledge that “just use <code>set_value</code>” is the sender
+equivalent of the coroutine idiom. Added Section 5.1 (the equal-footing
+observation), Q11, Q12, Q13. Restructured the trade-off table with
+composition algebra rows and compile-time work graph row. Reframed the
+invitation to ask whether the composition algebra applies to compound
+I/O results. Expanded structured concurrency guarantees in Section 11.
+Added Disclosure paragraph on <code>std::execution</code> support. Added
+direct quotations from Petersen and Voutilainen with permission.</li>
 </ul>
 <hr />
 <h2 id="disclosure">1. Disclosure</h2>
@@ -1120,7 +1129,13 @@ Section 1.3 demonstrates the pattern:</p>
 <p>“Just use <code>set_value</code>” piped into a <code>let_value</code>
 decomposition. The example does not show what happens to
 <code>bytes_read</code> when the error must reach
-<code>set_error</code>.</p>
+<code>set_error</code>. The specification’s own motivating example for
+I/O is the approach that bypasses the composition algebra.</p>
+<p>The constructions in Sections 5-8 are illustrative. Petersen provided
+four compilable implementations<sup>[20]</sup> demonstrating the same
+trade-offs (https://godbolt.org/z/7W51hYE7c). Voutilainen provided a
+compilable channel ping-pong example<sup>[20]</sup>
+(https://godbolt.org/z/h5cv5fbTE).</p>
 <hr />
 <h2 id="just-use-set_value">5. “Just Use <code>set_value</code>”</h2>
 <p>The I/O sender calls <code>set_value(error_code, size_t)</code> for
@@ -1143,7 +1158,20 @@ bindings work (<a href="https://wg21.link/p3552r3">P3552R3</a><sup>[2]</sup> Sec
 <span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>            <span class="cf">break</span><span class="op">;</span></span>
 <span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
 <span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
-<p>Nearly identical to Corosio. Both values visible. No exceptions.</p>
+<p>Nearly identical to Corosio. Both values visible. No exceptions.
+Wrapping the pair in
+<code>std::expected&lt;size_t, error_code&gt;</code> is a variant of
+this approach - the compound result stays on the value channel as a
+single value. The C++23 monadic operations on <code>expected</code>
+(<code>and_then</code>, <code>or_else</code>, <code>transform</code>)
+provide value-channel composition for the wrapped result. This is the
+same pattern: the programmer inspects the compound result with
+value-level operations, not with channel-level algorithms.
+<code>upon_error</code> does not see inside the <code>expected</code>.
+<code>retry</code> does not fire on it. <code>when_all</code> does not
+cancel siblings. The <code>expected</code> approach is “just use
+<code>set_value</code>” with monadic syntax. It belongs in the first
+column of the trade-off table.</p>
 <p>This is the sender instantiation of the industry advice documented in
 <a href="https://wg21.link/p4054r0">P4054R0</a><sup>[7]</sup>: use the
 value channel whenever the result is not 100% failure. POSIX, Asio, Go,
@@ -1151,6 +1179,24 @@ and Rust all follow this convention. The coroutine-native echo server
 (Section 2) does the same thing - it returns
 <code>(error_code, size_t)</code> through the value channel and inspects
 both with <code>if (ec)</code>.</p>
+<p>The function signature says
+<code>std::execution::task&lt;void&gt;</code>. The body says
+<code>if (ec || wec) break</code>. The programmer is inside a sender
+coroutine, but the error handling is the coroutine model: structured
+bindings, <code>if</code>, <code>break</code>. No sender algorithm
+participates in the error decision. The sender machinery -
+<code>Environment</code>, <code>affine_on</code>,
+<code>AS-EXCEPT-PTR</code> - is present in the type but unused at the
+call site. To use it for I/O errors, the programmer must leave
+<code>if (ec)</code> and write pipes. Section 6 shows what that looks
+like:
+<code>co_await (async_read(...) | then([&amp;](...) { ... }) | upon_error([&amp;](...) { ... }))</code>.
+The function body now contains two programming models -
+<code>if (ec)</code> for the coroutine model and
+<code>| upon_error(...)</code> for the sender model - in the same scope.
+The unification promise holds for infrastructure operations where
+<code>co_await</code> hides the pipes. It breaks for compound I/O
+results where the pipes must be explicit.</p>
 <h3 id="what-the-composition-algebra-does-not-see">What the Composition
 Algebra Does Not See</h3>
 <p>The I/O sender never calls <code>set_error</code>. The composition
@@ -1197,16 +1243,25 @@ proposition - the reason to accept its additional complexity over
 coroutines. If “just use <code>set_value</code>” is the correct approach
 for I/O, those facilities are unused for I/O errors. The composition
 algebra - the part that makes senders more than coroutines - does not
-apply to compound I/O results.</p>
+apply to compound I/O results. The programmer who writes
+<code>auto [ec, n] = co_await async_read(...)</code> inside
+<code>std::execution::task</code> pays the cost of the sender model -
+the <code>Environment</code> template parameter,
+<code>AS-EXCEPT-PTR</code>, <code>affine_on</code>, the symmetric
+transfer gap - and receives the same behavior as a one-parameter
+coroutine-native task type with <code>if (ec)</code>.</p>
 <p>The sender model under “just use <code>set_value</code>” does provide
 compile-time work graphs and lazy evaluation that the coroutine model
-does not. These are genuine additions. The question is not whether
-senders offer more facilities in general - they do. The question is
-whether the facilities most relevant to error handling - the composition
-algebra - apply to compound I/O results. Compile-time work graphs do not
-route errors. Lazy evaluation does not inspect byte counts. The
-composition algebra does, and it is the facility that does not
-apply.</p>
+does not. These are genuine additions. Scheduling algorithms -
+<code>continues_on</code>, <code>on</code>, <code>schedule</code> - also
+work with “just use <code>set_value</code>” because they transfer
+execution context without inspecting the value. The finding in this
+paper is not about the scheduling subset of the sender algebra. The
+question is whether the facilities most relevant to error handling - the
+composition algebra - apply to compound I/O results. Compile-time work
+graphs do not route errors. Lazy evaluation does not inspect byte
+counts. The composition algebra does, and it is the facility that does
+not apply.</p>
 <p>Sections 6 through 8 explore what happens when the composition
 algebra is applied to compound I/O results. Each construction attempts
 to use the error channel. Each pays a cost.</p>
@@ -1284,6 +1339,14 @@ arguments to <code>exception_ptr</code>). No non-throwing path:</p>
 <span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
 <span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 <h3 id="the-cost-1">The Cost</h3>
+<p>Three specifications chain to produce the exception path. The I/O
+sender calls <code>set_error(ec)</code> (<a href="https://wg21.link/p2300r10">P2300R10</a><sup>[1]</sup>). The
+sender-awaitable’s <code>await_resume</code> converts it via
+<code>AS-EXCEPT-PTR</code> (<a href="https://wg21.link/p3552r3">P3552R3</a><sup>[2]</sup>).
+<code>task</code>’s coroutine machinery rethrows. Each specification
+made a deliberate design choice. The consequence of the three choices
+combined is that every routine <code>ECONNRESET</code> becomes a thrown
+exception.</p>
 <ul>
 <li><strong>Byte count.</strong> 500 of 1,000 bytes written before
 <code>ECONNRESET</code> - gone.</li>
@@ -1318,12 +1381,11 @@ This paper calls this pattern “just decompose it.”</p>
 <span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>    <span class="op">|</span> upon_error<span class="op">([](</span><span class="bu">std::</span>error_code ec<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>          <span class="co">// reachable</span></span>
 <span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>      <span class="op">});</span></span></code></pre></div>
-<p><code>exec::variant_sender</code> is from stdexec, not <a href="https://wg21.link/p2300r10">P2300R10</a><sup>[1]</sup>. This
-construction uses a facility the invitation (Section 13) does not
-permit. Even with <code>variant_sender</code> standardized, the
-data-loss problem persists: <code>just_error(ec)</code> carries only the
-error code (Q7). The return-type constraint and the data-loss constraint
-are independent.</p>
+<p><code>exec::variant_sender</code> is from stdexec, not <a href="https://wg21.link/p2300r10">P2300R10</a><sup>[1]</sup>. Even with
+<code>variant_sender</code> standardized, the data-loss problem
+persists: <code>just_error(ec)</code> carries only the error code (Q7).
+The return-type constraint and the data-loss constraint are
+independent.</p>
 <p>The handler sees both values. Downstream, <code>upon_error</code> is
 reachable, <code>when_all</code> cancels siblings, <code>retry</code>
 fires.</p>
@@ -1398,7 +1460,7 @@ cost.</p>
 <td>No</td>
 <td>No</td>
 <td>No</td>
-<td>Yes</td>
+<td>Yes (in scope)</td>
 </tr>
 <tr>
 <td><strong>Composition algebra</strong></td>
@@ -1457,6 +1519,22 @@ cost.</p>
 <td>No</td>
 </tr>
 <tr>
+<td>Static completion sig checking</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Heterogeneous child composition</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>No</td>
+</tr>
+<tr>
 <td><strong>Error handling</strong></td>
 <td></td>
 <td></td>
@@ -1502,7 +1580,12 @@ cost.</p>
 Both preserve data. Neither uses the composition algebra for I/O errors.
 The three middle columns attempt to use the composition algebra and each
 pays a different cost: shared mutable state, exception round-trips, or
-data loss on the error path.</p>
+data loss on the error path. Every construction that engages the
+composition algebra for I/O has a nonzero cost. The only construction
+without a cost - “just use <code>set_value</code>” - is the construction
+where the composition algebra does not participate. The cost of engaging
+the composition algebra for compound I/O results is nonzero. The benefit
+over <code>if (ec)</code> is zero.</p>
 <p>Infrastructure operations face no such trade-off. Their outcomes are
 binary. A retry policy that distinguishes zero-progress failures from
 partial-progress failures needs the byte count - retrying a read that
@@ -1510,6 +1593,14 @@ transferred zero bytes but not one that stalled after partial
 transfer.</p>
 <h3 id="when-the-byte-count-determines-correctness">When the Byte Count
 Determines Correctness</h3>
+<p>For composed operations (<code>async_read</code> with a completion
+condition), the byte count on error is often diagnostic - the
+application logs it but does not branch on it. For protocol-layer
+decisions and raw operations, the byte count determines correctness. The
+TLS <code>stream_truncated</code> case below is the clearest example.
+Partial-write recovery is another. The distinction matters: the byte
+count is not always decision-making data, but when it is, it must
+survive.</p>
 <p>Many HTTP servers - including Google’s - skip TLS
 <code>close_notify</code>. The composed read returns
 <code>(stream_truncated, n)</code>. If <code>n</code> equals
@@ -1553,9 +1644,41 @@ the byte count is gone.</p>
 </tr>
 </tbody>
 </table>
-<p>The coroutine-native model has no such boundary.</p>
+<p>The coroutine-native model’s abstraction floor is <code>throw</code>
+- opt-in and crossed only by an explicit decision. The sender model’s
+floor is <code>set_error</code> - required to engage the composition
+algebra.</p>
 <p>An HTTP/2 multiplexer issuing concurrent reads via
 <code>when_all</code> faces the same table at every I/O boundary.</p>
+<h3 id="where-the-composition-algebra-does-apply">Where the Composition
+Algebra Does Apply</h3>
+<p>The finding in this paper is limited to the I/O layer, where results
+are compound. The composition algebra applies to protocol-layer binary
+outcomes. Retry a request, cancel a stream, timeout a connection - these
+are binary outcomes. The composition algebra handles them well.</p>
+<p>A real networking application has both layers. The I/O layer produces
+<code>(error_code, size_t)</code>. The protocol layer consumes the I/O
+result, applies application logic, and produces a binary outcome
+(request succeeded / request failed). The composition algebra applies to
+the binary outcome, not to the compound I/O result.</p>
+<p>The question is where the reduction from compound to binary happens.
+Under “just use <code>set_value</code>,” it happens inside a
+<code>let_value</code> handler or a coroutine body - the same place it
+happens in coroutine-native code. The composition algebra takes over
+after the reduction. This is the abstraction floor (<a href="https://wg21.link/p4056r0">P4056R0</a><sup>[14]</sup> Section 4):
+compound results below, binary outcomes above, composition algebra above
+the floor.</p>
+<p>Both paradigms produce the binary outcome the composition algebra
+consumes. A coroutine body reduces <code>(error_code, size_t)</code> to
+a binary outcome with <code>if (ec)</code>. A <code>let_value</code>
+handler does the same. The composition algebra applies above the floor
+regardless of which paradigm produced the reduction below it. The sender
+model’s additional complexity at the I/O layer does not change the
+binary outcome the protocol layer receives.</p>
+<p>This paper does not argue that the composition algebra is useless for
+networking. It argues that the composition algebra does not apply to the
+I/O operations that produce compound results. Protocol-layer composition
+is orthogonal to this finding.</p>
 <hr />
 <h2 id="qt-sender-vs.-coroutine">10. Qt Sender vs. Coroutine</h2>
 <p>Ville Voutilainen’s <a href="https://git.qt.io/vivoutil/libunifex-with-qt">libunifex-with-qt</a><sup>[16]</sup>
@@ -1661,15 +1784,17 @@ guarantee the same property through coroutine frame lifetimes: child
 coroutines complete and their frames are destroyed before the parent
 coroutine resumes. Stop tokens propagate through <code>io_env</code> at
 <code>await_suspend</code> time. The mechanism differs - operation state
-protocol vs. coroutine frame scoping - but the guarantees are
-equivalent: no child outlives its parent, cancellation propagates
-downward, and results are available only after all children
-complete.</p>
-<p>The sender <code>when_all</code> additionally provides compile-time
-work-graph visibility that the coroutine <code>when_all</code> does not
-(Q8, Q10). They differ in where the compound result is visible when the
-composition decision is made. The trade-off table (Section 9) applies at
-every I/O boundary inside a structured concurrency scope.</p>
+protocol vs. coroutine frame scoping - but the structured concurrency
+guarantees are equivalent: no child outlives its parent, cancellation
+propagates downward, and results are available only after all children
+complete. The sender <code>when_all</code> additionally provides
+compile-time work-graph visibility, static type checking of completion
+signatures, and heterogeneous child composition (GPU + network + timer
+in one expression) that the coroutine <code>when_all</code> does
+not.</p>
+<p>They differ in where the compound result is visible when the
+composition decision is made (Q8, Q10). The trade-off table (Section 9)
+applies at every I/O boundary inside a structured concurrency scope.</p>
 <hr />
 <h2 id="frequently-raised-concerns">12. Frequently Raised Concerns</h2>
 <h3 id="q1-is-the-echo-server-too-minimal-to-be-representative">Q1: Is
@@ -1731,10 +1856,20 @@ the LEWG reflector (March 14, 2026)<sup>[20]</sup>:</p>
 <p>“Yes, use an algorithm other than <code>when_all</code>, so that it
 doesn’t cancel the others on one error, and collects all results.”</p>
 </blockquote>
-<p>That is a change to the channel model - the standard
-<code>when_all</code> does not work with this pattern. If the committee
-wishes to pursue that direction, it deserves its own paper and its own
-design review.</p>
+<p>Voutilainen demonstrated this approach in a compilable channel
+ping-pong example<sup>[20]</sup> (https://godbolt.org/z/h5cv5fbTE) that
+sends the full tuple through <code>set_error</code>, preserves both
+values, and routes them back to the value channel downstream. This is
+the closest construction to satisfying the invitation’s constraints. It
+preserves data, avoids exceptions, and avoids shared state. The
+remaining cost: the standard <code>when_all</code> cancels siblings on
+<code>set_error</code> regardless of the error type, and downstream
+algorithms must use <code>if constexpr</code> guards to distinguish the
+tuple from <code>std::exception_ptr</code>. Voutilainen’s construction
+works within the three-channel model. It changes what the error channel
+carries, which changes the contract downstream algorithms expect. If the
+committee wishes to pursue that direction, it deserves its own paper and
+its own design review.</p>
 <h3 id="q5-do-coroutines-provide-structured-concurrency">Q5: Do
 coroutines provide structured concurrency?</h3>
 <p>Yes. See Section 11.</p>
@@ -1800,8 +1935,10 @@ are equivalent.</p>
 coroutines. Under “just use <code>set_value</code>,” those facilities
 are unused for I/O errors. If the composition algebra does not apply to
 compound I/O results, the sender model’s additional complexity over
-coroutines buys nothing for this domain. That is the domain-boundary
-finding.</p>
+coroutines buys nothing for I/O error handling in this domain.
+Scheduling, work graphs, and context transfer remain genuine additions
+(Q8, Q10). The domain-boundary finding is about the composition algebra,
+not the entire sender model.</p>
 <p>Petersen provided four working sender implementations on the LEWG
 reflector (March 14, 2026)<sup>[20]</sup> and confirmed their
 equivalence to the coroutine idiom. Asked whether all four are
@@ -1815,7 +1952,7 @@ Petersen replied:</p>
 results the same way - through values.</p>
 <h3 id="q12-is-this-paper-applying-a-double-standard">Q12: Is this paper
 applying a double standard?</h3>
-<p>An earlier draft did. R0 measured coroutines by their natural idiom
+<p>An earlier draft measured coroutines by their natural idiom
 (value-based error handling with <code>if (ec)</code>) while measuring
 senders against channel-based composition (<code>upon_error</code>,
 <code>retry</code>, <code>when_all</code> cancellation) that the
@@ -1838,25 +1975,22 @@ That is not a double standard. It is measuring the composition algebra
 against its own claims.</p>
 <h3 id="q13-does-the-composition-algebra-apply-to-protocol-layer-decisions">Q13:
 Does the composition algebra apply to protocol-layer decisions?</h3>
-<p>Yes. Retry a request, cancel a stream, timeout a connection - these
-are binary outcomes. The composition algebra handles them well. The
-finding in this paper is limited to the I/O layer, where results are
-compound. A real networking application has both layers. The I/O layer
-produces <code>(error_code, size_t)</code>. The protocol layer consumes
-the I/O result, applies application logic, and produces a binary outcome
-(request succeeded / request failed). The composition algebra applies to
-the binary outcome, not to the compound I/O result.</p>
-<p>The question is where the reduction from compound to binary happens.
-Under “just use <code>set_value</code>,” it happens inside a
-<code>let_value</code> handler or a coroutine body - the same place it
-happens in coroutine-native code. The composition algebra takes over
-after the reduction. This is the abstraction floor (<a href="https://wg21.link/p4056r0">P4056R0</a><sup>[14]</sup> Section 4):
-compound results below, binary outcomes above, composition algebra above
-the floor.</p>
-<p>The paper does not argue that the composition algebra is useless for
-networking. It argues that the composition algebra does not apply to the
-I/O operations that produce compound results. Protocol-layer composition
-is orthogonal to this finding.</p>
+<p>Yes. See Section 9, “Where the Composition Algebra Does Apply.”</p>
+<h3 id="q14-could-the-sender-model-be-extended-for-compound-results">Q14:
+Could the sender model be extended for compound results?</h3>
+<p>Petersen proposed on the LEWG reflector (March 14,
+2026)<sup>[20]</sup> that the findings in this paper could motivate new
+sender algorithms designed for compound results - an
+<code>error_code</code>-sensitive <code>when_all</code>, an
+<code>error_code</code>-aware <code>retry</code>, or adapters that
+bridge networking pipelines to the existing error-channel-based
+algorithms. This is a legitimate direction. The findings in this paper
+do not foreclose it. If such algorithms are designed and they satisfy
+the invitation’s constraints, the finding changes. The authors welcome
+that work and will re-evaluate. The question is timing: should the
+standard ship the current algorithms for networking before the
+compound-result-aware algorithms are designed, or should both iterate
+together?</p>
 <hr />
 <h2 id="invitation">13. Invitation</h2>
 <p>“Just use <code>set_value</code>” answers the data-preservation
@@ -1882,17 +2016,23 @@ algorithms from those algorithms’ specified behavior,</li>
 </ul>
 <p>If no such construction exists, the composition algebra does not
 apply to compound I/O results, and the sender model’s additional
-complexity over coroutines buys nothing for this domain. That finding
-identifies the domain boundary.</p>
+complexity over coroutines buys nothing for I/O error handling.
+Scheduling, work graphs, and context transfer remain genuine additions.
+The coroutine-native approach loses compile-time work graphs and lazy
+pipeline evaluation (Q8). The sender approach loses composition algebra
+applicability for compound I/O results. Both costs are real. The
+question is which cost is higher for networking. That finding identifies
+the domain boundary.</p>
 <p>The authors will incorporate any such construction and re-evaluate
 every finding.</p>
 <hr />
 <h2 id="acknowledgments">14. Acknowledgments</h2>
-<p>The authors thank Ian Petersen for identifying the double standard in
-R0 and for providing four working sender implementations that clarified
-the equal-footing observation - his critique materially improved this
-paper; Ville Voutilainen for working through the dispatch pattern, the
-channel ping-pong construction, and the <code>variant_sender</code>
+<p>The authors thank Ian Petersen for identifying an asymmetry in an
+earlier draft, for providing four working sender implementations that
+clarified the equal-footing observation, and (with Jessica Wong and Kirk
+Shoop) for <code>async_scope</code> - his critique materially improved
+this paper; Ville Voutilainen for working through the dispatch pattern,
+the channel ping-pong construction, and the <code>variant_sender</code>
 analysis with characteristic generosity and precision; Jens Maurer for
 reflector discussion on design freedom inside sender chains; Dietmar
 Kühl for the channel-routing enumeration in <a href="https://wg21.link/p2762r2">P2762R2</a><sup>[10]</sup> and for
@@ -1901,8 +2041,7 @@ partial-success problem in <a href="https://wg21.link/p2430r0">P2430R0</a><sup>[
 for the completion-token heuristic analysis in <a href="https://wg21.link/p2471r1">P2471R1</a><sup>[11]</sup>; Peter Dimov
 for the refined channel mapping in <a href="https://wg21.link/p4007r0">P4007R0</a><sup>[9]</sup>, “Senders and
 Coroutines”; Michał Dominiak, Eric Niebler, and Lewis Baker for
-<code>std::execution</code>; Ian Petersen, Jessica Wong, and Kirk Shoop
-for <code>async_scope</code>; Fabio Fracassi for <a href="https://wg21.link/p3570r2">P3570R2</a><sup>[12]</sup>, “Optional
+<code>std::execution</code>; Fabio Fracassi for <a href="https://wg21.link/p3570r2">P3570R2</a><sup>[12]</sup>, “Optional
 variants in sender/receiver”; and Herb Sutter for identifying the need
 for tutorials and constructed comparisons.</p>
 <p>Any person quoted in this paper who believes their words have been
@@ -1958,9 +2097,9 @@ Diversity” (Vinnie Falco, 2026). https://wg21.link/p4050r0</p></li>
 <li><p>Ville Voutilainen, <a href="https://git.qt.io/vivoutil/libunifex-with-qt">libunifex-with-qt</a>
 - Qt/stdexec integration examples (2024).
 https://git.qt.io/vivoutil/libunifex-with-qt</p></li>
-<li><p><a href="https://wg21.link/p4058r0">P4058R0</a> - “The Case
-Against <code>std::execution</code> For Networking” (Vinnie Falco,
-2026). https://wg21.link/p4058r0</p></li>
+<li><p><a href="https://wg21.link/p4058r0">P4058R0</a> - “The Cost of
+<code>std::execution</code> For Networking” (Vinnie Falco, 2026).
+https://wg21.link/p4058r0</p></li>
 <li><p><a href="https://wg21.link/p3796r1">P3796R1</a> - “Coroutine Task
 Issues” (Dietmar Kühl, 2025). https://wg21.link/p3796r1</p></li>
 <li><p><a href="https://wg21.link/d3980r0">D3980R0</a> - “Task’s

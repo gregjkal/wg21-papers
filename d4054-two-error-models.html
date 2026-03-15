@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>P4054R1: Two Error Models</title>
+  <title>P4054R0: Two Error Models</title>
   <style type="text/css">
 
 @font-face {
@@ -846,7 +846,7 @@ outline: none;
 
 <!-- Document Metadata -->
 <div class="document-info">
-  <p><strong>Document Number:</strong> P4054R1</p>
+  <p><strong>Document Number:</strong> P4054R0</p>
   <p><strong>Date:</strong> 2026-03-15</p>
   <p><strong>Audience:</strong> LEWG</p>
   <p><strong>Reply-to:</strong> Vinnie Falco <a href="mailto:vinnie.falco@gmail.com" class="email">vinnie.falco@gmail.com</a></p>
@@ -860,8 +860,6 @@ outline: none;
   <li><a href="#revision-history" id="toc-revision-history">Revision
   History</a>
   <ul>
-  <li><a href="#r1-march-2026" id="toc-r1-march-2026">R1: March
-  2026</a></li>
   <li><a href="#r0-march-2026-post-croydon-mailing" id="toc-r0-march-2026-post-croydon-mailing">R0: March 2026
   (post-Croydon mailing)</a></li>
   </ul></li>
@@ -889,6 +887,8 @@ outline: none;
   Mappings</a></li>
   <li><a href="#prior-engagement" id="toc-prior-engagement">6.2 Prior
   Engagement</a></li>
+  <li><a href="#the-p2300-authors-position" id="toc-the-p2300-authors-position">6.3 The P2300 Authors’
+  Position</a></li>
   </ul></li>
   <li><a href="#the-equivalence" id="toc-the-equivalence">7. The
   Equivalence</a></li>
@@ -910,7 +910,9 @@ outline: none;
   <code>let_value</code></a></li>
   <li><a href="#preserve-data-with-application-specific-wiring" id="toc-preserve-data-with-application-specific-wiring">11.5 Preserve
   Data With Application-Specific Wiring</a></li>
-  <li><a href="#the-observable-trade-offs" id="toc-the-observable-trade-offs">11.6 The Observable
+  <li><a href="#bundle-compound-data-into-the-error-type" id="toc-bundle-compound-data-into-the-error-type">11.6 Bundle Compound
+  Data Into the Error Type</a></li>
+  <li><a href="#the-observable-trade-offs" id="toc-the-observable-trade-offs">11.7 The Observable
   Trade-Offs</a></li>
   </ul></li>
   <li><a href="#conclusion" id="toc-conclusion">12. Conclusion</a></li>
@@ -931,10 +933,10 @@ channel, and dispatch it to either of the three channels based on the
 value I get?”</p>
 </blockquote>
 <p>The question launched a discussion. Ville Voutilainen, Ian Petersen,
-Jens Maurer, Herb Sutter, and the author explored the design space
-across several dozen messages. This paper follows that discussion and
-examines its implications for how the sender three-channel model
-interacts with compound I/O results.</p>
+Jens Maurer, and the author explored the design space across several
+dozen messages. This paper follows that discussion and examines its
+implications for how the sender three-channel model interacts with
+compound I/O results.</p>
 <p>The finding: both coroutines and senders have an abstraction floor -
 a boundary where compound results are reduced to a single value. The
 coroutine floor is <code>throw</code>. The sender floor is
@@ -942,31 +944,38 @@ coroutine floor is <code>throw</code>. The sender floor is
 difference is where the floor sits relative to composition. In
 coroutines, the floor is opt-in. In senders, the composition algebra
 lives above it.</p>
-<p>This paper is one of a suite that examines the relationship between
-compound I/O results and the sender three-channel model. The companion
-papers are <a href="https://wg21.link/p4050r0">P4050R0</a><sup>[14]</sup>, “On Task
+<p>This paper is one of a suite of six that examines the relationship
+between compound I/O results and the sender three-channel model. The
+companion papers are <a href="https://wg21.link/p4050r0">P4050R0</a><sup>[14]</sup>, “On Task
 Type Diversity”; <a href="https://wg21.link/p4053r0">P4053R0</a><sup>[6]</sup>, “Sender I/O:
 A Constructed Comparison”; <a href="https://wg21.link/p4055r0">P4055R0</a><sup>[12]</sup>, “Consuming
-Senders from Coroutine-Native Code”; and <a href="https://wg21.link/p4056r0">P4056R0</a><sup>[13]</sup>, “Producing
-Senders from Coroutine-Native Code.”</p>
+Senders from Coroutine-Native Code”; <a href="https://wg21.link/p4056r0">P4056R0</a><sup>[13]</sup>, “Producing
+Senders from Coroutine-Native Code”; and <a href="https://wg21.link/p4058r0">P4058R0</a><sup>[18]</sup>, “The Cost
+of <code>std::execution</code> For Networking.”</p>
 <hr />
 <h2 id="revision-history">Revision History</h2>
-<h3 id="r1-march-2026">R1: March 2026</h3>
-<ul>
-<li>Reframed in response to reflector discussion with Voutilainen,
-Petersen, Maurer, Sutter, and Krzemieński.</li>
-<li>Incorporated Ian Petersen’s observation that R0 held senders and
-coroutines to different standards regarding their error channels.</li>
-<li>Added the abstraction floor as a symmetric concept: both paradigms
-have one.</li>
-<li>Replaced the “Four Defenses, Four Concessions” framing with an
-honest trade-off space.</li>
-<li>Added reflector quotes throughout, with permission.</li>
-</ul>
 <h3 id="r0-march-2026-post-croydon-mailing">R0: March 2026 (post-Croydon
 mailing)</h3>
 <ul>
 <li>Initial version.</li>
+<li>Reframed in response to reflector discussion with Voutilainen,
+Petersen, Maurer, Sutter, and Krzemieński.</li>
+<li>Replaced abstract with Krzemieński’s reflector question and the
+abstraction floor finding.</li>
+<li>Incorporated Ian Petersen’s observation that a previous draft held
+senders and coroutines to different standards regarding their error
+channels.</li>
+<li>Added the abstraction floor as a symmetric concept: both paradigms
+have one.</li>
+<li>Replaced the “Four Defenses, Four Concessions” framing with an
+honest trade-off space (Section 11).</li>
+<li>Added Sections 2 (The Question), 7 (The Equivalence), 8 (The
+Symmetry), 9 (The Boundary), 10 (The Abstraction Floor).</li>
+<li>Added reflector quotes from Voutilainen, Petersen, Maurer, Kohlhoff,
+Kühl, Shoop, and Sutter throughout, with permission.</li>
+<li>Added <code>std::execution</code> support disclosure paragraph.</li>
+<li>Added <a href="https://wg21.link/p4058r0">P4058R0</a><sup>[18]</sup>
+to the companion list.</li>
 </ul>
 <hr />
 <h2 id="disclosure">1. Disclosure</h2>
@@ -991,8 +1000,8 @@ serve both.</p>
 <h2 id="the-question">2. The Question</h2>
 <p>Krzemieński’s question was direct: given a value on the value
 channel, how do I route it to different channels at runtime?
-Voutilainen, Petersen, Maurer, Sutter, and the author spent the next
-several days working through the answer. The conversation was technical,
+Voutilainen, Petersen, Maurer, and the author spent the next several
+days working through the answer. The conversation was technical,
 constructive, and occasionally funny. Each participant contributed
 something the others had not seen.</p>
 <p>This paper follows that conversation. The sections that follow
@@ -1061,12 +1070,14 @@ violated.</p>
 </tr>
 </tbody>
 </table>
-<p>Every row is binary. The postcondition was satisfied or it was
-not.</p>
+<p>Every row is binary. The postcondition was satisfied or it was not.
+On failure, the non-status fields carry no meaningful data:
+<code>malloc</code> returns NULL, <code>fopen</code> returns NULL,
+<code>pthread_create</code> leaves the thread ID indeterminate.</p>
 <h3 id="compound-result-operations">3.2 Compound-Result Operations</h3>
 <p>Read, write, accept, parse, convert. The operation completes and
-returns a classification of what happened, paired with associated
-data.</p>
+returns associated data that is meaningful regardless of the status
+classification.</p>
 <table>
 <thead>
 <tr>
@@ -1088,8 +1099,8 @@ data.</p>
 <td><code>(ptr, errc)</code></td>
 </tr>
 <tr>
-<td><code>strtol</code></td>
-<td><code>(value, endptr, errno)</code></td>
+<td><code>recvmsg</code></td>
+<td><code>(ssize_t, msg_flags)</code></td>
 </tr>
 <tr>
 <td><code>accept</code></td>
@@ -1154,6 +1165,17 @@ compose with generic algorithms: <code>retry</code> retries on
 failure, <code>upon_error</code> routes errors to handlers.</p>
 <p>The three-channel model is correct for this class.
 <code>std::execution</code> serves it well.</p>
+<p>Throughout this paper, <em>composition algebra</em> refers
+specifically to the channel-dispatching subset of
+<code>std::execution</code> algorithms - those whose behavior depends on
+which channel a result arrives on. <code>retry</code> re-executes on
+<code>set_error</code>. <code>when_all</code> cancels siblings when one
+completes with <code>set_error</code> or <code>set_stopped</code>.
+<code>upon_error</code> and <code>upon_stopped</code> route to handlers
+by channel. Algorithms that sequence work without inspecting the channel
+- <code>then</code>, <code>let_value</code>, <code>bulk</code> - compose
+but do not dispatch. The distinction is between <em>sequencing</em> and
+<em>routing</em>.</p>
 <hr />
 <h2 id="the-compound-result-error-model">5. The Compound-Result Error
 Model</h2>
@@ -1237,6 +1259,18 @@ Voutilainen<sup>[16]</sup></p>
 </blockquote>
 <p>The data can survive the channel crossing. The question is whether it
 survives the generic algorithms downstream.</p>
+<p>A natural response is that the <code>dispatch</code> adapter, if
+standardized, would close the gap within the sender model. The adapter
+solves the <em>local</em> problem: at the point of dispatch, both fields
+are visible and the programmer chooses a channel with full context. But
+the downstream algebra is channel-typed, not value-typed. Once
+<code>dispatch</code> routes <code>ec</code> to <code>set_error</code>,
+the byte count must travel separately - inside the error object
+(position 11.6), in a captured lambda (position 11.5), or not at all
+(position 11.1). <code>retry</code> does not receive the byte count
+through the channel; it receives <code>error_code</code>. The adapter
+moves the classification to the right layer. It does not change what the
+channels can carry after the classification is made.</p>
 <h3 id="known-mappings">6.1 Known Mappings</h3>
 <p>Two known attempts to solve the channel assignment problem for I/O
 illustrate the structural difficulty.</p>
@@ -1298,6 +1332,49 @@ type-match the first arg.”</p>
 compound-result channel-routing problem identified in <a href="https://wg21.link/p2430r0">P2430R0</a><sup>[2]</sup>. The problem
 has been identified by Kohlhoff (2021), Kühl (2023), and Shoop (2021).
 It remains open.</p>
+<h3 id="the-p2300-authors-position">6.3 The P2300 Authors’ Position</h3>
+<p><a href="https://wg21.link/p2300r10">P2300R10</a><sup>[1]</sup>
+addresses compound results directly in Section 4.14, “Senders can
+represent partial success.” The authors identify two cases.</p>
+<p>For the first case:</p>
+<blockquote>
+<p>“Often in the case of partial success, the error condition is not
+fatal nor does it mean the API has failed to satisfy its
+post-conditions. It is merely an extra piece of information about the
+nature of the completion. In those cases, ‘partial success’ is another
+way of saying ‘success’. As a result, it is sensible to pass both the
+error code and the result (if any) through the value
+channel.”<sup>[1]</sup></p>
+</blockquote>
+<p>This is position 11.2 (Section 11). The composition algebra does not
+participate.</p>
+<p>For the second case:</p>
+<blockquote>
+<p>“In other cases, the partial success is more of a partial
+<em>failure</em>. […] It’s possible that bundling the error and the
+incomplete results into an object and passing it through the error
+channel makes more sense. In that way, generic algorithms will not miss
+the fact that a post-condition has not been met and react
+inappropriately.”<sup>[1]</sup></p>
+</blockquote>
+<p>This is position 11.6 (Section 11). The composition algebra
+participates, but every <code>upon_error</code> handler in the pipeline
+must understand the bundled type.</p>
+<p>An earlier paper by several of the same authors, <a href="https://wg21.link/p1525r1">P1525R1</a><sup>[19]</sup> (“One-Way
+execute is a Poor Basis Operation,” 2020), characterized the error
+channel’s intended scope:</p>
+<blockquote>
+<p>“The <code>set_error()</code> channel of a receiver, like C++
+exceptions, is for exceptional circumstances: things like dropped
+network connections, resource allocation failure, or inability to create
+an execution agents.”<sup>[19]</sup></p>
+</blockquote>
+<p>Section 5 of this paper observes that <code>ECONNRESET</code> - a
+dropped network connection - means “fatal, abort the transaction” in one
+protocol and “done, expected closure” in another. The same condition
+that P1525R1 lists as an example of what <code>set_error</code> is for
+is the same condition that compound-result I/O treats as a vocabulary
+entry requiring application-level classification.</p>
 <hr />
 <h2 id="the-equivalence">7. The Equivalence</h2>
 <p>In the same reflector discussion, Petersen constructed four working
@@ -1315,12 +1392,18 @@ implements a different policy for splitting
 <p>“In one word, yes. In more words, there’s some nuance but basically
 yes.” - Ian Petersen<sup>[16]</sup></p>
 </blockquote>
-<p>The implementations differ in machinery. The result is the same: both
-paradigms handle compound results as values. The coroutine destructures
-a pair and branches with <code>switch</code>. The sender pipes
-<code>set_value(ec, buffer)</code> into <code>let_value</code> and
-branches with <code>if</code>. The dispatch logic is identical. The
-syntax differs.</p>
+<p>The nuance matters. The implementations are equivalent in result -
+both paradigms handle compound results as values. The coroutine
+destructures a pair and branches with <code>switch</code>. The sender
+pipes <code>set_value(ec, buffer)</code> into <code>let_value</code> and
+branches with <code>if</code>. The dispatch logic is identical. But the
+four sender implementations each use a different construction
+(<code>variant_sender</code>, <code>any_sender_of</code>,
+<code>execution::task</code>, custom sender), and a programmer
+encountering the problem for the first time must evaluate all four
+before choosing. The coroutine version has one construction. The
+equivalence is in what the code does, not in what the programmer must
+know to write it.</p>
 <p>This equivalence raises a question the discussion had not yet
 asked.</p>
 <hr />
@@ -1375,6 +1458,21 @@ lambda capture, shared state, or a function object that carries the byte
 count alongside the error code. The generic algorithms do not see the
 byte count through the channel. They see it through a side channel the
 programmer constructs.</p>
+<p>A sender advocate might respond that intrusive wiring is normal
+programming - generic algorithms are building blocks, not complete
+solutions. The question is what the intrusive wiring costs in practice.
+If “generic” means templates and custom adaptors at every composition
+point, that is the same complexity that made the Networking TS difficult
+to teach. The abstraction floor does not make senders wrong. It
+identifies where the programmer must leave the algebra and write
+application-specific code - and for compound-result I/O, that point
+arrives at every operation. <a href="https://wg21.link/p4053r0">P4053R0</a><sup>[6]</sup> provides the
+concrete measurement. Four echo-server implementations - two
+sender-based, two coroutine-based - implement identical protocol logic.
+The sender constructions require between 2x and 3.5x the line count of
+the coroutine constructions, with the additional lines concentrated in
+channel-routing and type-erasure boilerplate. The cost is not
+speculative.</p>
 <table>
 <colgroup>
 <col style="width: 23%" />
@@ -1434,8 +1532,8 @@ programmer constructs.</p>
 <td>Via <code>let_value</code></td>
 </tr>
 <tr>
-<td><code>strtol</code></td>
-<td>Sync</td>
+<td><code>recvmsg</code></td>
+<td>Either</td>
 <td>Compound-result</td>
 <td>Via <code>let_value</code></td>
 </tr>
@@ -1512,6 +1610,13 @@ gone.</p>
 property of any system with mutually exclusive error and value paths.
 Giving it a name helps us see it. Being honest about where it sits helps
 us design around it.</p>
+<p>The floors are structurally analogous but operationally opposite.
+Coroutines default to below-floor composition: the programmer stays
+below the floor unless an explicit <code>throw</code> crosses it.
+Senders default to above-floor composition: the programmer enters the
+composition algebra - <code>retry</code>, <code>when_all</code>,
+<code>upon_error</code> - and must leave it to inspect compound data.
+This is the design tension, not a cosmetic difference.</p>
 <p>The difference is where the floor sits relative to composition. In
 coroutines, the floor is opt-in. The default -
 <code>co_return pair{ec, n}</code> - stays below the floor. Below the
@@ -1523,15 +1628,28 @@ is only crossed by an explicit <code>throw</code>.</p>
 To use the algebra, the result must cross the floor. To preserve
 compound data, the result must stay below it. The programmer cannot do
 both simultaneously without application-specific wiring (Section 9).</p>
-<p>When designing an async facility, identify where compound results get
-reduced to single values. Name that boundary. Be honest when it is
-there.</p>
+<p>Any async facility that separates error and value paths has an
+abstraction floor. Identifying where it sits relative to composition is
+a design decision, not an accident.</p>
+<p>The preceding analysis compares coroutine <em>sequential</em>
+composition to sender <em>concurrent</em> composition. The comparison is
+fair for the compound-result problem because compound results arise at
+individual I/O operations, which are sequential by nature - a single
+<code>read</code> returns one <code>(ec, n)</code>. But coroutine
+structured concurrency - fan-out, join, cancellation propagation -
+requires its own framework (<code>when_all</code> over tasks, nurseries,
+task groups), and those frameworks face analogous routing decisions. The
+coroutine advantage for compound results is that the routing happens in
+user code with full language support (<code>if</code>,
+<code>switch</code>, structured bindings), not in a type-level algebra.
+The coroutine advantage for concurrent composition is smaller, and this
+paper does not claim otherwise.</p>
 <p><a href="https://wg21.link/p4056r0">P4056R0</a><sup>[13]</sup> uses
 the abstraction floor as a design constraint. <a href="https://wg21.link/p4053r0">P4053R0</a><sup>[6]</sup> shows the
 floor in each of four echo server constructions.</p>
 <hr />
 <h2 id="the-trade-off-space">11. The Trade-Off Space</h2>
-<p>Five positions are available for handling compound I/O results in a
+<p>Six positions are available for handling compound I/O results in a
 sender pipeline. Each is a legitimate design choice. Each trades
 something.</p>
 <h3 id="accept-the-information-loss">11.1 Accept the Information
@@ -1572,14 +1690,28 @@ Data With Application-Specific Wiring</h3>
 in a lambda and restore it after the successor runs. The data survives.
 The generic algorithms participate. The wiring is intrusive and not
 fully generic (Section 9).</p>
-<h3 id="the-observable-trade-offs">11.6 The Observable Trade-Offs</h3>
+<h3 id="bundle-compound-data-into-the-error-type">11.6 Bundle Compound
+Data Into the Error Type</h3>
+<p>Call <code>set_error(io_result{ec, n})</code> where
+<code>io_result</code> carries both the error code and the byte count.
+The composition algebra participates: <code>retry</code> sees the error,
+<code>upon_error</code> sees the error. The data survives the floor
+crossing because it is inside the error object. <a href="https://wg21.link/p2300r10">P2300R10</a><sup>[1]</sup> suggests
+this approach for partial failure (Section 6.3). The cost: every
+<code>upon_error</code> handler in the pipeline must accept
+<code>io_result</code> as a variant alongside <code>error_code</code>,
+<code>exception_ptr</code>, and any other error type in the completion
+signatures. <code>retry</code> must understand <code>io_result</code>.
+The error type proliferates across the pipeline. No published library
+implements this convention.</p>
+<h3 id="the-observable-trade-offs">11.7 The Observable Trade-Offs</h3>
 <table>
 <colgroup>
-<col style="width: 35%" />
-<col style="width: 17%" />
-<col style="width: 23%" />
-<col style="width: 8%" />
-<col style="width: 15%" />
+<col style="width: 32%" />
+<col style="width: 22%" />
+<col style="width: 21%" />
+<col style="width: 7%" />
+<col style="width: 14%" />
 </colgroup>
 <thead>
 <tr>
@@ -1614,7 +1746,7 @@ fully generic (Section 9).</p>
 </tr>
 <tr>
 <td>Decompose (11.4)</td>
-<td>Below floor</td>
+<td>Yes (below floor)</td>
 <td>Yes (above floor)</td>
 <td>Yes</td>
 <td>Yes</td>
@@ -1626,19 +1758,17 @@ fully generic (Section 9).</p>
 <td>No</td>
 <td>Yes</td>
 </tr>
+<tr>
+<td>Bundle into error type (11.6)</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Partial</td>
+<td>Yes</td>
+</tr>
 </tbody>
 </table>
 <hr />
 <h2 id="conclusion">12. Conclusion</h2>
-<p>Herb Sutter observed during the discussion:</p>
-<blockquote>
-<p>“The main adoption friction I’m encountering with
-<code>std::execution</code> is the lack of clear documentation and
-tutorials on how to use it, especially in existing concurrent/parallel
-code.” - Herb Sutter<sup>[15]</sup></p>
-</blockquote>
-<p>This paper is one answer to that call. The discussion it records is
-the kind of collaborative exploration Sutter identified as missing.</p>
 <p>The partition is real. The channel analysis is real. The abstraction
 floor exists in both paradigms. The finding is not that senders cannot
 carry compound results - they can, through <code>set_value</code>. The
@@ -1654,9 +1784,8 @@ both channels, and characterizing the boundary between generic and
 application-specific composition with precision; Ian Petersen for four
 working sender implementations, for confirming the equivalence between
 sender and coroutine dispatch, and for identifying the symmetry between
-coroutine and sender error channels that prompted this revision; Jens
-Maurer for framing the design spectrum; and Herb Sutter for identifying
-the need for clear documentation and tutorials.</p>
+coroutine and sender error channels that prompted this revision; and
+Jens Maurer for framing the design spectrum.</p>
 <p>The author also thanks Chris Kohlhoff for identifying the
 partial-success problem in <a href="https://wg21.link/p2430r0">P2430R0</a><sup>[2]</sup>, Dietmar Kühl
 for the channel-routing enumeration in <a href="https://wg21.link/p2762r2">P2762R2</a><sup>[3]</sup> and for
@@ -1721,6 +1850,12 @@ channel,” March 2026.
 http://lists.isocpp.org/lib-ext/2026/03/31330.php</p></li>
 <li><p>Ian Petersen, four sender implementations of channel dispatch,
 March 2026. https://godbolt.org/z/7W51hYE7c</p></li>
+<li><p><a href="https://wg21.link/p4058r0">P4058R0</a> - “The Cost of
+<code>std::execution</code> For Networking” (Vinnie Falco, 2026).
+https://wg21.link/p4058r0</p></li>
+<li><p><a href="https://wg21.link/p1525r1">P1525R1</a> - “One-Way
+execute is a Poor Basis Operation” (Eric Niebler, Kirk Shoop, Lewis
+Baker, Lee Howes et al., 2020). https://wg21.link/p1525r1</p></li>
 </ol>
 
 </body>

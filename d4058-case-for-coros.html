@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>P4050R0: On the Diversity of Coroutine Task Types</title>
+  <title>P4058R0: The Case for Coroutines</title>
   <style type="text/css">
 
 @font-face {
@@ -842,11 +842,11 @@ outline: none;
   <div class="header-text">WG21 Proposal</div>
 </header>
 
-<h1>On the Diversity of Coroutine Task Types</h1>
+<h1>The Case for Coroutines</h1>
 
 <!-- Document Metadata -->
 <div class="document-info">
-  <p><strong>Document Number:</strong> P4050R0</p>
+  <p><strong>Document Number:</strong> P4058R0</p>
   <p><strong>Date:</strong> 2026-03-15</p>
   <p><strong>Audience:</strong> LEWG</p>
   <p><strong>Reply-to:</strong> Vinnie Falco <a href="mailto:vinnie.falco@gmail.com" class="email">vinnie.falco@gmail.com</a></p>
@@ -864,75 +864,76 @@ outline: none;
   (post-Croydon mailing)</a></li>
   </ul></li>
   <li><a href="#disclosure" id="toc-disclosure">1. Disclosure</a></li>
-  <li><a href="#dietmar-kühl" id="toc-dietmar-kühl">2. Dietmar Kühl</a>
+  <li><a href="#two-models" id="toc-two-models">2. Two Models</a></li>
+  <li><a href="#where-stdexecution-excels" id="toc-where-stdexecution-excels">3. Where
+  <code>std::execution</code> Excels</a></li>
+  <li><a href="#the-price-of-coroutines" id="toc-the-price-of-coroutines">4. The Price of Coroutines</a></li>
+  <li><a href="#what-c-has-been-waiting-for" id="toc-what-c-has-been-waiting-for">5. What C++ Has Been Waiting
+  For</a>
   <ul>
-  <li><a href="#the-best-possible-p3552r3" id="toc-the-best-possible-p3552r3">2.1 The Best Possible
-  P3552R3</a></li>
+  <li><a href="#asios-asyncreadstream" id="toc-asios-asyncreadstream">5.1 Asio’s
+  <code>AsyncReadStream</code></a></li>
+  <li><a href="#the-c20-concept" id="toc-the-c20-concept">5.2 The C++20
+  Concept</a></li>
+  <li><a href="#what-changed" id="toc-what-changed">5.3 What
+  Changed</a></li>
   </ul></li>
-  <li><a href="#the-claim" id="toc-the-claim">3. The Claim</a></li>
-  <li><a href="#destructible" id="toc-destructible">4.
-  <code>destructible</code></a></li>
-  <li><a href="#two-libraries-two-environments" id="toc-two-libraries-two-environments">5. Two Libraries, Two
-  Environments</a>
+  <li><a href="#the-coroutine-dividend" id="toc-the-coroutine-dividend">6. The Coroutine Dividend</a>
   <ul>
-  <li><a href="#from-trivial-to-standard-divergence" id="toc-from-trivial-to-standard-divergence">5.1 From trivial to
-  standard divergence</a></li>
-  <li><a href="#custom-queries-and-write_env" id="toc-custom-queries-and-write_env">5.2 Custom queries and
-  <code>write_env</code></a></li>
-  <li><a href="#what-do-real-domains-look-like" id="toc-what-do-real-domains-look-like">5.3 What do real domains look
-  like?</a></li>
-  <li><a href="#what-about-the-standard-queries" id="toc-what-about-the-standard-queries">5.4 What about the standard
-  queries?</a></li>
-  <li><a href="#destructible-1" id="toc-destructible-1">5.5
-  <code>destructible</code></a></li>
-  <li><a href="#if-environment-has-a-default-who-customizes-it" id="toc-if-environment-has-a-default-who-customizes-it">5.6 If
-  <code>Environment</code> has a default, who customizes it?</a></li>
+  <li><a href="#type-erasure-is-structural" id="toc-type-erasure-is-structural">6.1 Type Erasure Is
+  Structural</a></li>
+  <li><a href="#the-operation-state-is-not-a-template" id="toc-the-operation-state-is-not-a-template">6.2 The Operation State
+  Is Not a Template</a></li>
+  <li><a href="#the-operation-state-lives-in-the-socket" id="toc-the-operation-state-lives-in-the-socket">6.3 The Operation
+  State Lives in the Socket</a></li>
+  <li><a href="#the-stream-can-be-type-erased" id="toc-the-stream-can-be-type-erased">6.4 The Stream Can Be
+  Type-Erased</a></li>
+  <li><a href="#the-stream-compiles-once" id="toc-the-stream-compiles-once">6.5 The Stream Compiles
+  Once</a></li>
+  <li><a href="#synchronous-and-asynchronous-in-one-abstraction" id="toc-synchronous-and-asynchronous-in-one-abstraction">6.6
+  Synchronous and Asynchronous in One Abstraction</a></li>
+  <li><a href="#the-stream-is-abi-stable" id="toc-the-stream-is-abi-stable">6.7 The Stream Is
+  ABI-Stable</a></li>
+  <li><a href="#the-three-layers-emerge" id="toc-the-three-layers-emerge">6.8 The Three Layers Emerge</a></li>
+  <li><a href="#the-frame-subsidizes-everything" id="toc-the-frame-subsidizes-everything">6.9 The Frame Subsidizes
+  Everything</a></li>
   </ul></li>
-  <li><a href="#the-asio-precedent" id="toc-the-asio-precedent">6. The
-  Asio Precedent</a></li>
-  <li><a href="#design-intent" id="toc-design-intent">7. Design
-  Intent</a></li>
-  <li><a href="#the-ecosystem" id="toc-the-ecosystem">8. The
-  Ecosystem</a></li>
-  <li><a href="#concepts-mitigate-the-risk" id="toc-concepts-mitigate-the-risk">9. Concepts Mitigate the
-  Risk</a></li>
-  <li><a href="#frequently-raised-concerns" id="toc-frequently-raised-concerns">10. Frequently Raised
-  Concerns</a></li>
-  <li><a href="#conclusion" id="toc-conclusion">11. Conclusion</a></li>
+  <li><a href="#what-trade-offs" id="toc-what-trade-offs">7. What
+  Trade-Offs?</a></li>
+  <li><a href="#conclusion" id="toc-conclusion">8. Conclusion</a></li>
   <li><a href="#acknowledgments" id="toc-acknowledgments">Acknowledgments</a></li>
-  <li><a href="#references" id="toc-references">References</a>
-  <ul>
-  <li><a href="#wg21-papers" id="toc-wg21-papers">WG21 Papers</a></li>
-  <li><a href="#stackoverflow-and-github" id="toc-stackoverflow-and-github">StackOverflow and GitHub</a></li>
-  <li><a href="#talks" id="toc-talks">Talks</a></li>
-  <li><a href="#other" id="toc-other">Other</a></li>
-  </ul></li>
+  <li><a href="#references" id="toc-references">References</a></li>
   </ul>
 </nav>
 
 <h2 id="abstract">Abstract</h2>
-<p><code>std::execution::task&lt;T, Environment&gt;</code> (<a href="https://wg21.link/p3552r3">P3552R3</a><sup>[1]</sup>) is proposed
-as a lingua franca for coroutine-based asynchronous code. The
-<code>Environment</code> parameter is an open query-response protocol
-whose interoperability surface is defined by a single concept:
-<code>queryable</code>, which is <code>destructible</code>. This paper
-asks a simple question: when two libraries define different
-environments, how does one task <code>co_await</code> the other? The
-answer, traced step by step through the specification, is that no
-general conversion exists. The query set is open by design, and the only
-adaptation mechanism - <code>write_env</code> - requires the caller to
-know every missing query by name. The risk to the ecosystem is
-structural, documented by the specification itself, by NVIDIA’s
-reference implementation, by the only production precedent (Boost.Asio),
-and by <code>task</code>’s own author.</p>
-<p>This paper is one of a suite of six that examines the relationship
+<p>C++20 coroutines provide five properties: type erasure through
+<code>coroutine_handle&lt;&gt;</code>, promise customization through
+<code>promise_type</code>, stackless frames that suspend and resume
+independently, symmetric transfer through <code>await_suspend</code>
+returning a handle, and compiler-managed state that survives across
+suspension. Each property was designed for generality - async patterns,
+lazy evaluation, generators. None was designed for I/O.</p>
+<p>Combined, the five properties produce a substrate for serial
+byte-oriented I/O that resolves problems unique to C++: template
+explosion, compile-time cost, allocation control, and ABI instability.
+Type erasure plus compiler-managed state yields type-erased streams with
+zero per-operation allocation. Promise customization plus stackless
+frames yields frame allocator propagation before
+<code>operator new</code>. Symmetric transfer yields O(1) stack depth in
+deep coroutine chains. The synergy is not in any single property. It is
+in what the five produce together. This paper shows each property in
+working code, traces the causal chain from language mechanism to library
+design, and states the price.</p>
+<p>This paper is one of a suite of seven that examines the relationship
 between compound I/O results and the sender three-channel model. The
-companion papers are <a href="https://wg21.link/p4053r0">P4053R0</a><sup>[9]</sup>, “Sender I/O:
-A Constructed Comparison”; <a href="https://wg21.link/p4054r0">P4054R0</a><sup>[10]</sup>, “Two Error
-Models”; <a href="https://wg21.link/p4055r0">P4055R0</a><sup>[11]</sup>,
-“Consuming Senders from Coroutine-Native Code”; <a href="https://wg21.link/p4056r0">P4056R0</a><sup>[12]</sup>, “Producing
-Senders from Coroutine-Native Code”; and <a href="https://wg21.link/p4058r0">P4058R0</a><sup>[13]</sup>, “The Cost
-of <code>std::execution</code> For Networking.”</p>
+companion papers are <a href="https://wg21.link/p4050r0">P4050R0</a><sup>[1]</sup>, “On Task
+Type Diversity”; <a href="https://wg21.link/p4053r0">P4053R0</a><sup>[2]</sup>, “Sender I/O:
+A Constructed Comparison”; <a href="https://wg21.link/p4054r0">P4054R0</a><sup>[3]</sup>, “Two Error
+Models”; <a href="https://wg21.link/p4055r0">P4055R0</a><sup>[4]</sup>,
+“Consuming Senders from Coroutine-Native Code”; <a href="https://wg21.link/p4056r0">P4056R0</a><sup>[5]</sup>, “Producing
+Senders from Coroutine-Native Code”; and <a href="https://wg21.link/p4062r0">P4062R0</a><sup>[6]</sup>, “Coroutine
+Executors and P2464R0.”</p>
 <hr />
 <h2 id="revision-history">Revision History</h2>
 <h3 id="r0-march-2026-post-croydon-mailing">R0: March 2026 (post-Croydon
@@ -942,13 +943,11 @@ mailing)</h3>
 </ul>
 <hr />
 <h2 id="disclosure">1. Disclosure</h2>
-<p>The author developed and maintains <a href="https://github.com/cppalliance/corosio">Corosio</a><sup>[34]</sup>
-and <a href="https://github.com/cppalliance/capy">Capy</a><sup>[33]</sup> and
-believes coroutine-native I/O is the correct foundation for networking
-in C++. The cross-library bridges (Section 8) were authored by Klemens
-Morgenstern. The frame allocator gap was identified by Peter Dimov.
-Neither is a co-author. The author provides information, asks nothing,
-and serves at the pleasure of the chair.</p>
+<p>The author developed and maintains <a href="https://github.com/cppalliance/corosio">Corosio</a><sup>[7]</sup>
+and <a href="https://github.com/cppalliance/capy">Capy</a><sup>[8]</sup>
+and believes coroutine-native I/O is the correct foundation for
+networking in C++. The author provides information, asks nothing, and
+serves at the pleasure of the chair.</p>
 <p>The author regards <code>std::execution</code> as an important
 contribution to C++ and supports its standardization for the domains it
 serves well - GPU dispatch, heterogeneous execution, and compile-time
@@ -962,786 +961,672 @@ senders and interoperate where the domains meet. Two models, each
 correct for its domain, is a stronger standard than one model asked to
 serve both.</p>
 <hr />
-<h2 id="dietmar-kühl">2. Dietmar Kühl</h2>
-<p>The findings documented in this paper and in <a href="https://wg21.link/p3801r0">P3801R0</a><sup>[6]</sup> are not
-engineering failures. They are structural consequences of making
-<code>task</code> serve two masters. Dietmar Kühl responded to every
-concern with professionalism and technical precision, and wrote <a href="https://wg21.link/p3796r1">P3796R1</a><sup>[7]</sup> to collect
-the issues himself.</p>
-<p><strong>The Environment parameter is not Dietmar’s design choice. It
-is a structural requirement imposed by P2300.</strong></p>
-<h3 id="the-best-possible-p3552r3">2.1 The Best Possible P3552R3</h3>
-<p>Out of respect for Kühl’s work, this paper evaluates only the
-strongest possible version of his design.</p>
-<p><a href="https://wg21.link/p3552r3">P3552R3</a><sup>[1]</sup> is
-underspecified in several areas. The <code>Environment</code> parameter
-lacks a default. The allocator delivery timing is being addressed in <a href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2026/p3980r0.html">P3980R0</a><sup>[8]</sup>.
-The symmetric transfer gap is acknowledged in <a href="https://wg21.link/p3796r1">P3796R1</a><sup>[7]</sup> and <a href="https://wg21.link/p3801r0">P3801R0</a><sup>[6]</sup>. The author
-has contributed fixes to some of these gaps directly.</p>
-<p>This paper grants <a href="https://wg21.link/p3552r3">P3552R3</a><sup>[1]</sup> every benefit
-of the doubt. We assume a default <code>Environment</code> will be
-provided. We assume the engineering gaps will be closed. We do not argue
-from underspecification. We evaluate the design on its strongest
-possible terms.</p>
-<p>Three topics are off-limits. Allocator timing - how and when the
-frame allocator reaches <code>operator new</code> - is being addressed
-in <a href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2026/p3980r0.html">P3980R0</a><sup>[8]</sup>
-and by the author’s own contributions. Allocator propagation - how the
-allocator flows to child operations through the environment - is an
-engineering problem with known solutions. Categorization of compound I/O
-results into the three channels (<code>set_value</code>,
-<code>set_error</code>, <code>set_stopped</code>) is the subject of <a href="https://wg21.link/p4054r0">P4054R0</a><sup>[10]</sup> and <a href="https://wg21.link/p4053r0">P4053R0</a><sup>[9]</sup>, not this
-paper.</p>
-<hr />
-<h2 id="the-claim">3. The Claim</h2>
-<p>A standard task type provides a lingua franca. It eliminates pairwise
-bridges. It gives the ecosystem a common type that every library can
-accept and return. <a href="https://wg21.link/p3552r3">P3552R3</a><sup>[1]</sup> Section 3
-states: “The <code>task</code> coroutine provided by the standard
-library may not always fit user’s needs.” SG1 discussion notes on <a href="https://wg21.link/p1056r1">P1056R1</a><sup>[35]</sup> record:
-“There can be more than one <code>task</code> type for different
-needs.”</p>
-<p>The claim is that <code>std::execution::task</code> serves as that
-lingua franca. This paper stress-tests that claim.</p>
-<hr />
-<h2 id="destructible">4. <code>destructible</code></h2>
-<p><a href="https://wg21.link/p2300r10">P2300R10</a><sup>[3]</sup>
-defines <code>queryable</code> in
-[exec.queryable.concept]<sup>[24]</sup> as follows:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> T<span class="op">&gt;</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">concept</span> queryable <span class="op">=</span> destructible<span class="op">&lt;</span>T<span class="op">&gt;;</span></span></code></pre></div>
-<p>We will return to this.</p>
-<hr />
-<h2 id="two-libraries-two-environments">5. Two Libraries, Two
-Environments</h2>
-<p>The <code>Environment</code> parameter is an extension point. Two
-libraries will define two environments. The progression below begins
-with empty environments and escalates through standard type mismatches,
-custom queries, and NVIDIA’s deployed GPU environment. Each step is
-individually reasonable. No step is recoverable.</p>
-<h3 id="from-trivial-to-standard-divergence">5.1 From trivial to
-standard divergence</h3>
-<table>
-<colgroup>
-<col style="width: 51%" />
-<col style="width: 48%" />
-</colgroup>
-<thead>
-<tr>
-<th>Library A</th>
-<th>Library B</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>struct env_a {};</code></td>
-<td><code>struct env_b {};</code></td>
-</tr>
-<tr>
-<td><code>task&lt;int, env_a&gt; compute();</code></td>
-<td><code>task&lt;int, env_b&gt; fetch();</code></td>
-</tr>
-</tbody>
-</table>
-<p>Both environments are empty. Both produce identical default behavior.
-The types are incompatible - a function accepting
-<code>task&lt;int, env_a&gt;</code> cannot accept
-<code>task&lt;int, env_b&gt;</code>. A converting constructor
-(<code>env_a(auto const&amp;)</code>) compiles but discards everything;
-the moment either environment carries state, the constructor must know
-what to extract.</p>
-<p>The problem deepens with standard nested types. If Library A binds a
-concrete scheduler for performance - exactly what Asio users do when
-they replace <code>any_io_executor</code> with
-<code>io_context::executor_type</code> - the types diverge further:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> env_a <span class="op">{</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">using</span> <span class="dt">scheduler_type</span> <span class="op">=</span> my_thread_pool<span class="op">;</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
-<p>Library B uses the default type-erased <code>task_scheduler</code>.
-The <code>scheduler_type</code> mismatch means the inner task cannot
-extract the scheduler it needs. Add a second axis -
-<code>allocator_type</code> - and the construction protocol cannot
-reconcile the choices. Still just standard nested types. No custom
-queries yet. Already incompatible.</p>
-<h3 id="custom-queries-and-write_env">5.2 Custom queries and
-<code>write_env</code></h3>
-<p>Library A needs to propagate tenant context in a multi-tenant
-service:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> <span class="dt">get_tenant_id_t</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="op">:</span> <span class="dt">forwarding_query_t</span> <span class="op">{};</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="kw">inline</span> <span class="kw">constexpr</span> <span class="dt">get_tenant_id_t</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    get_tenant_id<span class="op">{};</span></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> env_a <span class="op">{</span></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">using</span> <span class="dt">scheduler_type</span> <span class="op">=</span> my_thread_pool<span class="op">;</span></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    tenant_id tid<span class="op">;</span></span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> query<span class="op">(</span><span class="dt">get_tenant_id_t</span><span class="op">)</span> <span class="at">const</span></span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>        <span class="op">-&gt;</span> tenant_id <span class="op">{</span> <span class="cf">return</span> tid<span class="op">;</span> <span class="op">}</span></span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
-<p>One custom query. Completely reasonable. Library B knows nothing
-about <code>get_tenant_id</code>. <a href="https://wg21.link/p2300r10">P2300R10</a><sup>[3]</sup> provides
-<code>write_env</code> in [exec.write.env] - the caller names each
-missing query and provides its value by hand:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> adapted <span class="op">=</span> write_env<span class="op">(</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    compute<span class="op">(),</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    prop<span class="op">{</span>get_tenant_id<span class="op">,</span> my_tid<span class="op">});</span></span></code></pre></div>
-<p>It compiles. It works. But the moment Library B also defines a custom
-query - <code>get_connection_pool</code> - the caller must inject
-<code>get_tenant_id</code> into one side <em>and</em>
-<code>get_connection_pool</code> into the other. The caller must know
-every custom query from every library, by name, and inject them all
-manually. There is no discovery mechanism - no way to ask an environment
-“what queries do you need?” For two libraries with one custom query
-each, a determined caller can make it work. Tedious, but possible.</p>
-<h3 id="what-do-real-domains-look-like">5.3 What do real domains look
-like?</h3>
-<p>NVIDIA’s reference implementation defines custom forwarding queries
-in <a href="https://github.com/NVIDIA/stdexec/blob/main/include/nvexec/stream/common.cuh">nvexec/stream/common.cuh</a><sup>[36]</sup>:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> <span class="dt">get_stream_provider_t</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    <span class="op">:</span> __query<span class="op">&lt;</span><span class="dt">get_stream_provider_t</span><span class="op">&gt;</span></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">static</span> <span class="kw">constexpr</span> <span class="kw">auto</span></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    query<span class="op">(</span><span class="dt">forwarding_query_t</span><span class="op">)</span> <span class="kw">noexcept</span></span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>        <span class="op">-&gt;</span> <span class="dt">bool</span> <span class="op">{</span> <span class="cf">return</span> <span class="kw">true</span><span class="op">;</span> <span class="op">}</span></span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
-<p>The <code>stream_provider</code> carries a CUDA stream, pinned and
-managed memory resources, a stream pool, a task hub, and a priority
-level:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> stream_provider</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">cudaError_t</span> <span class="va">status_</span><span class="op">{</span>cudaSuccess<span class="op">};</span></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>optional<span class="op">&lt;</span><span class="dt">cudaStream_t</span><span class="op">&gt;</span> <span class="va">own_stream_</span><span class="op">{};</span></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    context <span class="va">context_</span><span class="op">;</span></span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>mutex <span class="va">custodian_</span><span class="op">;</span></span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>vector<span class="op">&lt;</span><span class="bu">std::</span>function<span class="op">&lt;</span><span class="dt">void</span><span class="op">()&gt;&gt;</span></span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>        <span class="va">cemetery_</span><span class="op">;</span></span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
-<p>Where <code>context</code> carries:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> context</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>pmr::memory_resource<span class="op">*</span></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">pinned_resource_</span><span class="op">;</span></span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>pmr::memory_resource<span class="op">*</span></span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>        <span class="va">managed_resource_</span><span class="op">;</span></span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    <span class="dt">stream_pools_t</span><span class="op">*</span> <span class="va">stream_pools_</span><span class="op">;</span></span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    queue<span class="op">::</span>task_hub<span class="op">*</span> <span class="va">hub_</span><span class="op">;</span></span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    stream_priority <span class="va">priority_</span><span class="op">;</span></span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
-<p>This is injected into the environment via
-<code>make_stream_env</code>:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> make_stream_env<span class="op">(</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    BaseEnv<span class="op">&amp;&amp;</span> base_env<span class="op">,</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    stream_provider<span class="op">*</span> sp<span class="op">)</span> <span class="kw">noexcept</span></span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> __env<span class="op">::</span>__join<span class="op">(</span></span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>        prop<span class="op">{</span>get_stream_provider<span class="op">,</span> sp<span class="op">},</span></span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>        <span class="kw">static_cast</span><span class="op">&lt;</span>BaseEnv<span class="op">&amp;&amp;&gt;(</span>base_env<span class="op">));</span></span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
-<p>This is not hypothetical. This is deployed code in the
-<code>std::execution</code> reference implementation. Now imagine a
-networking domain with its own custom queries:</p>
-<table>
-<colgroup>
-<col style="width: 53%" />
-<col style="width: 46%" />
-</colgroup>
-<thead>
-<tr>
-<th>GPU domain (nvexec)</th>
-<th>Network domain</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>get_stream_provider</code> -&gt;
-<code>stream_provider*</code></td>
-<td><code>get_ssl_context</code> -&gt; <code>ssl::context*</code></td>
-</tr>
-<tr>
-<td><code>get_stream</code> -&gt; <code>cudaStream_t</code></td>
-<td><code>get_connection_pool</code> -&gt; <code>pool*</code></td>
-</tr>
-<tr>
-<td>pinned/managed memory resources, stream pool, …</td>
-<td>…</td>
-</tr>
-</tbody>
-</table>
-<p>Neither environment can construct itself from the other. The caller
-would need to inject <code>get_stream_provider</code> - which requires a
-<code>stream_provider*</code> pointing to a live object managing CUDA
-resources - plus <code>get_ssl_context</code>,
-<code>get_connection_pool</code>, and every other custom query from
-every domain involved. The caller must construct the domain-specific
-objects correctly, manage their lifetimes, and know the semantic
-requirements of each query. <code>write_env</code> does not help with
-any of this. It is a syntactic mechanism for injecting key-value pairs.
-The semantic burden is entirely on the caller.</p>
-<h3 id="what-about-the-standard-queries">5.4 What about the standard
-queries?</h3>
-<p>The standard defines eight forwarding queries:
-<code>get_scheduler</code>, <code>get_allocator</code>,
-<code>get_stop_token</code>, <code>get_domain</code>,
-<code>get_delegation_scheduler</code>,
-<code>get_forward_progress_guarantee</code>,
-<code>get_completion_scheduler&lt;Tag&gt;</code>, and
-<code>get_await_completion_adaptor</code>.</p>
-<p>A conversion layer could forward these. But NVIDIA already defines
-custom queries (<code>get_stream_provider</code>,
-<code>get_stream</code>) that are not in this list. Any domain that
-needs custom queries - GPU, networking, database, audio - is outside the
-standard set. The standard queries are the <em>minimum</em>. The
-<code>Environment</code> parameter exists precisely so domains can add
-<em>more</em>. <a href="https://wg21.link/p3552r3">P3552R3</a><sup>[1]</sup> itself
-demonstrates a custom <code>get_value_t</code> query in its own Section
-4.7.</p>
-<p>The design <em>encourages</em> custom queries. A conversion that
-handles only standard queries defeats the purpose of the open
-protocol.</p>
-<h3 id="destructible-1">5.5 <code>destructible</code></h3>
-<p>No general conversion exists. The query set is open by design.
-<code>write_env</code> requires foreknowledge of every query. Forwarding
-standard queries misses the custom queries that justify the
-Environment’s existence.</p>
-<p>Good stewardship of the standard means shipping features narrow and
-widening with evidence. The committee has practiced this consistently -
-<code>std::string_view</code>, <code>std::span</code>, the Lakos
-Rule.</p>
-<p>Every concept in the sender/receiver model eventually bottoms out at
-<code>queryable</code>:</p>
-<table>
-<thead>
-<tr>
-<th>Concept</th>
-<th>Refines</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>scheduler</code></td>
-<td><code>queryable</code>, <code>copyable</code>,
-<code>equality_comparable</code>, …</td>
-</tr>
-<tr>
-<td><code>sender</code></td>
-<td><code>queryable</code>, <code>move_constructible</code>, …</td>
-</tr>
-<tr>
-<td><code>receiver</code></td>
-<td><code>queryable</code>, <code>move_constructible</code>, …</td>
-</tr>
-<tr>
-<td><code>queryable</code></td>
-<td></td>
-</tr>
-</tbody>
-</table>
-<table>
-<thead>
-<tr>
-<th>[exec]</th>
-<th>[exec.queryable.concept]</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>6,607 lines</td>
-<td>2 lines</td>
-</tr>
-</tbody>
-</table>
-<p><code>queryable</code> is <code>destructible</code>. It cannot be
-narrowed after C++26 ships.</p>
-<p><strong>N libraries with N different environments produce N
-incompatible task types with no general conversion path.</strong></p>
-<p>Jonathan Müller wrote in <a href="https://wg21.link/p3801r0">P3801R0</a><sup>[6]</sup>:</p>
+<h2 id="two-models">2. Two Models</h2>
+<p><a href="https://wg21.link/p3552r3">P3552R3</a><sup>[9]</sup> Section
+9.4.1 defines the result:</p>
 <blockquote>
-<p>“As a standardization committee, we are drafting a standard that
-should outlive us. We are not working on some open-source library, we
-are designing the foundation for an entire ecosystem.”</p>
+<p>“The <code>task</code> class template represents a sender that can be
+used as the return type of coroutines.”</p>
 </blockquote>
-<h3 id="if-environment-has-a-default-who-customizes-it">5.6 If
-<code>Environment</code> has a default, who customizes it?</h3>
+<p>One type. Two models. <code>std::execution::task</code> is a
+coroutine that is also a sender. Shipping it is an implicit endorsement
+of two async models in the C++ standard. The committee has already paid
+for two models.</p>
+<p>On September 28, 2020, LEWG polled: “We must have a single async
+model for the C++ Standard Library.” The result was no consensus. In
+October 2021, <a href="https://wg21.link/p2453r0">P2453R0</a><sup>[10]</sup> published
+the outcomes of an electronic poll with 56 participants:</p>
+<blockquote>
+<p>“We believe we need one grand unified model for asynchronous
+execution in the C++ Standard Library, that covers structured
+concurrency, event based programming, active patterns, etc.”</p>
+<p>SF:4 / WF:9 / N:5 / WA:5 / SA:1 - No consensus (leaning in
+favor).</p>
+</blockquote>
+<p>The “one model” premise was polled twice. It achieved consensus
+neither time. And <code>task</code> ships two models regardless.</p>
+<p>This parallels the coroutine frame allocation: you pay once, you get
+everything that rides on it. Since the price is paid, the question is
+not whether to have two models but whether to get value from both.</p>
+<hr />
+<h2 id="where-stdexecution-excels">3. Where <code>std::execution</code>
+Excels</h2>
+<p>The sender/receiver model is an achievement. The people who built it
+and deployed it have said so in their own words.</p>
+<p>Eric Niebler described the philosophical foundation in
+2020<sup>[11]</sup>:</p>
+<blockquote>
+<p>“Structured concurrency brings the Modern C++ style to our async
+programs by making async lifetimes correspond to ordinary C++ lexical
+scopes, eliminating the need for reference counting to manage object
+lifetime.”</p>
+</blockquote>
+<p>Child operations complete before their parents. Lexical scopes govern
+async lifetimes. The same discipline that makes synchronous C++ safe -
+RAII, deterministic destruction, nested scopes - extends to asynchronous
+code. This is the sender model’s deepest conviction.</p>
+<p>The practical motivation is equally clear. Niebler wrote in
+2024<sup>[12]</sup>:</p>
+<blockquote>
+<p>“Every library that exposes asynchrony uses a slightly different
+callback API. If you want to chain two async operations from two
+different libraries, you’re going to need to write a bunch of glue code
+to map this async abstraction to that async abstraction. It’s the Tower
+of Babel problem.”</p>
+</blockquote>
+<p>One standard async abstraction solves the interoperability problem.
+Senders provide the common vocabulary.</p>
+<p>Senders and coroutines are not either/or. Niebler framed this
+directly<sup>[12]</sup>:</p>
+<blockquote>
+<p>“Returning a sender is a great choice: your users can await the
+sender in a coroutine if they like, or they can avoid the coroutine
+frame allocation and use the sender with a generic algorithm like
+<code>then()</code> or <code>when_all()</code>. The lack of allocations
+makes senders an especially good choice for embedded developers.”</p>
+</blockquote>
+<p>The sender model provides zero-allocation pipelines through a
+specific design choice: <code>connect(sender, receiver)</code> produces
+an operation state that aggregates all data before <code>start()</code>
+is called. Niebler described the consequence<sup>[12]</sup>:</p>
+<blockquote>
+<p>“We can launch lots of async work with complex dependencies with only
+a single dynamic allocation or, in some cases, no allocations at
+all.”</p>
+</blockquote>
+<p>Separating construction from launch lets the pipeline aggregate all
+state before any work starts. The optimizer sees the full pipeline. This
+is possible because the operation state is parameterized on the receiver
+type - the compiler knows the complete type at every stage.</p>
+<p>Senders also provide completion signatures as type-level contracts.
+The sender declares how it can complete. A type mismatch between
+pipeline stages is a compile error. The three-channel model -
+<code>set_value</code>, <code>set_error</code>, <code>set_stopped</code>
+- routes results by channel, and generic algorithms like
+<code>retry</code>, <code>when_all</code>, and <code>upon_error</code>
+dispatch on the channel without knowing the concrete sender type.</p>
+<p>These are deployed at scale. <a href="https://wg21.link/p2470r0">P2470R0</a><sup>[13]</sup> documented
+the deployments: Facebook (“monthly users number in the billions”),
+NVIDIA (“fully invested in P2300… we plan to ship in production”), and
+Bloomberg (experimentation). GPU dispatch, infrastructure, HPC - the
+domains where compile-time work graphs, zero-allocation pipelines, and
+heterogeneous composition deliver their full value.</p>
+<hr />
+<h2 id="the-price-of-coroutines">4. The Price of Coroutines</h2>
+<p>Coroutines are not free. Three costs are irreducible.</p>
+<p><strong>Frame allocation.</strong> When a function becomes a
+coroutine, the compiler moves everything that would normally live on the
+stack - every local variable, every function parameter, the suspension
+point that records where execution left off, and the awaitable machinery
+that manages resumption - into a heap-allocated block called the
+coroutine frame. Every coroutine that suspends must allocate this frame
+through <code>operator new</code>. The frame size is determined by the
+compiler. The caller cannot <code>sizeof</code> it, cannot
+stack-allocate it, cannot embed it in a struct. HALO (<a href="https://wg21.link/p0981r0">P0981R0</a><sup>[14]</sup>) can elide
+the allocation when the compiler proves the frame’s lifetime is bounded
+by the caller’s scope, but no compiler guarantees HALO. The recycling
+allocator (<a href="https://github.com/cppalliance/capy/blob/p4058r0/include/boost/capy/ex/recycling_memory_resource.hpp">recycling_memory_resource</a><sup>[8]</sup>)
+amortizes the cost to a thread-local pool lookup - nanoseconds instead
+of microseconds - but the allocation still happens. Senders do not pay
+this cost. Sender operation states can be stack-allocated or embedded in
+the parent’s operation state.</p>
+<p><strong>Opaque resume.</strong> The compiler cannot see through
+<code>std::coroutine_handle&lt;&gt;::resume()</code>. Every suspension
+point is an optimization barrier. The optimizer cannot inline across it.
+In tight inner loops this is measurable. This is the fundamental cost of
+type erasure through the handle. Senders do not pay this cost. Sender
+operation states are fully visible to the optimizer within a
+pipeline.</p>
+<p><strong>Reference lifetime hazard.</strong> Coroutine parameters are
+copied into the frame at the call site, but references are copied as
+references, not as values. A <code>const std::string&amp;</code>
+parameter stores the reference in the frame. If the caller’s string goes
+out of scope before the first suspension point, the reference dangles.
+Lambda captures by reference have the same hazard. This is a correctness
+cost, not a performance cost. Google built <code>Co&lt;T&gt;</code> as
+immovable and prvalue-only specifically to prevent it (<a href="https://wg21.link/p3801r0">P3801R0</a><sup>[15]</sup>). Senders do
+not share this hazard in the same way - the operation state owns copies
+of everything passed through <code>connect</code>.</p>
+<p>You pay the price once. A coroutine that does fifty reads pays one
+frame allocation and fifty zero-cost resumptions. The frame that you
+cannot avoid is the same frame that holds the operation state, the local
+variables, and the result. The type erasure that blocks inlining is the
+same type erasure that gives you <code>any_stream</code>,
+<code>task&lt;T&gt;</code> with one parameter, and non-template
+operation states. The price subsidizes everything in Section 6.</p>
+<hr />
+<h2 id="what-c-has-been-waiting-for">5. What C++ Has Been Waiting
+For</h2>
+<p>The committee has been trying to standardize networking since <a href="https://wg21.link/n1925">N1925</a><sup>[16]</sup> (2005). The
+contract that every attempt has been built on comes from Asio.</p>
+<h3 id="asios-asyncreadstream">5.1 Asio’s
+<code>AsyncReadStream</code></h3>
+<p>The <a href="https://www.boost.org/doc/libs/1_87_0/doc/html/boost_asio/reference/AsyncReadStream.html">Boost.Asio
+documentation</a><sup>[17]</sup> defines <code>AsyncReadStream</code> as
+a named requirement with two operations:</p>
 <table>
+<colgroup>
+<col style="width: 21%" />
+<col style="width: 35%" />
+<col style="width: 43%" />
+</colgroup>
 <thead>
 <tr>
-<th>Nobody</th>
-<th>Somebody</th>
+<th>operation</th>
+<th>type</th>
+<th>semantics</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>The parameter is unnecessary.</td>
-<td>The lingua franca breaks.</td>
+<td><code>a.get_executor()</code></td>
+<td>satisfying Executor requirements</td>
+<td>Returns the associated I/O executor</td>
+</tr>
+<tr>
+<td><code>a.async_read_some(mb, t)</code></td>
+<td>determined by async operation requirements</td>
+<td>completion signature <code>void(error_code ec, size_t n)</code></td>
 </tr>
 </tbody>
 </table>
+<p>Two operations. Twenty years. The contract has not changed. The
+Networking TS formalized it. The committee could not ship it. But the
+contract survived because it is correct.</p>
+<h3 id="the-c20-concept">5.2 The C++20 Concept</h3>
+<p><a href="https://github.com/cppalliance/capy/blob/p4058r0/include/boost/capy/concept/read_stream.hpp">ReadStream</a><sup>[8]</sup>
+formalizes the same contract as a C++20 concept:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">concept</span> ReadStream <span class="op">=</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">requires</span><span class="op">(</span>T<span class="op">&amp;</span> stream<span class="op">,</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>             mutable_buffer_archetype buffers<span class="op">)</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span> stream<span class="op">.</span>read_some<span class="op">(</span>buffers<span class="op">)</span> <span class="op">}</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>            <span class="op">-&gt;</span> IoAwaitable<span class="op">;</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>        <span class="kw">requires</span> awaitable_decomposes_to<span class="op">&lt;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>            <span class="kw">decltype</span><span class="op">(</span>stream<span class="op">.</span>read_some<span class="op">(</span>buffers<span class="op">)),</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>            <span class="bu">std::</span>error_code<span class="op">,</span> <span class="bu">std::</span>size_t<span class="op">&gt;;</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    <span class="op">};</span></span></code></pre></div>
+<p><code>read_some</code> takes a buffer. The result satisfies
+<code>IoAwaitable</code>. The result decomposes to
+<code>(error_code, size_t)</code> via structured bindings. Nine
+lines.</p>
+<p>The semantic requirements match Asio’s: if
+<code>buffer_size(buffers) &gt; 0</code> and <code>!ec</code>, then
+<code>n &gt;= 1 &amp;&amp; n &lt;= buffer_size(buffers)</code> - at
+least one byte was read. If <code>ec</code>, then <code>n</code> is the
+number of bytes read before the I/O condition arose. I/O conditions are
+reported via the <code>error_code</code> component. Library failures
+(such as allocation failure) are reported via exceptions. The caller
+must ensure the buffer memory remains valid until the
+<code>co_await</code> expression returns.</p>
+<h3 id="what-changed">5.3 What Changed</h3>
+<p>Two things vanished.</p>
+<p>The completion token disappeared. In Asio,
+<code>async_read_some(mb, t)</code> takes a completion token
+<code>t</code> that determines the async model - callback, future,
+coroutine, or use_awaitable. In the coroutine model, the coroutine
+<em>is</em> the completion mechanism. There is no token. There is no
+choice. The coroutine suspends and resumes. The simplification is the
+trade-off.</p>
+<p><code>get_executor()</code> disappeared entirely. I/O objects do not
+carry executors. The caller provides the executor through
+<code>io_env</code> at <code>await_suspend</code> time. This resolves a
+long-standing Asio confusion where the I/O object has an executor and
+the completion token has a different executor, and the user must
+understand which one governs resumption. In the coroutine model there is
+one executor, it comes from the caller, and the I/O object never sees
+it.</p>
+<p>What stayed: <code>read_some</code> takes a buffer, returns
+<code>(error_code, size_t)</code>. The named requirement became a
+concept. The language caught up to the contract.</p>
 <hr />
-<h2 id="the-asio-precedent">6. The Asio Precedent</h2>
-<p>The only production two-parameter coroutine type is Asio’s
-<code>awaitable&lt;T, Executor&gt;</code>. Asio provides a type-erased
-default - <code>any_io_executor</code> - that works for the majority of
-users. Most users stay on the default and succeed. But when users
-deviate - for performance, for concrete executor binding - the type
-incompatibility surfaces. Five independent reports illustrate the kind
-of failure the <code>Environment</code> parameter will produce at
-greater scale:</p>
+<h2 id="the-coroutine-dividend">6. The Coroutine Dividend</h2>
+<p>Asio made a different set of trade-offs. It supports callbacks,
+futures, coroutines, and completion tokens. That flexibility serves
+every async model a user might want. But the flexibility has a cost: the
+I/O operations must be templates, the operation states must be
+parameterized on the completion handler type, and the stream model
+cannot be type-erased without per-operation allocation. These are not
+defects. They are consequences of supporting every completion model
+simultaneously.</p>
+<p>When you commit to coroutines as the only completion mechanism, you
+give up that flexibility. You cannot use callbacks. You cannot use
+futures. You cannot use completion tokens. That is a real cost. But the
+commitment unlocks optimizations and ergonomics that no other trade-off
+can deliver. The operation state becomes concrete. The stream becomes
+type-erasable. The library becomes separately compilable. The API
+becomes ABI-stable. None of these are possible when the completion
+mechanism is a template parameter.</p>
+<p>The ecosystem ran from the frame allocation. We embraced it. What we
+found is that the frame - the one cost everyone fears - subsidizes
+everything the ecosystem has been waiting for. Each consequence in the
+chain that follows is possible only because the previous one holds.
+Remove any link and the rest collapse. The chain is not a list of
+independent benefits. It is a single argument, nine steps long, and it
+begins with the frame.</p>
+<h3 id="type-erasure-is-structural">6.1 Type Erasure Is Structural</h3>
+<table>
+<tr>
+<th>
+Awaitable
+</th>
+<th>
+Sender
+</th>
+</tr>
+<tr>
+<td>
+<pre><code>struct read_awaitable
+{
+    bool await_ready();
+    void await_suspend(
+        std::coroutine_handle&lt;&gt; h);
+        // caller erased
+    io_result&lt;size_t&gt;
+        await_resume();
+};</code></pre>
+</td>
+<td>
+<pre><code>template&lt;class Receiver&gt;
+struct read_operation
+{
+    Receiver rcvr_;
+        // caller stamped in
+    void start() noexcept;
+};</code></pre>
+</td>
+</tr>
+</table>
+<p>Same operation. Left: the caller is erased behind
+<code>coroutine_handle&lt;&gt;</code>. Right: the caller’s type is
+stamped into the operation state as <code>Receiver</code>. The
+<code>&lt;&gt;</code> is the fork in the road. Everything in 6.2 through
+6.9 follows from this difference.</p>
+<p><code>std::function</code> erases a callable.
+<code>coroutine_handle&lt;&gt;</code> erases a resumable. One is a
+library convention. The other is a language primitive. Both hide the
+concrete type behind a fixed interface. The difference is that
+<code>std::function</code> must allocate its own storage.
+<code>coroutine_handle&lt;&gt;</code> points to a frame the compiler
+already built.</p>
+<p>When a coroutine <code>co_await</code>s an awaitable, the awaitable’s
+<code>await_suspend</code> receives
+<code>std::coroutine_handle&lt;&gt;</code>. That handle is type-erased.
+The awaitable does not know what the caller’s return type is, what the
+caller’s promise type is, what local variables the caller holds, or
+where the caller will resume. The caller’s entire identity - its
+variables, its suspension point, its future - is behind an opaque
+pointer. The awaitable sees one thing: a handle it can resume or
+destroy.</p>
+<p>Any function that returns an awaitable gets structural type erasure
+of the caller for free. The I/O operation’s state does not depend on who
+is waiting for it. A <code>read_op</code> struct is the same whether the
+caller is <code>task&lt;int&gt;</code>, <code>task&lt;void&gt;</code>,
+or any other coroutine type. The caller is erased. The operation state
+is concrete.</p>
+<p>The cost is real. Because the handle is opaque, the compiler cannot
+optimize through <code>resume()</code>. It cannot inline the caller into
+the awaitable or the awaitable into the caller. The optimization barrier
+from Section 4 is the same mechanism that provides the type erasure. You
+do not get one without the other.</p>
+<p>In the sender model, <code>connect(sender, receiver)</code> stamps
+the receiver’s type into the operation state. The optimizer sees the
+full pipeline - it can inline across operation boundaries, eliminate
+dead code, and propagate constants through the entire chain. That is the
+strength for GPU pipelines (Section 3). The cost of that visibility is
+that the I/O operation’s state depends on who is waiting for it. The
+same <code>async_read</code> connected to two different receivers
+produces two different operation state types.</p>
+<p>Two models. One trades optimization for erasure. The other trades
+erasure for optimization. The sender model’s causal chain diverges here.
+The receiver-parameterized operation state gives the optimizer full
+pipeline visibility - the strength documented in Section 3. But the
+chain that follows in 6.2 through 6.9 requires a concrete operation
+state. The sender model cannot enter it.</p>
+<p>From here forward, the paper walks the coroutine chain alone.</p>
+<h3 id="the-operation-state-is-not-a-template">6.2 The Operation State
+Is Not a Template</h3>
+<p>Windows (IOCP). <a href="https://github.com/cppalliance/corosio/blob/p4058r0/include/boost/corosio/native/detail/iocp/win_overlapped_op.hpp">overlapped_op</a><sup>[7]</sup>
+and <a href="https://github.com/cppalliance/corosio/blob/p4058r0/include/boost/corosio/native/detail/iocp/win_socket.hpp">read_op</a><sup>[7]</sup>:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> overlapped_op <span class="op">:</span> OVERLAPPED</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>coroutine_handle<span class="op">&lt;&gt;</span> h<span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    capy<span class="op">::</span>executor_ref      ex<span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>error_code<span class="op">*</span>        ec_out<span class="op">;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>size_t<span class="op">*</span>            bytes_out<span class="op">;</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    DWORD                   bytes_transferred<span class="op">;</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> read_op <span class="op">:</span> overlapped_op</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    WSABUF wsabufs<span class="op">[</span><span class="dv">16</span><span class="op">];</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>    DWORD  wsabuf_count<span class="op">;</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>    DWORD  flags<span class="op">;</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>    win_socket_internal<span class="op">&amp;</span> internal<span class="op">;</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
+<p>Linux (epoll). <a href="https://github.com/cppalliance/corosio/blob/p4058r0/include/boost/corosio/native/detail/epoll/epoll_op.hpp">epoll_op.hpp</a><sup>[7]</sup>:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> epoll_read_op <span class="kw">final</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="op">:</span> reactor_read_op<span class="op">&lt;</span>epoll_op<span class="op">&gt;</span> <span class="op">{};</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> epoll_write_op <span class="kw">final</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">:</span> reactor_write_op<span class="op">&lt;</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>        epoll_op<span class="op">,</span> epoll_write_policy<span class="op">&gt;</span> <span class="op">{};</span></span></code></pre></div>
+<p>Not templates. Not parameterized on the caller. Known at
+library-build time. The same <code>read_op</code> serves every coroutine
+that reads from the socket, regardless of the caller’s type.</p>
+<h3 id="the-operation-state-lives-in-the-socket">6.3 The Operation State
+Lives in the Socket</h3>
+<p><a href="https://github.com/cppalliance/corosio/blob/p4058r0/include/boost/corosio/native/detail/iocp/win_socket.hpp">win_socket_internal</a><sup>[7]</sup>:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> win_socket_internal</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    connect_op <span class="va">conn_</span><span class="op">;</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    read_op    <span class="va">rd_</span><span class="op">;</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    write_op   <span class="va">wr_</span><span class="op">;</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    SOCKET     <span class="va">socket_</span> <span class="op">=</span> INVALID_SOCKET<span class="op">;</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span>        <span class="va">family_</span>  <span class="op">=</span> AF_UNSPEC<span class="op">;</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
+<p>Three operation states. Members of the socket. Pre-allocated when the
+socket is created. Not allocated per-operation. 10,000 sockets means
+10,000 <code>read_op</code> instances of one known type, allocated once,
+reused for every read.</p>
+<h3 id="the-stream-can-be-type-erased">6.4 The Stream Can Be
+Type-Erased</h3>
+<p><a href="https://github.com/cppalliance/capy/blob/p4058r0/include/boost/capy/io/any_read_stream.hpp">any_read_stream</a><sup>[8]</sup>
+type-erases any <code>ReadStream</code>. The erasure is on the
+awaitable, not the stream. The <a href="https://github.com/cppalliance/capy/blob/p4058r0/include/boost/capy/io/any_read_stream.hpp">vtable</a><sup>[8]</sup>
+dispatches <code>await_ready</code>, <code>await_suspend</code>,
+<code>await_resume</code> through function pointers:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> vtable</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">void</span> <span class="op">(*</span>construct_awaitable<span class="op">)(</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>        <span class="dt">void</span><span class="op">*,</span> <span class="dt">void</span><span class="op">*,</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>        <span class="bu">std::</span>span<span class="op">&lt;</span>mutable_buffer <span class="at">const</span><span class="op">&gt;);</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    <span class="dt">bool</span> <span class="op">(*</span>await_ready<span class="op">)(</span><span class="dt">void</span><span class="op">*);</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>coroutine_handle<span class="op">&lt;&gt;</span> <span class="op">(*</span>await_suspend<span class="op">)(</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>        <span class="dt">void</span><span class="op">*,</span> <span class="bu">std::</span>coroutine_handle<span class="op">&lt;&gt;,</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>        io_env <span class="at">const</span><span class="op">*);</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    io_result<span class="op">&lt;</span><span class="bu">std::</span>size_t<span class="op">&gt;</span> <span class="op">(*</span>await_resume<span class="op">)(</span><span class="dt">void</span><span class="op">*);</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    <span class="dt">void</span> <span class="op">(*</span>destroy_awaitable<span class="op">)(</span><span class="dt">void</span><span class="op">*)</span> <span class="kw">noexcept</span><span class="op">;</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>size_t awaitable_size<span class="op">;</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>size_t awaitable_align<span class="op">;</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>    <span class="dt">void</span> <span class="op">(*</span>destroy<span class="op">)(</span><span class="dt">void</span><span class="op">*)</span> <span class="kw">noexcept</span><span class="op">;</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
+<p>The awaitable storage is pre-allocated at construction time and
+reused for every <code>read_some</code> call. <code>read_some</code>
+constructs the real awaitable into cached storage, dispatches through
+the vtable, and destroys it on resume. One allocation at construction.
+Zero per-operation.</p>
+<h3 id="the-stream-compiles-once">6.5 The Stream Compiles Once</h3>
+<p>Because <code>any_read_stream</code> has a fixed layout, a function
+accepting <code>any_read_stream&amp;</code> goes in a <code>.cpp</code>
+file:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co">// dump.hpp</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;boost/capy/task.hpp&gt;</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;boost/capy/io/any_read_stream.hpp&gt;</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>capy<span class="op">::</span>task<span class="op">&lt;&gt;</span> dump<span class="op">(</span>capy<span class="op">::</span>any_read_stream<span class="op">&amp;</span> in<span class="op">);</span></span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co">// dump.cpp</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&quot;dump.hpp&quot;</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;boost/capy/buffers.hpp&gt;</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>capy<span class="op">::</span>task<span class="op">&lt;&gt;</span> dump<span class="op">(</span>capy<span class="op">::</span>any_read_stream<span class="op">&amp;</span> in<span class="op">)</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    <span class="dt">char</span> buf<span class="op">[</span><span class="dv">1024</span><span class="op">];</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span><span class="op">(;;)</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>        <span class="kw">auto</span> <span class="op">[</span>ec<span class="op">,</span> n<span class="op">]</span> <span class="op">=</span> <span class="cf">co_await</span> in<span class="op">.</span>read_some<span class="op">(</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>            capy<span class="op">::</span>mutable_buffer<span class="op">(</span>buf<span class="op">,</span> <span class="kw">sizeof</span> buf<span class="op">));</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span><span class="op">(</span>ec<span class="op">)</span></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>            <span class="cf">break</span><span class="op">;</span></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>        <span class="bu">std::</span>cout<span class="op">.</span>write<span class="op">(</span>buf<span class="op">,</span> n<span class="op">);</span></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>The header includes only <a href="https://github.com/cppalliance/capy">Capy</a><sup>[8]</sup>. No
+platform headers. No <a href="https://github.com/cppalliance/corosio">Corosio</a><sup>[7]</sup>.
+No sockets. The <code>.cpp</code> compiles once. Consumers include the
+header and link. The stream behind <code>any_read_stream</code> could be
+a TCP socket, a TLS session, a file, or a test mock. Nothing
+recompiles.</p>
+<p>This is also the <a href="https://github.com/cppalliance/capy">Capy</a><sup>[8]</sup>/<a href="https://github.com/cppalliance/corosio">Corosio</a><sup>[7]</sup>
+split point. Capy delivers the abstract layer:
+<code>task&lt;T&gt;</code>, <code>any_read_stream</code>,
+<code>any_write_stream</code>, <code>any_stream</code>, buffer concepts,
+stream concepts, <code>when_all</code>, <code>when_any</code>, the frame
+allocator. Pure C++20. No platform dependency. Corosio delivers the
+platform layer: <code>tcp_socket</code>, <code>tls_stream</code>,
+timers, DNS, signals. Capy delivers value on its own - sans-I/O
+protocols, buffered streams, test mocks, all compile against Capy
+without Corosio. The architecture that made separate compilation
+possible is the same architecture that made the library split
+possible.</p>
+<h3 id="synchronous-and-asynchronous-in-one-abstraction">6.6 Synchronous
+and Asynchronous in One Abstraction</h3>
+<p><code>co_await</code> checks <code>await_ready()</code> first. If the
+awaitable returns <code>true</code>, no suspension happens - the
+coroutine continues synchronously. A memory buffer, a test mock, a zlib
+decompressor, a base64 decoder - they all satisfy
+<code>ReadStream</code> by returning immediately-ready awaitables. The
+same <code>dump</code> function from Section 6.5 works whether the
+stream suspends for kernel I/O or returns instantly from a buffer. The
+algorithm does not know the difference.</p>
+<p>A pipeline of <code>tcp_socket</code> -&gt; <code>tls_stream</code>
+-&gt; <code>decompression_stream</code> -&gt; HTTP parser works
+regardless of which layers suspend. The synchronous layers pay zero
+suspension cost. One abstraction. Sync and async. No
+<code>is_async</code> flag. No separate sync API.</p>
+<h3 id="the-stream-is-abi-stable">6.7 The Stream Is ABI-Stable</h3>
+<p>The vtable layout of <code>any_read_stream</code> does not change.
+Libraries compiled today work with new transports tomorrow. A
+<code>tls_stream</code> implementation compiled against OpenSSL 3.0
+satisfies <code>ReadStream</code>. A future implementation compiled
+against a post-quantum TLS library will satisfy the same concept, plug
+into the same <code>any_read_stream</code>, and work with every library
+that was compiled against the old transport. No recompilation. No
+relinking. The forty-year-old contract - <code>read_some</code> takes a
+buffer, returns <code>(error_code, size_t)</code> - is the ABI.</p>
+<h3 id="the-three-layers-emerge">6.8 The Three Layers Emerge</h3>
+<p>The user chooses the trade-off. <a href="https://github.com/cppalliance/corosio/blob/p4058r0/include/boost/corosio/io/io_stream.hpp">io_stream</a><sup>[7]</sup>,
+<a href="https://github.com/cppalliance/corosio/blob/p4058r0/include/boost/corosio/tcp_socket.hpp">tcp_socket</a><sup>[7]</sup>,
+<a href="https://github.com/cppalliance/corosio/blob/p4058r0/include/boost/corosio/native/native_tcp_socket.hpp">native_tcp_socket</a><sup>[7]</sup>:</p>
+<pre><code>io_stream                        // abstract (Layer 3)
+    |
+tcp_socket                       // concrete (Layer 2)
+    |
+native_tcp_socket&lt;Backend&gt;       // native   (Layer 1)</code></pre>
+<p><strong>Abstract</strong> (<code>io_stream</code>): virtual dispatch,
+ABI-stable, separately compiled. The compilation firewall. Business
+logic accepts <code>any_stream&amp;</code> and never sees a platform
+header. Maximum compilation speed. Maximum insulation. The cost is
+virtual dispatch per I/O operation - nanoseconds against a microsecond
+syscall.</p>
+<p><strong>Concrete</strong> (<code>tcp_socket</code>):
+protocol-specific API - bind, connect, shutdown - still virtual
+dispatch, still separately compiled. Application code lives here. The
+full socket API without platform headers in the caller’s translation
+unit.</p>
+<p><strong>Native</strong>
+(<code>native_tcp_socket&lt;Backend&gt;</code>): templated on the
+platform backend. Member function shadowing eliminates the vtable. Full
+inlining. Zero overhead. The cost is that the platform backend header is
+included and the code is in a header. Hot paths and benchmarks live
+here.</p>
+<p>The user does not choose once for the whole application. Different
+layers coexist. A library accepts <code>any_stream&amp;</code>
+(abstract). An application creates <code>tcp_socket</code> (concrete). A
+benchmark uses <code>native_tcp_socket&lt;epoll&gt;</code> (native). All
+three interoperate through the inheritance chain. The user gets the best
+of everything - compilation firewall where they want insulation, zero
+overhead where they want performance.</p>
+<h3 id="the-frame-subsidizes-everything">6.9 The Frame Subsidizes
+Everything</h3>
+<p>The coroutine frame paid for in Section 4 holds the local variables,
+the suspension point, and the result. <code>any_read_stream</code> works
+without per-operation allocation because the caller’s frame already
+exists. The frame allocation you cannot avoid subsidizes the type
+erasure you want. This is the payoff for the price.</p>
+<p>Additional properties that ride on the same frame:</p>
 <ul>
-<li>A user cannot <code>co_await</code> a custom awaitable inside an
-Asio coroutine (StackOverflow #69280674<sup>[16]</sup>, 11 upvotes,
-3,014 views): “I am struggling to find out how to implement custom
-awaitable functions.”</li>
-<li>A user describes Asio’s executor behavior in coroutines as “rather
-confusing” and “very irritating” (StackOverflow
-#78593944<sup>[17]</sup>, 990 views).</li>
-<li>A user hits compilation errors from a concrete executor type
-(StackOverflow #79115751<sup>[18]</sup>).</li>
-<li>A user cannot <code>co_await</code> across <code>io_context</code>
-boundaries (StackOverflow #73517163<sup>[19]</sup>).</li>
-<li>A user cannot create custom awaitable functions (GitHub asio
-#795<sup>[20]</sup>).</li>
+<li><p><strong>Compile-time domain gate.</strong> The two-argument
+<code>await_suspend(coroutine_handle&lt;&gt;, io_env const*)</code> is a
+deliberate trade-off. The alternative was a single-argument
+<code>await_suspend</code> that extracts the environment from the
+promise, costing one fewer parameter. The two-argument form was chosen
+because it buys compile-time enforcement: any awaitable that does not
+accept <code>io_env const*</code> is a type error inside an I/O task.
+Foreign awaitables that do not speak the I/O protocol are rejected by
+the compiler, not by a runtime mismatch. The pointer is the cost. The
+domain gate is the benefit. <a href="https://github.com/cppalliance/capy/blob/p4058r0/include/boost/capy/concept/io_awaitable.hpp">IoAwaitable</a><sup>[8]</sup>.</p></li>
+<li><p><strong>Compound result preservation.</strong>
+<code>auto [ec, n] = co_await sock.read_some(buf)</code>. Both values
+visible. No channel split. No data loss. The three-channel model routes
+results by channel. Compound results must choose a channel, losing data
+on the error path (<a href="https://wg21.link/p4053r0">P4053R0</a><sup>[2]</sup>, <a href="https://wg21.link/p4054r0">P4054R0</a><sup>[3]</sup>).</p></li>
+<li><p><strong>Symmetric transfer.</strong> <code>await_suspend</code>
+returns <code>coroutine_handle&lt;&gt;</code>. O(1) stack depth
+regardless of chain length.</p></li>
+<li><p><strong>One-parameter <code>task&lt;T&gt;</code>.</strong> <a href="https://github.com/cppalliance/capy/blob/p4058r0/include/boost/capy/task.hpp">task.hpp</a><sup>[8]</sup>:
+<code>template&lt;typename T = void&gt; struct task</code>. One
+parameter. No Environment. The promise carries the environment.</p></li>
+<li><p><strong>Structured concurrency.</strong> <a href="https://github.com/cppalliance/capy/blob/p4058r0/include/boost/capy/when_all.hpp">when_all</a><sup>[8]</sup>
+and <a href="https://github.com/cppalliance/capy/blob/p4058r0/include/boost/capy/when_any.hpp">when_any</a><sup>[8]</sup>.
+Both return <code>task&lt;&gt;</code>. Stop tokens propagate through
+<code>io_env</code>. Children complete before the parent
+resumes.</p></li>
 </ul>
-<p>Asio’s case is mild. The executor concept has a closed interface.
-<code>any_io_executor</code> provides an escape hatch at the cost of one
-virtual dispatch per operation. Users who need performance can opt into
-a concrete executor and accept the type incompatibility.</p>
-<p><a href="https://wg21.link/p3552r3">P3552R3</a><sup>[1]</sup>’s
-<code>Environment</code> has an open interface. The query set is
-unbounded by design - no fixed set of operations to erase against. The
-escape hatch that saved Asio cannot exist here. The mild case already
-exhibits the predicted symptoms. The <code>Environment</code> is
-structurally riskier.</p>
 <hr />
-<h2 id="design-intent">7. Design Intent</h2>
-<p>The C++20 coroutine mechanism separates the return type from the
-promise type by design. Nicol Bolas explained the rationale on
-StackOverflow<sup>[14]</sup>:</p>
-<blockquote>
-<p>“That a function is a coroutine is intended to be an
-<em>implementation detail</em> of the function. Nothing in a function
-declaration requires it to be a coroutine. Including the return
-type.”</p>
-</blockquote>
-<p>The separation was designed so that a library can change its
-internals from callbacks to coroutines without changing the return type.
-<code>task&lt;T, Environment&gt;</code> puts sender policy in the return
-type, violating this separation.</p>
-<p>Bolas continued<sup>[14]</sup>:</p>
-<blockquote>
-<p>“Separating the two is intended to allow existing types that support
-continuations to be re-implemented internally as coroutines.”</p>
-</blockquote>
-<p>When the Environment changes, the return type changes, and every
-caller breaks. The separation was designed to prevent exactly this.</p>
-<p>Gor Nishanov formalized the consequence in <a href="https://wg21.link/p1362r0">P1362R0</a><sup>[4]</sup> Section
-3.7:</p>
-<blockquote>
-<p>“The separation is based on the observation that coroutine types and
-awaitables could be developed independently of each other by different
-library vendors. In a product, one could use N coroutine types that
-describe how coroutine behaves and M awaitables describing how a
-particular asynchronous API should be consumed. Users can freely mix and
-match coroutines and awaitables as needed.”</p>
-</blockquote>
-<p>Nishanov quantified the cost of violating this separation in the same
-section:</p>
-<blockquote>
-<p>“[A design that] does not separate their customization points into
-separate categories and every coroutine_suspend/coroutine_resume depends
-both on the promise and the awaitable…would require providing
-implementation for N * M customization points, whereas Coroutine TS will
-get by with just N + M.”</p>
-</blockquote>
-<p>The <code>Environment</code> parameter reintroduces this coupling. K
-libraries with K different environments require K<em>(K-1)/2 pairwise
-<code>write_env</code> adaptations, each requiring foreknowledge of
-every custom query on the other side. The Environment ties the task type
-to the execution context, collapsing the promise/awaitable separation
-back into the N</em>M cost Nishanov warned against.</p>
-<p>Nishanov reinforced the principle in <a href="https://wg21.link/p0975r0">P0975R0</a><sup>[5]</sup>:</p>
-<blockquote>
-<p>“Unlike most other languages that support coroutines, C++ coroutines
-are open and not tied to any particular runtime or generator type and
-allow libraries to imbue coroutines with meaning.”</p>
-</blockquote>
-<p>And at CppCon 2017<sup>[22]</sup>:</p>
-<blockquote>
-<p>“Different category of people have different desires for their
-asynchronous runtime so coroutines are open ended, they can hook up to
-anything you want.”</p>
-</blockquote>
-<p>The coroutine mechanism was designed to prevent the problem that
-Section 5 documents. The <code>Environment</code> reintroduces it.</p>
-<hr />
-<h2 id="the-ecosystem">8. The Ecosystem</h2>
-<p>Nine coroutine libraries are surveyed below. Asio is the most widely
-deployed C++ async library; the standard proposal carries normative
-weight. The convergence argument is not about counting libraries - it is
-about independent design decisions. Seven independent teams, solving
-different problems, all arrived at one parameter. The two that added a
-second parameter both needed an escape hatch: Asio provides
-<code>any_io_executor</code>; <a href="https://wg21.link/p3552r3">P3552R3</a><sup>[1]</sup> does not.</p>
-<table style="width:100%;">
-<colgroup>
-<col style="width: 12%" />
-<col style="width: 60%" />
-<col style="width: 4%" />
-<col style="width: 22%" />
-</colgroup>
-<thead>
-<tr>
-<th>Library</th>
-<th>Declaration</th>
-<th style="text-align: center;">Params</th>
-<th>Source</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>asyncpp</td>
-<td><code>template&lt;class T&gt; class task</code></td>
-<td style="text-align: center;">1</td>
-<td><a href="https://github.com/petiaccja/asyncpp/blob/master/include/asyncpp/task.hpp">task.hpp</a></td>
-</tr>
-<tr>
-<td>Boost.Cobalt</td>
-<td><code>template&lt;class T&gt; class task</code></td>
-<td style="text-align: center;">1</td>
-<td><a href="https://github.com/boostorg/cobalt/blob/develop/include/boost/cobalt/task.hpp">task.hpp</a></td>
-</tr>
-<tr>
-<td>Capy</td>
-<td><code>template&lt;class T = void&gt; struct task</code></td>
-<td style="text-align: center;">1</td>
-<td><a href="https://github.com/cppalliance/capy/blob/develop/include/boost/capy/task.hpp">task.hpp</a></td>
-</tr>
-<tr>
-<td>cppcoro</td>
-<td><code>template&lt;typename T&gt; class task</code></td>
-<td style="text-align: center;">1</td>
-<td><a href="https://github.com/lewissbaker/cppcoro/blob/master/include/cppcoro/task.hpp">task.hpp</a></td>
-</tr>
-<tr>
-<td>aiopp</td>
-<td><code>template&lt;typename Result&gt; class Task</code></td>
-<td style="text-align: center;">1</td>
-<td><a href="https://github.com/pfirsich/aiopp/blob/main/include/aiopp/task.hpp">task.hpp</a></td>
-</tr>
-<tr>
-<td>libcoro</td>
-<td><code>template&lt;typename return_type&gt; class task</code></td>
-<td style="text-align: center;">1</td>
-<td><a href="https://github.com/jbaldwin/libcoro/blob/main/include/coro/task.hpp">task.hpp</a></td>
-</tr>
-<tr>
-<td>folly::coro</td>
-<td><code>template&lt;typename T&gt; class Task</code></td>
-<td style="text-align: center;">1</td>
-<td><a href="https://github.com/facebook/folly/blob/main/folly/experimental/coro/Task.h">Task.h</a></td>
-</tr>
-<tr>
-<td>Boost.Asio</td>
-<td><code>template&lt;class T, class Executor = any_io_executor&gt; class awaitable</code></td>
-<td style="text-align: center;"><strong>2</strong></td>
-<td><a href="https://www.boost.org/doc/libs/latest/doc/html/boost_asio/reference/awaitable.html">awaitable.hpp</a></td>
-</tr>
-<tr>
-<td>P3552R3 (std)</td>
-<td><code>template&lt;class T, class Environment&gt; class task</code></td>
-<td style="text-align: center;"><strong>2</strong></td>
-<td><a href="https://github.com/bemanproject/task/blob/main/include/beman/task/detail/task.hpp">task.hpp</a></td>
-</tr>
-</tbody>
-</table>
-<p>The interface converged. The machinery diverged:</p>
+<h2 id="what-trade-offs">7. What Trade-Offs?</h2>
+<p>Six objections to the coroutine-native model are well-known. We
+concede every one.</p>
+<ol type="1">
+<li>Every coroutine that suspends pays a heap allocation. Senders do
+not.</li>
+<li><code>coroutine_handle&lt;&gt;::resume()</code> is an optimization
+barrier. Senders give the optimizer full pipeline visibility.</li>
+<li>References captured in the coroutine frame can dangle. Sender
+operation states own copies.</li>
+<li>Coroutines do not provide compile-time work graphs, static
+completion signature checking, or heterogeneous child composition.</li>
+<li>Coroutines do not provide the composition algebra -
+<code>retry</code>, <code>when_all</code> sibling cancellation,
+<code>upon_error</code>.</li>
+<li>Two async models in the standard library are harder to teach and
+maintain than one.</li>
+</ol>
+<p>These are real costs. The question is what each model offers
+networking in return.</p>
 <table>
-<colgroup>
-<col style="width: 17%" />
-<col style="width: 82%" />
-</colgroup>
 <thead>
 <tr>
-<th>Library</th>
-<th>Invariant enforced through promise</th>
+<th>Coroutines</th>
+<th>Senders</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>folly::coro</td>
-<td>Cancellation token, fiber scheduler, async stack traces</td>
-</tr>
-<tr>
-<td>Boost.Cobalt</td>
-<td>Intrusive list cancellation, Asio executor binding</td>
-</tr>
-<tr>
-<td>Google <code>Co</code></td>
-<td>Immovable prvalue-only <code>co_await</code> - prevents dangling
-references</td>
-</tr>
-<tr>
-<td>Capy</td>
-<td><code>io_env</code> propagation: executor, stop token, frame
-allocator</td>
-</tr>
-<tr>
-<td>cppcoro</td>
-<td>Symmetric transfer, lazy start</td>
-</tr>
-<tr>
-<td>P3552R3 <code>task</code></td>
-<td><code>affine_on</code> scheduler, sender environment, stop token via
-connect</td>
+<td>Type-erased streams, separate compilation, ABI stability</td>
+<td>?</td>
 </tr>
 </tbody>
 </table>
-<p>Jonathan Müller describes Google’s approach in <a href="https://wg21.link/p3801r0">P3801R0</a><sup>[6]</sup>:</p>
-<blockquote>
-<p>“Google’s coroutine library has a pure library solution: Their
-default coroutine type <code>Co</code> is immovable and
-<code>co_await</code> takes it by-value. That way you can only
-<code>co_await</code> prvalue coroutines, which makes it impossible to
-have dangling references.”</p>
-</blockquote>
-<p>Google needed a safety property that no other library provides. One
-template parameter. The promise enforces the invariant. Callers see
-<code>Co&lt;T&gt;</code>. The one-parameter design let them build it
-without fragmenting the ecosystem.</p>
-<p>Domain-specific task types interoperate through the C++20 awaitable
-protocol. The <a href="https://github.com/klemens-morgenstern/cross_await">cross_await</a><sup>[25]</sup>
-repository (Klemens Morgenstern) contains four cross-library composition
-examples, 51-105 lines each. Sender bridges follow the same pattern (<a href="https://wg21.link/p4055r0">P4055R0</a><sup>[11]</sup>, <a href="https://wg21.link/p4056r0">P4056R0</a><sup>[12]</sup>). The
-ecosystem independently arrived at the design that avoids the problem
-documented in Section 5.</p>
+<p>The right column is empty because
+<code>connect(sender, receiver)</code> stamps the receiver type into the
+operation state. The operation state is a template. It cannot live in
+the socket. The stream cannot be type-erased without per-operation
+allocation. It cannot compile once. It is not ABI-stable. This is not an
+implementation gap. It is the design decision that gives senders their
+optimizer visibility and their zero-allocation pipelines. The same
+decision that makes senders excellent for GPU dispatch makes them
+structurally unable to produce type-erased streams.</p>
+<p>The committee has been trying to ship networking since 2005. Every
+attempt failed in part because the template-heavy design could not be
+separately compiled and was not ABI-stable. The left column solves both.
+The right column cannot.</p>
 <hr />
-<h2 id="concepts-mitigate-the-risk">9. Concepts Mitigate the Risk</h2>
-<p>The fix is a general pattern: define a concept that constrains
-awaitables, not task types. The promise remains the extension point. The
-return type stays clean.</p>
-<p><code>IoAwaitable</code> (<a href="https://wg21.link/p4003r0">P4003R0</a><sup>[2]</sup>) is one
-realization:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span> A<span class="op">&gt;</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="kw">concept</span> IoAwaitable <span class="op">=</span></span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">requires</span><span class="op">(</span>A a<span class="op">,</span> <span class="bu">std::</span>coroutine_handle<span class="op">&lt;&gt;</span> h<span class="op">,</span></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>             io_env <span class="at">const</span><span class="op">*</span> env<span class="op">)</span></span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>        a<span class="op">.</span>await_suspend<span class="op">(</span>h<span class="op">,</span> env<span class="op">);</span></span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">};</span></span></code></pre></div>
-<p>Any type satisfying the concept works. The task type remains
-<code>task&lt;T&gt;</code> - one parameter. The promise delivers the
-domain environment through <code>await_transform</code>. New domains
-create new promises, not new template parameters.</p>
-<p>The concept constrains the awaitable, not the task type. Any task
-type whose promise propagates <code>io_env</code> can
-<code>co_await</code> any <code>IoAwaitable</code> - N task types plus M
-awaitables equals N+M implementations. The N+M property holds because
-the concept does not name the task type.</p>
-<p>Bolas explained the role of
-<code>await_transform</code><sup>[15]</sup>:</p>
-<blockquote>
-<p>“To declare the existence of such a function is to declare that your
-promise <em>cannot work</em> unless it instruments the awaitable… It is
-also useful for being able to actively shut off specific awaitables, or
-to only <em>allow</em> the use of specific awaitables.”</p>
-</blockquote>
-<p>A concept with a domain-specific <code>await_suspend</code> signature
-gets compile-time rejection of foreign awaitables for free.
-<code>IoAwaitable</code> is one such concept. It is not the only one.
-The pattern generalizes to any domain.</p>
-<p><code>IoAwaitable</code> is a concept, not a type. It constrains what
-a promise can <code>co_await</code>, not what a coroutine returns. A
-promise that does not define <code>await_transform</code> for
-<code>IoAwaitable</code> gets a compile-time error - not a silent type
-mismatch. The return type stays <code>task&lt;T&gt;</code> regardless.
-This is the difference between concept-level and type-level
-fragmentation: <code>task&lt;T, Environment&gt;</code> changes the
-return type when the Environment changes, breaking every caller. A
-concept leaves the return type alone and lets the promise declare which
-domains it supports.</p>
-<hr />
-<h2 id="frequently-raised-concerns">10. Frequently Raised Concerns</h2>
-<p><strong>Q1: Nicol Bolas is not normative.</strong> Bolas is
-explaining the rationale, not writing the standard. The normative
-backing is Nishanov’s <a href="https://wg21.link/p0975r0">P0975R0</a><sup>[5]</sup> (“open and
-not tied to any particular runtime”) and <a href="https://wg21.link/p1362r0">P1362R0</a><sup>[4]</sup> (N+M
-argument), both published WG21 papers. Even setting aside design-intent
-sources, the empirical evidence in Section 8 - seven independent
-libraries converging on one-parameter designs - demonstrates that the
-ecosystem treats the principle as operative.</p>
-<p><strong>Q2: <code>IoAwaitable</code> is the author’s own
-design.</strong> <code>IoAwaitable</code> is one realization of the
-principle. The cross_await bridges (Section 8, Klemens Morgenstern,
-independent author) demonstrate the same principle without
-<code>IoAwaitable</code>. Google’s <code>Co&lt;T&gt;</code> demonstrates
-it without <code>IoAwaitable</code>. The principle is: domain-specific
-invariants belong in the promise, not in the return type.</p>
-<p><strong>Q3: The Environment parameter serves a real need.</strong>
-Section 2.1 grants this. The paper does not argue that the Environment
-is useless. It argues that the Environment creates a structural risk to
-task type diversity. The question is whether the risk is worth accepting
-for domains outside the sender model.</p>
-<p><strong>Q4: Production libraries do not interoperate anyway.</strong>
-The cross_await bridges in Section 8 refute this. Four working examples,
-51-105 lines each. The C++20 awaitable protocol is the interop surface.
-Diversity with interoperability is the design intent (Nishanov <a href="https://wg21.link/p1362r0">P1362R0</a><sup>[4]</sup>: “mix and
-match”).</p>
-<p><strong>Q5: A default Environment will fix the
-fragmentation.</strong> Section 2.1 already grants the default. Even
-with a default, the parameter exists so users provide non-default
-environments. The moment they do, fragmentation begins. Adding a default
-delays the risk; it does not prevent it. Section 5 traces the
-progression from empty environments through NVIDIA’s deployed queries -
-the default does not change the outcome.</p>
-<p><strong>Q6: These issues will be fixed in a future revision.</strong>
-Section 2.1 already separates engineering gaps (off-limits) from
-structural findings. The open query set and the absence of a general
-conversion mechanism are consequences of the design decision to make the
-Environment an open protocol. They cannot be fixed without closing the
-protocol - which would break every custom query, including NVIDIA’s
-(Section 5.3).</p>
-<p><strong>Q7: A standard task type provides a lingua franca.</strong>
-The benefit is real. The question is whether
-<code>task&lt;T, Environment&gt;</code> delivers it. Section 5 shows
-that the lingua franca holds only when everyone uses the same
-Environment. The moment two libraries use different environments, the
-lingua franca breaks - and the parameter exists precisely so that users
-provide non-default environments. K libraries with K environments
-require K<em>(K-1)/2 pairwise adaptations (Section 7) - the N</em>M cost
-Nishanov warned against. A concept is a stronger lingua franca than a
-concrete type with a second template parameter that fragments on contact
-with itself.</p>
-<hr />
-<h2 id="conclusion">11. Conclusion</h2>
-<p>The <code>Environment</code> parameter in <a href="https://wg21.link/p3552r3">P3552R3</a><sup>[1]</sup> creates a
-structural risk to the task type diversity that C++20 coroutines were
-designed to enable. The risk is documented by the specification (the
-open query set, Section 4), by the reference implementation (NVIDIA’s
-custom queries, Section 5.3), by the only production precedent (Asio,
-Section 6), and by <code>task</code>’s own author (Section 5.5).</p>
+<h2 id="conclusion">8. Conclusion</h2>
+<p>The sender model makes design choices that give the optimizer full
+pipeline visibility, enable zero-allocation composition, and provide
+type-level completion contracts. These choices are correct for GPU
+dispatch, heterogeneous execution, and compile-time work graphs - the
+domains where <code>std::execution</code> is deployed at scale.</p>
+<p>The coroutine model makes the opposite choice.
+<code>coroutine_handle&lt;&gt;</code> erases the caller. That erasure is
+the fork in the road. It forecloses pipeline optimization. It requires a
+frame allocation. But it produces a causal chain - concrete operation
+states, type-erased streams, separate compilation, ABI stability, a
+three-layer architecture - that delivers what C++ networking has been
+waiting for since 2005.</p>
+<p>Both models make the right trade-offs for their domain. The standard
+is stronger with both.</p>
 <hr />
 <h2 id="acknowledgments">Acknowledgments</h2>
-<p>The author thanks Gor Nishanov for the coroutine model’s explicit
-support for task type diversity; Peter Dimov for identifying the frame
-allocator propagation gap; Klemens Morgenstern for Boost.Cobalt and the
-<a href="https://github.com/klemens-morgenstern/cross_await">cross_await</a>
-bridges; Dietmar Kühl for <a href="https://wg21.link/p3552r3">P3552R3</a><sup>[1]</sup>, <a href="https://wg21.link/p3796r1">P3796R1</a><sup>[7]</sup>, and
-<code>beman::execution</code>; Jonathan Müller for confirming the
-symmetric transfer gap in <a href="https://wg21.link/p3801r0">P3801R0</a><sup>[6]</sup> and for
-documenting Google’s <code>Co</code> design; Aaron Jacobs for the CppNow
-2024 presentation on coroutines at scale<sup>[23]</sup>; Steve Gerbino
-for the constructed comparison and bridge implementations; and Mungo
+<p>The author thanks Chris Kohlhoff for Asio’s stream model, buffer
+sequences, and executor architecture - twenty years of production
+deployment is the foundation this work builds on; Eric Niebler, Kirk
+Shoop, Lewis Baker, and their collaborators for
+<code>std::execution</code>; Gor Nishanov for the coroutine model’s
+explicit support for task type diversity; Dietmar Kühl for
+<code>beman::execution</code> and <a href="https://wg21.link/p3552r3">P3552R3</a>; Ian Petersen for
+identifying an asymmetry in an earlier draft and for confirming the
+equivalence between sender and coroutine dispatch; Ville Voutilainen for
+broadening the compound-result problem beyond I/O and for <a href="https://wg21.link/p2464r0">P2464R0</a>; Jens Maurer for framing
+the design spectrum; Herb Sutter for identifying the need for tutorials
+and documentation; Jonathan Müller for confirming the symmetric transfer
+gap in <a href="https://wg21.link/p3801r0">P3801R0</a>; Peter Dimov for
+the refined channel mapping; Klemens Morgenstern for Boost.Cobalt and
+the cross-library bridges; Steve Gerbino for co-developing the
+constructed comparison, bridge implementations, and Corosio; and Mungo
 Gill, Mohammad Nejati, and Michael Vandeberg for feedback.</p>
 <hr />
 <h2 id="references">References</h2>
-<h3 id="wg21-papers">WG21 Papers</h3>
 <ol type="1">
-<li><a href="https://wg21.link/p3552r3">P3552R3</a> - “Add a Coroutine
-Task Type” (Dietmar Kühl, Maikel Nadolski, 2025).
-https://wg21.link/p3552r3</li>
-<li><a href="https://wg21.link/p4003r0">P4003R0</a> - “Coroutines for
-I/O” (Vinnie Falco, Steve Gerbino, Mungo Gill, 2026).
-https://wg21.link/p4003r0</li>
-<li><a href="https://wg21.link/p2300r10">P2300R10</a> - “std::execution”
-(Michał Dominiak et al., 2024). https://wg21.link/p2300r10</li>
-<li><a href="https://wg21.link/p1362r0">P1362R0</a> - “Incremental
-Approach: Coroutine TS + Core Coroutines” (Gor Nishanov, 2018).
-https://wg21.link/p1362r0</li>
-<li><a href="https://wg21.link/p0975r0">P0975R0</a> - “Impact of
-coroutines on current and upcoming library facilities” (Gor Nishanov,
-2018). https://wg21.link/p0975r0</li>
-<li><a href="https://wg21.link/p3801r0">P3801R0</a> - “Concerns about
-the design of <code>std::execution::task</code>” (Jonathan Müller,
-2025). https://wg21.link/p3801r0</li>
-<li><a href="https://wg21.link/p3796r1">P3796R1</a> - “Coroutine Task
-Issues” (Dietmar Kühl, 2025). https://wg21.link/p3796r1</li>
-<li><a href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2026/p3980r0.html">P3980R0</a>
-- “Task’s Allocator Use” (Dietmar Kühl, 2026).
-https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2026/p3980r0.html</li>
-<li><a href="https://wg21.link/p4053r0">P4053R0</a> - “Sender I/O: A
+<li><p><a href="https://wg21.link/p4050r0">P4050R0</a> - “On Task Type
+Diversity” (Vinnie Falco, 2026). https://wg21.link/p4050r0</p></li>
+<li><p><a href="https://wg21.link/p4053r0">P4053R0</a> - “Sender I/O: A
 Constructed Comparison” (Vinnie Falco, Steve Gerbino, 2026).
-https://wg21.link/p4053r0</li>
-<li><a href="https://wg21.link/p4054r0">P4054R0</a> - “Two Error Models”
-(Vinnie Falco, 2026). https://wg21.link/p4054r0</li>
-<li><a href="https://wg21.link/p4055r0">P4055R0</a> - “Consuming Senders
-from Coroutine-Native Code” (Vinnie Falco, Steve Gerbino, 2026).
-https://wg21.link/p4055r0</li>
-<li><a href="https://wg21.link/p4056r0">P4056R0</a> - “Producing Senders
-from Coroutine-Native Code” (Vinnie Falco, Steve Gerbino, 2026).
-https://wg21.link/p4056r0</li>
-<li><a href="https://wg21.link/p4058r0">P4058R0</a> - “The Cost of
-<code>std::execution</code> For Networking” (Vinnie Falco, 2026).
-https://wg21.link/p4058r0</li>
-</ol>
-<h3 id="stackoverflow-and-github">StackOverflow and GitHub</h3>
-<ol start="14" type="1">
-<li>Nicol Bolas, “Why is the promise type separated from the coroutine
-object?” StackOverflow #68167497.
-https://stackoverflow.com/questions/68167497</li>
-<li>Nicol Bolas, “Why is <code>promise_type::await_transform</code>
-greedy?” StackOverflow #76110225.
-https://stackoverflow.com/questions/76110225</li>
-<li>“co_await custom awaiter in boost asio coroutine” StackOverflow
-#69280674. https://stackoverflow.com/questions/69280674</li>
-<li>“Boost Asio: Executors in C++20 coroutines” StackOverflow #78593944.
-https://stackoverflow.com/questions/78593944</li>
-<li>“Boost asio using concrete executor type with c++20 coroutines
-causes compilation errors” StackOverflow #79115751.
-https://stackoverflow.com/questions/79115751</li>
-<li>“Can I co_await an operation executed by one io_context in a
-coroutine executed by another in Asio?” StackOverflow #73517163.
-https://stackoverflow.com/questions/73517163</li>
-<li>“How to create custom awaitable functions” GitHub asio #795.
-https://github.com/chriskohlhoff/asio/issues/795</li>
-<li>“Why can not <code>start_detached</code> an
-<code>exec::task</code>?” stdexec #1594.
-https://github.com/NVIDIA/stdexec/issues/1594</li>
-</ol>
-<h3 id="talks">Talks</h3>
-<ol start="22" type="1">
-<li>Gor Nishanov, “Naked coroutines live (with networking),” CppCon
-2017. https://www.youtube.com/watch?v=UL3TtTgt3oU</li>
-<li>Aaron Jacobs, “C++ Coroutines at Scale - Implementation Choices at
-Google,” CppNow 2024. https://www.youtube.com/watch?v=k-A12dpMYHo</li>
-</ol>
-<h3 id="other">Other</h3>
-<ol start="24" type="1">
-<li><a href="https://eel.is/c++draft/">C++ Working Draft</a> (Richard
-Smith, ed.). https://eel.is/c++draft/</li>
-<li>Klemens Morgenstern, <a href="https://github.com/klemens-morgenstern/cross_await">cross_await</a>
-- “co_await one coroutine library from another” (2026).
-https://github.com/klemens-morgenstern/cross_await</li>
-<li><a href="https://github.com/lewissbaker/cppcoro">cppcoro</a> - C++
-coroutine library (Lewis Baker).
-https://github.com/lewissbaker/cppcoro</li>
-<li><a href="https://github.com/jbaldwin/libcoro">libcoro</a> - C++20
-coroutine library (Josh Baldwin).
-https://github.com/jbaldwin/libcoro</li>
-<li><a href="https://github.com/petiaccja/asyncpp">asyncpp</a> - Async
-coroutine library (Péter Kardos).
-https://github.com/petiaccja/asyncpp</li>
-<li><a href="https://github.com/pfirsich/aiopp">aiopp</a> - Async I/O
-library (Joel Schumacher). https://github.com/pfirsich/aiopp</li>
-<li><a href="https://github.com/bemanproject/task">bemanproject/task</a>
-- P3552R3 reference implementation.
-https://github.com/bemanproject/task</li>
-<li><a href="https://github.com/facebook/folly/blob/main/folly/experimental/coro/Task.h">folly::coro</a>
-- Facebook coroutine task type.
-https://github.com/facebook/folly/blob/main/folly/experimental/coro/Task.h</li>
-<li><a href="https://github.com/boostorg/cobalt/blob/develop/include/boost/cobalt/task.hpp">Boost.Cobalt</a>
-- Boost coroutine task type (Klemens Morgenstern).
-https://github.com/boostorg/cobalt/blob/develop/include/boost/cobalt/task.hpp</li>
-<li><a href="https://github.com/cppalliance/capy">Capy</a> - Coroutine
-primitives library (Vinnie Falco).
-https://github.com/cppalliance/capy</li>
-<li><a href="https://github.com/cppalliance/corosio">Corosio</a> -
+https://wg21.link/p4053r0</p></li>
+<li><p><a href="https://wg21.link/p4054r0">P4054R0</a> - “Two Error
+Models” (Vinnie Falco, 2026). https://wg21.link/p4054r0</p></li>
+<li><p><a href="https://wg21.link/p4055r0">P4055R0</a> - “Consuming
+Senders from Coroutine-Native Code” (Vinnie Falco, Steve Gerbino, 2026).
+https://wg21.link/p4055r0</p></li>
+<li><p><a href="https://wg21.link/p4056r0">P4056R0</a> - “Producing
+Senders from Coroutine-Native Code” (Vinnie Falco, Steve Gerbino, 2026).
+https://wg21.link/p4056r0</p></li>
+<li><p><a href="https://wg21.link/p4062r0">P4062R0</a> - “Coroutine
+Executors and P2464R0” (Vinnie Falco, 2026).
+https://wg21.link/p4062r0</p></li>
+<li><p><a href="https://github.com/cppalliance/corosio">cppalliance/corosio</a> -
 Coroutine-native networking library.
-https://github.com/cppalliance/corosio</li>
-<li><a href="https://wg21.link/p1056r1">P1056R1</a> - “Add lazy
-coroutine (coroutine task) type” (Lewis Baker, Gor Nishanov, 2019).
-https://wg21.link/p1056r1</li>
-<li>NVIDIA, <a href="https://github.com/NVIDIA/stdexec/blob/main/include/nvexec/stream/common.cuh">nvexec/stream/common.cuh</a>
-- GPU stream environment queries.
-https://github.com/NVIDIA/stdexec/blob/main/include/nvexec/stream/common.cuh</li>
+https://github.com/cppalliance/corosio</p></li>
+<li><p><a href="https://github.com/cppalliance/capy">cppalliance/capy</a> -
+Coroutine I/O primitives library.
+https://github.com/cppalliance/capy</p></li>
+<li><p><a href="https://wg21.link/p3552r3">P3552R3</a> - “Add a
+Coroutine Task Type” (Dietmar Kühl, Maikel Nadolski, 2025).
+https://wg21.link/p3552r3</p></li>
+<li><p><a href="https://wg21.link/p2453r0">P2453R0</a> - “2021 October
+Library Evolution Poll Outcomes” (Bryce Adelstein Lelbach, Fabio
+Fracassi, Ben Craig, 2022). https://wg21.link/p2453r0</p></li>
+<li><p>Eric Niebler, “Structured Concurrency,” 2020.
+https://ericniebler.com/2020/11/08/structured-concurrency/</p></li>
+<li><p>Eric Niebler, “What are Senders Good For, Anyway?” 2024.
+https://ericniebler.com/2024/02/04/what-are-senders-good-for-anyway/</p></li>
+<li><p><a href="https://wg21.link/p2470r0">P2470R0</a> - “Slides for
+presentation of P2300R2” (Eric Niebler, 2021).
+https://wg21.link/p2470r0</p></li>
+<li><p><a href="https://wg21.link/p0981r0">P0981R0</a> - “Halo:
+coroutine Heap Allocation eLision Optimization” (Gor Nishanov, 2018).
+https://wg21.link/p0981r0</p></li>
+<li><p><a href="https://wg21.link/p3801r0">P3801R0</a> - “Concerns about
+the design of <code>std::execution::task</code>” (Jonathan Müller,
+2025). https://wg21.link/p3801r0</p></li>
+<li><p><a href="https://wg21.link/n1925">N1925</a> - “A Proposal to Add
+Networking Utilities to the C++ Standard Library” (Chris Kohlhoff,
+2005). https://wg21.link/n1925</p></li>
+<li><p>Boost.Asio AsyncReadStream requirements.
+https://www.boost.org/doc/libs/1_87_0/doc/html/boost_asio/reference/AsyncReadStream.html</p></li>
 </ol>
 
 </body>
