@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>D4055R0: Consuming Senders from Coroutine-Native Code</title>
+  <title>P4055R0: Consuming Senders from Coroutine-Native Code</title>
   <style type="text/css">
 
 @font-face {
@@ -846,7 +846,7 @@ outline: none;
 
 <!-- Document Metadata -->
 <div class="document-info">
-  <p><strong>Document Number:</strong> D4055R0</p>
+  <p><strong>Document Number:</strong> P4055R0</p>
   <p><strong>Date:</strong> 2026-03-13</p>
   <p><strong>Audience:</strong> LEWG</p>
   <p><strong>Reply-to:</strong> Vinnie Falco <a href="mailto:vinnie.falco@gmail.com" class="email">vinnie.falco@gmail.com</a><br><strong></strong> Steve
@@ -909,6 +909,18 @@ networking in C++. The bridge depends on <a href="https://github.com/cppalliance
 (coroutine primitives, no sockets, no platform I/O) and
 <code>beman::execution</code><sup>[5]</sup>. The authors provide
 information, ask nothing, and serve at the pleasure of the chair.</p>
+<p>The authors regard <code>std::execution</code> as an important
+contribution to C++ and support its standardization for the domains it
+serves well - GPU dispatch, heterogeneous execution, and compile-time
+work-graph composition among them. Nothing in this paper or its
+companions argues for removing, delaying, or diminishing
+<code>std::execution</code>. The authors’ position is narrower: that
+networking and stream I/O present a compound-result structure that the
+three-channel model was not designed to carry, and that this domain is
+better served by a coroutine-native facility that can coexist with
+senders and interoperate where the domains meet. Two models, each
+correct for its domain, is a stronger standard than one model asked to
+serve both.</p>
 <hr />
 <h2 id="the-bridge">2. The Bridge</h2>
 <div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>capy<span class="op">::</span>task<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> compute<span class="op">(</span><span class="kw">auto</span> sched<span class="op">)</span></span>

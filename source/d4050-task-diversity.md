@@ -1,6 +1,6 @@
 ---
 title: "On Task Type Diversity"
-document: D4050R0
+document: P4050R0
 date: 2026-03-11
 reply-to:
   - "Vinnie Falco <vinnie.falco@gmail.com>"
@@ -26,6 +26,8 @@ This paper is one of a suite of five. The companion papers are [D4053R0](https:/
 ## 1. Disclosure
 
 The authors developed and maintain [Corosio](https://github.com/cppalliance/corosio)<sup>[3]</sup> and [Capy](https://github.com/cppalliance/capy)<sup>[4]</sup> and believe coroutine-native I/O is the correct foundation for networking in C++. The frame allocator gap (Section 3) was identified by Peter Dimov. The cross-library bridges (Section 5) were authored by Klemens Morgenstern. Neither is a co-author. The authors provide information, ask nothing, and serve at the pleasure of the chair.
+
+The authors regard `std::execution` as an important contribution to C++ and support its standardization for the domains it serves well - GPU dispatch, heterogeneous execution, and compile-time work-graph composition among them. Nothing in this paper or its companions argues for removing, delaying, or diminishing `std::execution`. The authors' position is narrower: that networking and stream I/O present a compound-result structure that the three-channel model was not designed to carry, and that this domain is better served by a coroutine-native facility that can coexist with senders and interoperate where the domains meet. Two models, each correct for its domain, is a stronger standard than one model asked to serve both.
 
 ---
 

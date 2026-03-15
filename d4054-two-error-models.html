@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>D4054R0: Two Error Models</title>
+  <title>P4054R0: Two Error Models</title>
   <style type="text/css">
 
 @font-face {
@@ -846,7 +846,7 @@ outline: none;
 
 <!-- Document Metadata -->
 <div class="document-info">
-  <p><strong>Document Number:</strong> D4054R0</p>
+  <p><strong>Document Number:</strong> P4054R0</p>
   <p><strong>Date:</strong> 2026-03-12</p>
   <p><strong>Audience:</strong> LEWG</p>
   <p><strong>Reply-to:</strong> Vinnie Falco <a href="mailto:vinnie.falco@gmail.com" class="email">vinnie.falco@gmail.com</a></p>
@@ -893,12 +893,12 @@ outline: none;
   <ul>
   <li><a href="#accept-the-information-loss" id="toc-accept-the-information-loss">6.1 Accept the Information
   Loss</a></li>
-  <li><a href="#route-everything-through-set_value" id="toc-route-everything-through-set_value">6.2 Route Everything
-  Through <code>set_value</code></a></li>
+  <li><a href="#just-use-set_value" id="toc-just-use-set_value">6.2
+  “Just Use <code>set_value</code>”</a></li>
   <li><a href="#classify-errors-into-channels" id="toc-classify-errors-into-channels">6.3 Classify Errors Into
   Channels</a></li>
-  <li><a href="#decompose-with-let_value" id="toc-decompose-with-let_value">6.4 Decompose with
-  <code>let_value</code></a></li>
+  <li><a href="#just-decompose-it" id="toc-just-decompose-it">6.4 “Just
+  Decompose It”</a></li>
   <li><a href="#the-observable-tradeoffs" id="toc-the-observable-tradeoffs">6.5 The Observable
   Tradeoffs</a></li>
   </ul></li>
@@ -940,6 +940,18 @@ and <a href="https://github.com/cppalliance/capy">Capy</a><sup>[4]</sup>
 and believe coroutine-native I/O is the correct foundation for
 networking in C++. The authors provide information, ask nothing, and
 serve at the pleasure of the chair.</p>
+<p>The authors regard <code>std::execution</code> as an important
+contribution to C++ and support its standardization for the domains it
+serves well - GPU dispatch, heterogeneous execution, and compile-time
+work-graph composition among them. Nothing in this paper or its
+companions argues for removing, delaying, or diminishing
+<code>std::execution</code>. The authors’ position is narrower: that
+networking and stream I/O present a compound-result structure that the
+three-channel model was not designed to carry, and that this domain is
+better served by a coroutine-native facility that can coexist with
+senders and interoperate where the domains meet. Two models, each
+correct for its domain, is a stronger standard than one model asked to
+serve both.</p>
 <hr />
 <h2 id="the-partition">2. The Partition</h2>
 <h3 id="infrastructure-operations">2.1 Infrastructure Operations</h3>
@@ -1242,7 +1254,7 @@ call site. The I/O result was a pair. The model split it.</p>
 <code>set_value(expected&lt;size_t, error_code&gt;)</code>. The error
 code is inside the <code>expected</code>, invisible to
 <code>when_all</code>, <code>upon_error</code>, and <code>retry</code>.
-This is Approach A1 (<a href="https://wg21.link/d4053r0">D4053R0</a><sup>[5]</sup> Section 5)
+This is “just use <code>set_value</code>” (<a href="https://wg21.link/d4053r0">D4053R0</a><sup>[5]</sup> Section 5)
 with the pair wrapped in <code>std::expected</code> instead of delivered
 as two arguments. The channel-based composition algebra is bypassed.
 <code>let_error</code> is the same pattern in reverse: catch the error,
@@ -1256,7 +1268,7 @@ everything through <code>set_value</code>.</p>
 <span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>                  <span class="cf">return</span> just_error<span class="op">(</span>ec<span class="op">);</span></span>
 <span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>              <span class="cf">return</span> just<span class="op">(</span>n<span class="op">);</span></span>
 <span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>          <span class="op">});</span></span></code></pre></div>
-<p>This is Approach C in <a href="https://wg21.link/d4053r0">D4053R0</a><sup>[5]</sup> Section 8.
+<p>This is “just decompose it” (<a href="https://wg21.link/d4053r0">D4053R0</a><sup>[5]</sup> Section 8).
 The handler sees both values. Classification happens with full
 application context. Downstream, <code>upon_error</code> is reachable,
 <code>when_all</code> cancels siblings, <code>retry</code> fires.</p>
@@ -1340,8 +1352,9 @@ the set_error channel taking just one argument is somewhat limiting.” He
 did not resolve it, noting that “when substantial work is done and
 partial successes become reasonable, it is likely that intermediate
 results are to be produced and algorithms of a different shape are used
-anyway.” P2762R2 chose <code>set_error</code> routing (Approach B in <a href="https://wg21.link/d4053r0">D4053R0</a><sup>[5]</sup>) for its
-examples.</p>
+anyway.” P2762R2 chose <code>set_error</code> routing (“just use
+<code>set_error</code>” in <a href="https://wg21.link/d4053r0">D4053R0</a><sup>[5]</sup> Section 7)
+for its examples.</p>
 <p>Kirk Shoop identified the same heuristic difficulty in <a href="https://wg21.link/p2471r1">P2471R1</a><sup>[10]</sup> (“NetTS,
 ASIO and Sender Library Design Comparison,” 2021), observing that
 completion tokens translating to senders “must use a heuristic to
@@ -1374,8 +1387,7 @@ contradicts POSIX <code>write()</code>, Asio’s twenty-year
 <code>(error_code, size_t)</code> convention, and network programming
 practice across every language that preserves compound results. Partial
 writes are normal.</p>
-<h3 id="route-everything-through-set_value">6.2 Route Everything Through
-<code>set_value</code></h3>
+<h3 id="just-use-set_value">6.2 “Just Use <code>set_value</code>”</h3>
 <p>Call <code>set_value(error_code, bytes)</code> for all outcomes. The
 pair stays intact. But <code>set_error</code> and
 <code>set_stopped</code> now serve no purpose for I/O senders.
@@ -1393,12 +1405,11 @@ at the I/O layer - before the application, the only code with enough
 context to classify correctly, has seen the result.
 <code>ECONNRESET</code> is fatal in one protocol and expected in
 another. No context-free classification can get this right.</p>
-<h3 id="decompose-with-let_value">6.4 Decompose with
-<code>let_value</code></h3>
+<h3 id="just-decompose-it">6.4 “Just Decompose It”</h3>
 <p>The strongest sender-native response. Route everything through
 <code>set_value(error_code, bytes)</code>, pipe into
 <code>let_value</code>, inspect both values, re-route the error code to
-<code>set_error</code> (Section 5, Approach C in <a href="https://wg21.link/d4053r0">D4053R0</a><sup>[5]</sup> Section 8).
+<code>set_error</code> (Section 5, “just decompose it” in <a href="https://wg21.link/d4053r0">D4053R0</a><sup>[5]</sup> Section 8).
 The classification moves to application code with full protocol
 context.</p>
 <p>But <code>set_error</code> takes a single argument. The byte count is
@@ -1409,17 +1420,18 @@ information loss did not.</p>
 <p>Each position trades something the compound-result model
 preserves:</p>
 <ul>
-<li><strong>(a)</strong> trades I/O data for channel simplicity</li>
-<li><strong>(b)</strong> trades channel relevance for data
-preservation</li>
-<li><strong>(c)</strong> trades fixed channel semantics for a
-domain-specific classification</li>
-<li><strong>(d)</strong> trades error-path data for deferred,
-context-aware decomposition</li>
+<li><strong>Accept the loss</strong> (6.1) trades I/O data for channel
+simplicity</li>
+<li><strong>“Just use <code>set_value</code>”</strong> (6.2) trades
+channel relevance for data preservation</li>
+<li><strong>Classify errors</strong> (6.3) trades fixed channel
+semantics for a domain-specific classification</li>
+<li><strong>“Just decompose it”</strong> (6.4) trades error-path data
+for deferred, context-aware decomposition</li>
 </ul>
 <p>The author is not aware of a fifth position and welcomes
 counterexamples (see <a href="https://wg21.link/d4053r0">D4053R0</a><sup>[5]</sup> Section
-11).</p>
+12).</p>
 <hr />
 <h2 id="domain-boundary">7. Domain Boundary</h2>
 <p>The finding is not that the three-channel model is wrong. It is that

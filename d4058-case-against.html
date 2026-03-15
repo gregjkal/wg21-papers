@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>D4058R0: The Case Against std::execution For Networking</title>
+  <title>P4058R0: The Case Against std::execution For Networking</title>
   <style type="text/css">
 
 @font-face {
@@ -846,7 +846,7 @@ outline: none;
 
 <!-- Document Metadata -->
 <div class="document-info">
-  <p><strong>Document Number:</strong> D4058R0</p>
+  <p><strong>Document Number:</strong> P4058R0</p>
   <p><strong>Date:</strong> 2026-03-13</p>
   <p><strong>Audience:</strong> LEWG, SG1</p>
   <p><strong>Reply-to:</strong> Vinnie Falco <a href="mailto:vinnie.falco@gmail.com" class="email">vinnie.falco@gmail.com</a></p>
@@ -902,6 +902,18 @@ and <a href="https://github.com/cppalliance/capy">Capy</a><sup>[2]</sup>
 and believe coroutine-native I/O is the correct foundation for
 networking in C++. We provide evidence, we state our case, and we defer
 respectfully to the committee.</p>
+<p>The authors regard <code>std::execution</code> as an important
+contribution to C++ and support its standardization for the domains it
+serves well - GPU dispatch, heterogeneous execution, and compile-time
+work-graph composition among them. Nothing in this paper or its
+companions argues for removing, delaying, or diminishing
+<code>std::execution</code>. The authors’ position is narrower: that
+networking and stream I/O present a compound-result structure that the
+three-channel model was not designed to carry, and that this domain is
+better served by a coroutine-native facility that can coexist with
+senders and interoperate where the domains meet. Two models, each
+correct for its domain, is a stronger standard than one model asked to
+serve both.</p>
 <hr />
 <h2 id="opening-statement">Opening Statement</h2>
 <p>We present five exhibits. Taken individually, each documents a
@@ -991,35 +1003,41 @@ against a coroutine-native echo server. The echo server is deliberately
 minimal. The compound-result problem is per-operation - adding protocol
 complexity adds more call sites with the same trade-off, not a different
 one.</p>
-<p>Approach A1 routes both values through <code>set_value</code>. Both
-values visible. No exceptions. But <code>set_error</code> serves no
-purpose - <code>when_all</code> does not cancel siblings on I/O failure,
+<p>“Just use <code>set_value</code>” (<a href="https://wg21.link/d4053r0">D4053R0</a><sup>[10]</sup> Section 5)
+routes both values through <code>set_value</code>. Both values visible.
+No exceptions. But <code>set_error</code> serves no purpose -
+<code>when_all</code> does not cancel siblings on I/O failure,
 <code>upon_error</code> is unreachable, <code>retry</code> does not
 fire. The three-channel model reduces to one channel.</p>
-<p>Approach A2 routes the error code through <code>set_error</code> and
-captures the byte count in shared state. All three channels in use. But
-the byte count bypasses the channels - <code>retry</code> fires on
+<p>“Just split the result” (<a href="https://wg21.link/d4053r0">D4053R0</a><sup>[10]</sup> Section 6)
+routes the error code through <code>set_error</code> and captures the
+byte count in shared state. All three channels in use. But the byte
+count bypasses the channels - <code>retry</code> fires on
 <code>set_error</code> but the byte count reflects the previous stage,
 not the failed one. Shared mutable state across continuation boundaries
 reintroduces the hazard the sender model was designed to eliminate.</p>
-<p>Approach B routes errors through <code>set_error</code>.
-Channel-based composition works. But every <code>ECONNRESET</code>
-requires <code>make_exception_ptr</code> plus
-<code>rethrow_exception</code>. The byte count is destroyed. 500 of
-1,000 bytes written before a connection reset - gone.</p>
-<p>Approach C decomposes with <code>let_value</code>. The handler sees
-both values. Classification happens with full application context. But
+<p>“Just use <code>set_error</code>” (<a href="https://wg21.link/d4053r0">D4053R0</a><sup>[10]</sup> Section 7)
+routes errors through <code>set_error</code>. Channel-based composition
+works. But every <code>ECONNRESET</code> requires
+<code>make_exception_ptr</code> plus <code>rethrow_exception</code>. The
+byte count is destroyed. 500 of 1,000 bytes written before a connection
+reset - gone.</p>
+<p>“Just decompose it” (<a href="https://wg21.link/d4053r0">D4053R0</a><sup>[10]</sup> Section 8)
+decomposes with <code>let_value</code>. The handler sees both values.
+Classification happens with full application context. But
 <code>set_error</code> takes a single argument. The byte count is
 destroyed when the error code crosses into the error channel. The
 decomposition point moved from the I/O layer to the application. The
 information loss did not.</p>
 <p>No construction achieves both full data preservation and
 channel-based composition without shared state or exceptions. The
-invitation in <a href="https://wg21.link/d4053r0">D4053R0</a><sup>[10]</sup> Section 11
+invitation in <a href="https://wg21.link/d4053r0">D4053R0</a><sup>[10]</sup> Section 13
 stands: construct a sender-based echo server that preserves compound I/O
-results, retains channel-based composition, and avoids exception
-round-trips, using C++26 facilities. We will incorporate any such
-construction and re-evaluate every finding.</p>
+results, retains channel-based composition without altering the
+completion signatures expected by generic sender algorithms from those
+algorithms’ specified behavior, avoids exception round-trips, and uses
+only the algorithms and sender adapters specified in <a href="https://wg21.link/p2300r10">P2300R10</a><sup>[3]</sup>, <a href="https://wg21.link/p3552r3">P3552R3</a><sup>[4]</sup>, and <a href="https://wg21.link/p3149r9">P3149R9</a><sup>[24]</sup>. We will
+incorporate any such construction and re-evaluate every finding.</p>
 <p><strong>Four approaches. Four trade-offs. The coroutine-native
 approach pays none of them.</strong></p>
 <hr />
@@ -1329,6 +1347,10 @@ https://github.com/NVIDIA/stdexec</p></li>
 <li><p><a href="https://wg21.link/p3570r2">P3570R2</a> - “Optional
 variants in sender/receiver” (Fabio Fracassi, 2025).
 https://wg21.link/p3570r2</p></li>
+<li><p><a href="https://wg21.link/p3149r9">P3149R9</a> -
+“<code>async_scope</code> - Creating scopes for non-sequential
+concurrency” (Ian Petersen, Jessica Wong, Kirk Shoop, et al., 2025).
+https://wg21.link/p3149r9</p></li>
 </ol>
 
 </body>
