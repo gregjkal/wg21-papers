@@ -1,7 +1,7 @@
 ---
 title: "Sender I/O: A Constructed Comparison"
 document: P4053R0
-date: 2026-03-13
+date: 2026-03-15
 reply-to:
   - "Vinnie Falco <vinnie.falco@gmail.com>"
   - "Steve Gerbino <steve@gerbino.co>"
@@ -10,9 +10,9 @@ audience: LEWG
 
 ## Abstract
 
-Four sender-based TCP echo servers are constructed from [P2300R10](https://wg21.link/p2300r10)<sup>[1]</sup> and [P3552R3](https://wg21.link/p3552r3)<sup>[2]</sup> and compared against a coroutine-native echo server. No construction achieves both full data preservation and channel-based composition without shared state or exceptions. The three-channel model is correct for infrastructure operations with binary outcomes. The finding is about domain, not defect.
+The sender composition algebra - `when_all` cancellation, `upon_error`, `retry` - does not apply to compound I/O results without losing data, requiring shared state, or converting routine errors to exceptions. Four sender-based TCP echo servers are constructed from [P2300R10](https://wg21.link/p2300r10)<sup>[1]</sup> and [P3552R3](https://wg21.link/p3552r3)<sup>[2]</sup> and compared against a coroutine-native echo server. One construction - "just use `set_value`" - preserves all data by bypassing the composition algebra entirely, producing code nearly identical to the coroutine version. Both paradigms are equivalent when compound results stay on the value channel. The composition algebra is the sender model's value proposition over coroutines. If it does not apply to compound I/O results, the two models are equivalent for this domain. The finding is about domain, not defect.
 
-This paper is one of a suite of five that examines the relationship between compound I/O results and the sender three-channel model. The companion papers are [D4050R0](https://wg21.link/d4050r0)<sup>[15]</sup>, "On Task Type Diversity"; [D4054R0](https://wg21.link/d4054r0)<sup>[7]</sup>, "Two Error Models"; [D4055R0](https://wg21.link/d4055r0)<sup>[13]</sup>, "Consuming Senders from Coroutine-Native Code"; and [D4056R0](https://wg21.link/d4056r0)<sup>[14]</sup>, "Producing Senders from Coroutine-Native Code."
+This paper is one of a suite of six that examines the relationship between compound I/O results and the sender three-channel model. The companion papers are [P4050R0](https://wg21.link/p4050r0)<sup>[15]</sup>, "On Task Type Diversity"; [P4054R0](https://wg21.link/p4054r0)<sup>[7]</sup>, "Two Error Models"; [P4055R0](https://wg21.link/p4055r0)<sup>[13]</sup>, "Consuming Senders from Coroutine-Native Code"; [P4056R0](https://wg21.link/p4056r0)<sup>[14]</sup>, "Producing Senders from Coroutine-Native Code"; and [P4058R0](https://wg21.link/p4058r0)<sup>[17]</sup>, "The Case Against `std::execution` For Networking."
 
 ---
 
@@ -21,6 +21,7 @@ This paper is one of a suite of five that examines the relationship between comp
 ### R0: March 2026 (post-Croydon mailing)
 
 - Initial version.
+- Revised prior to publication to eliminate a double standard identified by Ian Petersen: an earlier draft measured coroutines by their natural idiom (value-based error handling) but measured senders against channel-based composition the coroutine baseline does not use. Reframed "just use `set_value`" as the sender equivalent of the coroutine idiom. Added Section 5.1, Q11, Q12. Reframed the invitation. Incorporated reflector discussion with direct quotations from Petersen and Voutilainen.
 
 ---
 
@@ -135,19 +136,35 @@ auto do_session(auto& sock, auto& buf)
 }
 ```
 
-Nearly identical to Corosio. Both values visible. No exceptions. No sender composition.
+Nearly identical to Corosio. Both values visible. No exceptions.
 
-### What "Just Use `set_value`" Loses
+This is the sender instantiation of the industry advice documented in [P4054R0](https://wg21.link/p4054r0)<sup>[7]</sup>: use the value channel whenever the result is not 100% failure. POSIX, Asio, Go, and Rust all follow this convention. The coroutine-native echo server (Section 2) does the same thing - it returns `(error_code, size_t)` through the value channel and inspects both with `if (ec)`.
 
-The I/O sender never calls `set_error`. The composition algebra is bypassed:
+### What the Composition Algebra Does Not See
+
+The I/O sender never calls `set_error`. The composition algebra is not engaged:
 
 - **`when_all`** does not cancel siblings on I/O failure - the failure arrived through `set_value`.
-- **`upon_error`** is unreachable.
-- **`retry`** does not fire.
+- **`upon_error`** is unreachable for I/O errors.
+- **`retry`** does not fire on I/O errors.
 
-An HTTP/2 multiplexer issuing concurrent reads via `when_all` expects sibling cancellation on stream failure. Under "just use `set_value`," the failure arrives through `set_value` and `when_all` continues reading on dead streams.
+The coroutine-native echo server also does not use these facilities. It has no `upon_error`, no `retry`, no `when_all` cancellation on I/O failure. It uses `if (ec)`. The two approaches are equivalent.
 
-The model reduces to one channel. `set_error` serves no purpose for I/O senders under "just use `set_value`." If this is the correct approach, then the composition algebra that justifies the sender model's complexity over coroutines does not apply to the I/O domain.
+### 5.1 The Equal-Footing Observation
+
+Ian Petersen observed this symmetry on the LEWG reflector (March 14, 2026)<sup>[20]</sup>:
+
+> "Applying that decades-old industry advice to the sender sublanguage is easy: call `set_value` with an error code and your partially-successful value. If we're going to compare and contrast coroutines with senders, we should compare and contrast them on equal footing. Your coroutine examples don't use the coroutine error channel, but your assertions about the deficiencies of senders insist that sender code must use the sender error channel."
+
+The observation is correct. An earlier draft of this paper held the two paradigms to different standards - measuring coroutines by their natural idiom (value-based error handling) while measuring senders against channel-based composition that the coroutine baseline does not use. The authors are grateful to Petersen for identifying this.
+
+"Just use `set_value`" works. It preserves both values, avoids exceptions, and produces code nearly identical to the coroutine version. On equal footing, the two paradigms are equivalent for compound I/O results.
+
+That equivalence raises a deeper question. The sender model provides facilities the coroutine model does not: `when_all` sibling cancellation, `upon_error` handlers, `retry` policies, compile-time work graphs. These are the sender model's value proposition - the reason to accept its additional complexity over coroutines. If "just use `set_value`" is the correct approach for I/O, those facilities are unused for I/O errors. The composition algebra - the part that makes senders more than coroutines - does not apply to compound I/O results.
+
+The sender model under "just use `set_value`" does provide compile-time work graphs and lazy evaluation that the coroutine model does not. These are genuine additions. The question is not whether senders offer more facilities in general - they do. The question is whether the facilities most relevant to error handling - the composition algebra - apply to compound I/O results. Compile-time work graphs do not route errors. Lazy evaluation does not inspect byte counts. The composition algebra does, and it is the facility that does not apply.
+
+Sections 6 through 8 explore what happens when the composition algebra is applied to compound I/O results. Each construction attempts to use the error channel. Each pays a cost.
 
 ---
 
@@ -189,7 +206,7 @@ auto do_session(auto& sock, auto& buf)
 
 All three channels in use. `upon_error` reachable. `when_all` cancels siblings. `retry` fires.
 
-### What "Just Split the Result" Loses
+### The Cost
 
 The byte count bypasses the channels:
 
@@ -224,7 +241,7 @@ auto do_session(auto& sock, auto& buf)
 }
 ```
 
-### What "Just Use `set_error`" Loses
+### The Cost
 
 - **Byte count.** 500 of 1,000 bytes written before `ECONNRESET` - gone.
 - **Non-throwing path.** Every `ECONNRESET` requires `make_exception_ptr` + `rethrow_exception`.
@@ -263,7 +280,7 @@ async_read(sock, net::buffer(buf))
 
 The handler sees both values. Downstream, `upon_error` is reachable, `when_all` cancels siblings, `retry` fires.
 
-### What "Just Decompose It" Loses
+### The Cost
 
 `just_error(ec)` carries only the error code. `set_error` takes a single argument ([P2300R10](https://wg21.link/p2300r10)<sup>[1]</sup> \[exec.recv.concepts\]).
 
@@ -277,25 +294,28 @@ The handler sees both values. Downstream, `upon_error` is reachable, `when_all` 
 
 ## 9. The Trade-Off
 
-Each sender approach pays a cost the coroutine-native approach does not.
+"Just use `set_value`" and the coroutine-native approach are equivalent - both use the value channel, both preserve data, neither engages the composition algebra for I/O errors. The remaining three constructions attempt to use the composition algebra. Each pays a cost.
 
-| Property                        | "Just use `set_value`" | "Just split the result" | "Just use `set_error`" | "Just decompose it"  | Corosio              |
-| ------------------------------- | ---------------------- | ----------------------- | ---------------------- | -------------------- | -------------------- |
-| **Data preservation**           |                        |                         |                        |                      |                      |
-| Partial write preserved         | Yes                    | Yes                     | No                     | No (on error path)   | Yes                  |
-| Byte count in completion sig    | Yes                    | No (side state)         | No (discarded)         | No (on error path)   | Yes (return value)   |
-| Retry sees byte count           | No                     | No                      | No                     | No                   | Yes                  |
-| **Composition**                 |                        |                         |                        |                      |                      |
-| `when_all` cancels on I/O error | No                     | Yes                     | Yes                    | Yes                  | Yes (value-based)    |
-| Error handler reachable         | No (`upon_error`)      | Yes (`upon_error`)      | Yes (`upon_error`)     | Yes (`upon_error`)   | Yes (`if (ec)`)      |
-| Retry on I/O error              | No (`retry`)           | Yes (`retry`)           | Yes (`retry`)          | Yes (`retry`)        | Yes (`retry_after`)  |
-| Channels used for I/O           | 1 of 3                 | 3 of 3                  | 3 of 3                 | 3 of 3               | Values (no channels) |
-| Compile-time work graph         | Yes (lazy)             | Yes (lazy)              | Yes (lazy)             | Yes (lazy)           | No                   |
-| **Ergonomics**                  |                        |                         |                        |                      |                      |
-| Error code at call site         | Yes                    | Yes                     | No (in `catch`)        | Yes (in handler)     | Yes                  |
-| Byte count at call site         | Yes                    | Yes                     | No (discarded)         | Yes (in handler)     | Yes                  |
-| Exception on `ECONNRESET`       | No                     | No                      | Yes                    | No                   | No                   |
-| Shared mutable state required   | No                     | Yes                     | No                     | No                   | No                   |
+| Property                            | "Just use `set_value`" | "Just split the result" | "Just use `set_error`" | "Just decompose it"  | Corosio              |
+| ----------------------------------- | ---------------------- | ----------------------- | ---------------------- | -------------------- | -------------------- |
+| **Data preservation**               |                        |                         |                        |                      |                      |
+| Partial write preserved             | Yes                    | Yes                     | No                     | No (on error path)   | Yes                  |
+| Byte count in completion sig        | Yes                    | No (side state)         | No (discarded)         | No (on error path)   | Yes (return value)   |
+| Retry sees byte count               | No                     | No                      | No                     | No                   | Yes                  |
+| **Composition algebra**             |                        |                         |                        |                      |                      |
+| Uses composition algebra for I/O    | No                     | Yes                     | Yes                    | Yes                  | No                   |
+| `when_all` cancels on I/O error     | No                     | Yes                     | Yes                    | Yes                  | No                   |
+| `upon_error` reachable for I/O      | No                     | Yes                     | Yes                    | Yes                  | No                   |
+| `retry` fires on I/O error          | No                     | Yes                     | Yes                    | Yes                  | No                   |
+| Channels used for I/O               | 1 of 3                 | 3 of 3                  | 3 of 3                 | 3 of 3               | Values (no channels) |
+| Compile-time work graph             | Yes (lazy)             | Yes (lazy)              | Yes (lazy)             | Yes (lazy)           | No                   |
+| **Error handling**                  |                        |                         |                        |                      |                      |
+| Error code at call site             | Yes (`if (ec)`)        | Yes                     | No (in `catch`)        | Yes (in handler)     | Yes (`if (ec)`)      |
+| Byte count at call site             | Yes                    | Yes                     | No (discarded)         | Yes (in handler)     | Yes                  |
+| Exception on `ECONNRESET`           | No                     | No                      | Yes                    | No                   | No                   |
+| Shared mutable state required       | No                     | Yes                     | No                     | No                   | No                   |
+
+The first and last columns are symmetric. Both use the value channel. Both preserve data. Neither uses the composition algebra for I/O errors. The three middle columns attempt to use the composition algebra and each pays a different cost: shared mutable state, exception round-trips, or data loss on the error path.
 
 Infrastructure operations face no such trade-off. Their outcomes are binary. A retry policy that distinguishes zero-progress failures from partial-progress failures needs the byte count - retrying a read that transferred zero bytes but not one that stalled after partial transfer.
 
@@ -395,6 +415,12 @@ exec::task<void> doFetchWithCoro()
 
 Voutilainen's example is a demonstration of Qt/stdexec integration, not production code, and the authors are grateful for it - it is the only published side-by-side comparison of a sender pipeline and a coroutine performing the same work. The sender pipeline is "just split the result" in the trade-off table. The byte count is in `this->bytesDownloaded`, not in any channel. `repeat_effect_until` reads the data member directly. The coroutine version accesses the same data member, but the coroutine's sequential execution - guaranteed by the executor - serializes access to `bytesDownloaded`. The sender pipeline's lambda captures create aliasing across continuation boundaries that the type system does not prevent.
 
+Asked whether the byte count could be made visible to downstream algorithms through the channel rather than through shared state, Voutilainen assessed the options on the LEWG reflector (March 14, 2026)<sup>[20]</sup>:
+
+> "the short answer is, 'yes, intrusively'. Not fully-generically."
+
+Voutilainen described several constructions - capturing the count in a successor's function object, using shared state, or passing data through the environment - and characterized each as "limitedly-general and slightly intrusive." The assessment is consistent with the trade-off table: making the byte count visible to the composition algebra requires moving it outside the channel.
+
 ---
 
 ## 11. Structured Concurrency
@@ -426,7 +452,9 @@ capy::task<> timeout_a_worker()
 }
 ```
 
-Both models provide structured concurrency; the sender `when_all` additionally provides compile-time work-graph visibility that the coroutine `when_all` does not (Q8, Q10). They differ in where the compound result is visible when the composition decision is made. The trade-off table (Section 9) applies at every I/O boundary inside a structured concurrency scope.
+Both models provide structured concurrency. In the sender model, the operation state protocol guarantees that child operation states are destroyed before the parent's receiver is called. In the coroutine model, `capy::when_all` and `capy::when_any` guarantee the same property through coroutine frame lifetimes: child coroutines complete and their frames are destroyed before the parent coroutine resumes. Stop tokens propagate through `io_env` at `await_suspend` time. The mechanism differs - operation state protocol vs. coroutine frame scoping - but the guarantees are equivalent: no child outlives its parent, cancellation propagates downward, and results are available only after all children complete.
+
+The sender `when_all` additionally provides compile-time work-graph visibility that the coroutine `when_all` does not (Q8, Q10). They differ in where the compound result is visible when the composition decision is made. The trade-off table (Section 9) applies at every I/O boundary inside a structured concurrency scope.
 
 ---
 
@@ -438,7 +466,11 @@ The echo server is deliberately minimal. The compound-result problem is per-oper
 
 ### Q2: Are these gaps being addressed by ongoing work?
 
-Several of the ergonomic issues documented here are the subject of active committee work, including [P3796R1](https://wg21.link/p3796r1)<sup>[17]</sup> and [D3980R0](https://wg21.link/d3980r0)<sup>[18]</sup>. The authors welcome that work. However, the trade-off documented in Section 9 is structural at two levels. First, `set_error` takes a single argument; no iteration of the sender algorithms can deliver both the error code and the byte count through `set_error` without changing the channel model itself. Second, even if `set_error` accepted compound results, the I/O sender must still choose which channel to call - and that choice is context-dependent. `ECONNRESET` is fatal in an HTTP request handler but expected in a long-polling connection. The classification that determines the channel is application logic, not I/O logic. No context-free channel assignment is correct for all protocols. Ergonomic improvements to `let_value`, `variant_sender`, or `task` do not alter either constraint.
+Several of the ergonomic issues documented here are the subject of active committee work, including [P3796R1](https://wg21.link/p3796r1)<sup>[18]</sup> and [D3980R0](https://wg21.link/d3980r0)<sup>[19]</sup>. The authors welcome that work. Voutilainen confirmed on the LEWG reflector (March 14, 2026)<sup>[20]</sup> that one needed facility is not yet in the standard:
+
+> "We do not need the dispatch() I spoke about before, but we do need the variant_sender."
+
+`exec::variant_sender` exists in stdexec but is not part of [P2300R10](https://wg21.link/p2300r10)<sup>[1]</sup>. Even with `variant_sender` standardized, the trade-off documented in Section 9 is structural at two levels. First, `set_error` takes a single argument; no iteration of the sender algorithms can deliver both the error code and the byte count through `set_error` without changing the channel model itself. Second, even if `set_error` accepted compound results, the I/O sender must still choose which channel to call - and that choice is context-dependent. `ECONNRESET` is fatal in an HTTP request handler but expected in a long-polling connection. The classification that determines the channel is application logic, not I/O logic. No context-free channel assignment is correct for all protocols. Ergonomic improvements to `let_value`, `variant_sender`, or `task` do not alter either constraint.
 
 ### Q3: Could the byte count be stored in the operation state instead of shared state?
 
@@ -446,7 +478,11 @@ A variant of "just split the result" stores the byte count in the operation stat
 
 ### Q4: Could the entire compound result be sent through `set_error`?
 
-Sending `tuple<error_code, size_t>` through `set_error` preserves both values but changes the completion signatures expected by generic sender algorithms. `retry` fires on a tuple. `upon_error` receives application data. That is a change to the channel model. If the committee wishes to pursue that direction, it deserves its own paper and its own design review.
+Sending `tuple<error_code, size_t>` through `set_error` preserves both values but changes the completion signatures expected by generic sender algorithms. `retry` fires on a tuple. `upon_error` receives application data. Asked whether `when_all` works correctly when a child sends a compound result through `set_error`, Voutilainen replied on the LEWG reflector (March 14, 2026)<sup>[20]</sup>:
+
+> "Yes, use an algorithm other than `when_all`, so that it doesn't cancel the others on one error, and collects all results."
+
+That is a change to the channel model - the standard `when_all` does not work with this pattern. If the committee wishes to pursue that direction, it deserves its own paper and its own design review.
 
 ### Q5: Do coroutines provide structured concurrency?
 
@@ -472,19 +508,50 @@ Compile-time work graphs, lazy pipeline evaluation without coroutine frames, and
 
 Yes. Compile-time work graphs connecting GPU dispatch, thread pool submission, and event loop scheduling in a single statically typed pipeline - that is the sender model's domain and its genuine strength. Q8 acknowledges the cost. The compound-result problem is orthogonal. A GPU kernel launch is a binary outcome. A `read` is not. The sender model's cross-context composition works because its target operations are infrastructure operations with binary outcomes. The finding in this paper is about the operations that are not binary. This paper identifies the domain boundary.
 
+### Q11: Does "just use `set_value`" answer the comparison?
+
+For data preservation, yes. "Just use `set_value`" preserves both values, avoids exceptions, and produces code nearly identical to the coroutine version. On equal footing, the two paradigms are equivalent.
+
+For the composition algebra, no. The composition algebra - `when_all` cancellation, `upon_error`, `retry` - is the sender model's value proposition over coroutines. Under "just use `set_value`," those facilities are unused for I/O errors. If the composition algebra does not apply to compound I/O results, the sender model's additional complexity over coroutines buys nothing for this domain. That is the domain-boundary finding.
+
+Petersen provided four working sender implementations on the LEWG reflector (March 14, 2026)<sup>[20]</sup> and confirmed their equivalence to the coroutine idiom. Asked whether all four are equivalent to `auto [ec, buf] = co_await read(socket, buffer); switch (ec) { ... }`, Petersen replied:
+
+> "In one word, yes."
+
+The equivalence is the finding. Both paradigms handle compound I/O results the same way - through values.
+
+### Q12: Is this paper applying a double standard?
+
+An earlier draft did. R0 measured coroutines by their natural idiom (value-based error handling with `if (ec)`) while measuring senders against channel-based composition (`upon_error`, `retry`, `when_all` cancellation) that the coroutine baseline does not use. Petersen identified this asymmetry<sup>[20]</sup>:
+
+> "The data is only 'just there' in a coroutine if you collapse everything into the value channel, like the coroutine examples in your papers. Using the error channel (`set_error` in senders, `throw` in coroutines) requires a side channel if you want to convey both error and value at once."
+
+This revision corrects the asymmetry. Both paradigms are measured by the same ruler: the value-channel approach works for both. The remaining question is whether the sender model's composition algebra - the facilities that go beyond what coroutines provide - applies to compound I/O results. Sections 6 through 8 explore that question. Each construction that attempts to use the composition algebra pays a cost. That is not a double standard. It is measuring the composition algebra against its own claims.
+
+### Q13: Does the composition algebra apply to protocol-layer decisions?
+
+Yes. Retry a request, cancel a stream, timeout a connection - these are binary outcomes. The composition algebra handles them well. The finding in this paper is limited to the I/O layer, where results are compound. A real networking application has both layers. The I/O layer produces `(error_code, size_t)`. The protocol layer consumes the I/O result, applies application logic, and produces a binary outcome (request succeeded / request failed). The composition algebra applies to the binary outcome, not to the compound I/O result.
+
+The question is where the reduction from compound to binary happens. Under "just use `set_value`," it happens inside a `let_value` handler or a coroutine body - the same place it happens in coroutine-native code. The composition algebra takes over after the reduction. This is the abstraction floor ([P4056R0](https://wg21.link/p4056r0)<sup>[14]</sup> Section 4): compound results below, binary outcomes above, composition algebra above the floor.
+
+The paper does not argue that the composition algebra is useless for networking. It argues that the composition algebra does not apply to the I/O operations that produce compound results. Protocol-layer composition is orthogonal to this finding.
+
 ---
 
 ## 13. Invitation
 
-Construct a sender-based echo server that:
+"Just use `set_value`" answers the data-preservation question. Both values survive. No exceptions. The code is nearly identical to the coroutine version. The authors accept this.
 
-- preserves compound I/O results on the error path,
-- retains channel-based composition (`when_all`, `upon_error`, `retry`),
-- does not alter the completion signatures expected by generic sender algorithms (`retry`, `upon_error`, `when_all`) from those algorithms' specified behavior,
+The remaining question is whether the sender composition algebra applies to compound I/O results. The composition algebra - `when_all` sibling cancellation, `upon_error`, `retry` - is the sender model's value proposition over coroutines. If it applies to I/O, the sender model provides something coroutines do not. If it does not, the two models are equivalent for this domain.
+
+Construct a sender-based echo server that uses the composition algebra for I/O errors and:
+
+- preserves compound I/O results on the error path (the byte count survives into `upon_error`, `retry`, and `when_all`),
+- does not alter the completion signatures expected by generic sender algorithms from those algorithms' specified behavior,
 - avoids exception round-trips for routine error codes, and
-- uses only the algorithms and sender adapters specified in [P2300R10](https://wg21.link/p2300r10)<sup>[1]</sup>, [P3552R3](https://wg21.link/p3552r3)<sup>[2]</sup>, and [P3149R9](https://wg21.link/p3149r9)<sup>[6]</sup>.
+- avoids shared mutable state across continuation boundaries.
 
-If the committee believes these five properties should not be expected simultaneously for I/O senders, that finding is equally valuable - it identifies the domain boundary.
+If no such construction exists, the composition algebra does not apply to compound I/O results, and the sender model's additional complexity over coroutines buys nothing for this domain. That finding identifies the domain boundary.
 
 The authors will incorporate any such construction and re-evaluate every finding.
 
@@ -492,7 +559,9 @@ The authors will incorporate any such construction and re-evaluate every finding
 
 ## 14. Acknowledgments
 
-The authors thank Dietmar K&uuml;hl for the channel-routing enumeration in [P2762R2](https://wg21.link/p2762r2)<sup>[10]</sup> and for `beman::execution`, Chris Kohlhoff for identifying the partial-success problem in [P2430R0](https://wg21.link/p2430r0)<sup>[5]</sup>, Kirk Shoop for the completion-token heuristic analysis in [P2471R1](https://wg21.link/p2471r1)<sup>[11]</sup>, Peter Dimov for the refined channel mapping in [P4007R0](https://wg21.link/p4007r0)<sup>[9]</sup>, "Senders and Coroutines," Micha&lstrok; Dominiak, Eric Niebler, and Lewis Baker for `std::execution`, Ian Petersen, Jessica Wong, and Kirk Shoop for `async_scope`, and Fabio Fracassi for [P3570R2](https://wg21.link/p3570r2)<sup>[12]</sup>, "Optional variants in sender/receiver." The authors also thank Ville Voutilainen and Jens Maurer for reflector discussion, and Herb Sutter for identifying the need for constructed comparisons.
+The authors thank Ian Petersen for identifying the double standard in R0 and for providing four working sender implementations that clarified the equal-footing observation - his critique materially improved this paper; Ville Voutilainen for working through the dispatch pattern, the channel ping-pong construction, and the `variant_sender` analysis with characteristic generosity and precision; Jens Maurer for reflector discussion on design freedom inside sender chains; Dietmar K&uuml;hl for the channel-routing enumeration in [P2762R2](https://wg21.link/p2762r2)<sup>[10]</sup> and for `beman::execution`; Chris Kohlhoff for identifying the partial-success problem in [P2430R0](https://wg21.link/p2430r0)<sup>[5]</sup>; Kirk Shoop for the completion-token heuristic analysis in [P2471R1](https://wg21.link/p2471r1)<sup>[11]</sup>; Peter Dimov for the refined channel mapping in [P4007R0](https://wg21.link/p4007r0)<sup>[9]</sup>, "Senders and Coroutines"; Micha&lstrok; Dominiak, Eric Niebler, and Lewis Baker for `std::execution`; Ian Petersen, Jessica Wong, and Kirk Shoop for `async_scope`; Fabio Fracassi for [P3570R2](https://wg21.link/p3570r2)<sup>[12]</sup>, "Optional variants in sender/receiver"; and Herb Sutter for identifying the need for tutorials and constructed comparisons.
+
+Any person quoted in this paper who believes their words have been presented out of context or who wishes a quotation removed may contact the authors, who will comply without question.
 
 ---
 
@@ -510,7 +579,7 @@ The authors thank Dietmar K&uuml;hl for the channel-routing enumeration in [P276
 
 6. [P3149R9](https://wg21.link/p3149r9) - "`async_scope` - Creating scopes for non-sequential concurrency" (Ian Petersen, Jessica Wong, Kirk Shoop, et al., 2025). https://wg21.link/p3149r9
 
-7. [D4054R0](https://wg21.link/d4054r0) - "Two Error Models" (Vinnie Falco, 2026). https://wg21.link/d4054r0
+7. [P4054R0](https://wg21.link/p4054r0) - "Two Error Models" (Vinnie Falco, 2026). https://wg21.link/p4054r0
 
 8. IEEE Std 1003.1-2024 - POSIX `read()` / `write()` specification. https://pubs.opengroup.org/onlinepubs/9799919799/
 
@@ -522,14 +591,18 @@ The authors thank Dietmar K&uuml;hl for the channel-routing enumeration in [P276
 
 12. [P3570R2](https://wg21.link/p3570r2) - "Optional variants in sender/receiver" (Fabio Fracassi, 2025). https://wg21.link/p3570r2
 
-13. [D4055R0](https://wg21.link/d4055r0) - "Consuming Senders from Coroutine-Native Code" (Vinnie Falco, Steve Gerbino, 2026). https://wg21.link/d4055r0
+13. [P4055R0](https://wg21.link/p4055r0) - "Consuming Senders from Coroutine-Native Code" (Vinnie Falco, Steve Gerbino, 2026). https://wg21.link/p4055r0
 
-14. [D4056R0](https://wg21.link/d4056r0) - "Producing Senders from Coroutine-Native Code" (Vinnie Falco, Steve Gerbino, 2026). https://wg21.link/d4056r0
+14. [P4056R0](https://wg21.link/p4056r0) - "Producing Senders from Coroutine-Native Code" (Vinnie Falco, Steve Gerbino, 2026). https://wg21.link/p4056r0
 
-15. [D4050R0](https://wg21.link/d4050r0) - "On Task Type Diversity" (Vinnie Falco, 2026). https://wg21.link/d4050r0
+15. [P4050R0](https://wg21.link/p4050r0) - "On Task Type Diversity" (Vinnie Falco, 2026). https://wg21.link/p4050r0
 
 16. Ville Voutilainen, [libunifex-with-qt](https://git.qt.io/vivoutil/libunifex-with-qt) - Qt/stdexec integration examples (2024). https://git.qt.io/vivoutil/libunifex-with-qt
 
-17. [P3796R1](https://wg21.link/p3796r1) - "Coroutine Task Issues" (Dietmar K&uuml;hl, 2025). https://wg21.link/p3796r1
+17. [P4058R0](https://wg21.link/p4058r0) - "The Case Against `std::execution` For Networking" (Vinnie Falco, 2026). https://wg21.link/p4058r0
 
-18. [D3980R0](https://wg21.link/d3980r0) - "Task's Allocator Use" (Dietmar K&uuml;hl, 2026). https://wg21.link/d3980r0
+18. [P3796R1](https://wg21.link/p3796r1) - "Coroutine Task Issues" (Dietmar K&uuml;hl, 2025). https://wg21.link/p3796r1
+
+19. [D3980R0](https://wg21.link/d3980r0) - "Task's Allocator Use" (Dietmar K&uuml;hl, 2026). https://wg21.link/d3980r0
+
+20. LEWG reflector (lib-ext), March 2026. Threads: "Complicated success at coroutine/sender composition boundaries" (http://lists.isocpp.org/lib-ext/2026/03/31375.php) and "std::execution - dynamically selecting a channel" (http://lists.isocpp.org/lib-ext/2026/03/31377.php).
