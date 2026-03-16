@@ -901,7 +901,9 @@ outline: none;
   <li><a href="#what-trade-offs" id="toc-what-trade-offs">7. What
   Trade-Offs?</a></li>
   <li><a href="#anticipated-objections" id="toc-anticipated-objections">8. Anticipated Objections</a></li>
-  <li><a href="#conclusion" id="toc-conclusion">9. Conclusion</a></li>
+  <li><a href="#the-design-fork" id="toc-the-design-fork">9. The Design
+  Fork</a></li>
+  <li><a href="#conclusion" id="toc-conclusion">10. Conclusion</a></li>
   <li><a href="#acknowledgments" id="toc-acknowledgments">Acknowledgments</a></li>
   <li><a href="#references" id="toc-references">References</a></li>
   </ul>
@@ -1567,7 +1569,235 @@ for networking (Sections 5 and 6) and what the sender model provides for
 its domains (Section 3), and observes that neither model can provide
 what the other provides.</p>
 <hr />
-<h2 id="conclusion">9. Conclusion</h2>
+<h2 id="the-design-fork">9. The Design Fork</h2>
+<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Awaitable                        // Sender</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> await_suspend<span class="op">(</span>                 <span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> Receiver<span class="op">&gt;</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    coroutine_handle<span class="op">&lt;&gt;</span> h<span class="op">);</span>          <span class="kw">struct</span> read_operation <span class="op">{</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    <span class="co">// caller erased                    Receiver rcvr_;</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>                                        <span class="co">// caller stamped in</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>                                    <span class="op">};</span></span></code></pre></div>
+<p><code>coroutine_handle&lt;&gt;</code> erases the caller.
+<code>connect(sender, receiver)</code> stamps the caller into the
+operation state. Every row below is a downstream consequence of this
+choice.</p>
+<table>
+<colgroup>
+<col style="width: 69%" />
+<col style="width: 10%" />
+<col style="width: 14%" />
+<col style="width: 5%" />
+</colgroup>
+<thead>
+<tr>
+<th>Property</th>
+<th>Senders</th>
+<th>Coroutines</th>
+<th>Need</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Optimization</strong></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Full pipeline visibility to optimizer</td>
+<td>Yes</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Zero-allocation composition (no frame)</td>
+<td>Yes</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Compile-time work graphs</td>
+<td>Yes</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Static completion signature checking</td>
+<td>Yes</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Heterogeneous child composition (GPU+net+timer)</td>
+<td>Yes</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><strong>Type erasure and compilation</strong></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Structural type erasure of the caller</td>
+<td></td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr>
+<td>Operation state is not a template</td>
+<td></td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr>
+<td>Operation state can live in the I/O object</td>
+<td></td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr>
+<td>Stream can be type-erased (zero per-op alloc)</td>
+<td></td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr>
+<td>I/O library compiles once (separate compilation)</td>
+<td></td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr>
+<td>ABI stability across transport changes</td>
+<td></td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr>
+<td><strong>Error handling</strong></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Non-exception error channel</td>
+<td>Yes</td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr>
+<td>Compound I/O result preservation (ec + n)</td>
+<td></td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr>
+<td>Composition algebra for infrastructure errors</td>
+<td>Yes</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Composition algebra for compound I/O results</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><strong>Structured concurrency</strong></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>when_all with child lifetime guarantee</td>
+<td>Yes</td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr>
+<td>when_any / race with cancellation propagation</td>
+<td>Yes</td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr>
+<td>Async scope (spawn + join)</td>
+<td>Yes</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Stop token propagation</td>
+<td>Yes</td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr>
+<td><strong>Ecosystem</strong></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Single-parameter task type (no fragmentation)</td>
+<td></td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr>
+<td>Cross-library interop without bridges</td>
+<td></td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr>
+<td>Production deployment at scale</td>
+<td>Yes</td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr>
+<td><strong>Costs</strong></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Heap allocation per coroutine frame</td>
+<td></td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr>
+<td>Opaque resume (optimization barrier)</td>
+<td></td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr>
+<td>Reference lifetime hazard in coroutine frames</td>
+<td></td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr>
+<td>Complexity at the I/O call site</td>
+<td>Yes</td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>The two property sets are mutually exclusive consequences of the
+design fork. The first five rows follow from stamping the receiver into
+the operation state. The next six rows follow from erasing the caller
+behind <code>coroutine_handle&lt;&gt;</code>. Neither model can acquire
+the other’s properties without surrendering its own. The Need column is
+left for the reader.</p>
+<hr />
+<h2 id="conclusion">10. Conclusion</h2>
 <p>The sender model makes design choices that give the optimizer full
 pipeline visibility, enable zero-allocation composition, and provide
 type-level completion contracts. These choices are correct for GPU
