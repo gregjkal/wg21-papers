@@ -155,7 +155,7 @@ The analysis that follows compares Capy's `task<T>` against the best possible co
 
 ## 4. The Gap
 
-The table below shows the spec-mandated costs that exist in `task<T, IoEnv>` but not in the coroutine-native `task<T>`. These are irreducible: no conforming implementation can eliminate them. All implementation-quality costs are granted as concessions (Section 2). Case A assumes I/O operations return awaitables. Case B assumes I/O operations return senders.
+The table below shows the spec-mandated costs that exist in `task<T, IoEnv>` but not in the coroutine-native `task<T>`. Case A assumes I/O operations return awaitables. Case B assumes I/O operations return senders.
 
 | Property                                     | Coroutine-native `task<T>`  | Best `task<T, IoEnv>` Case A                     | Best `task<T, IoEnv>` Case B                     |
 | -------------------------------------------- | --------------------------- | ------------------------------------------------ | ------------------------------------------------ |
@@ -211,7 +211,7 @@ In the sender model, `final_suspend` ([task.promise] paragraph 6) must invoke `s
 
 [task.promise] paragraph 9 specifies that `await_transform` skips `affine_on` when the sender type is the same `task` type. For the common I/O case - a chain of `task<T, IoEnv>` coroutines all running on the same executor - no scheduler comparison is needed on the completion path.
 
-The completion path cost is granted as a concession.
+The completion path cost is not analyzed further.
 
 ### 5.5 The Combinator Gap
 

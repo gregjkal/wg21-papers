@@ -1159,9 +1159,7 @@ concessions (Section 2).</p>
 <h2 id="the-gap">4. The Gap</h2>
 <p>The table below shows the spec-mandated costs that exist in
 <code>task&lt;T, IoEnv&gt;</code> but not in the coroutine-native
-<code>task&lt;T&gt;</code>. These are irreducible: no conforming
-implementation can eliminate them. All implementation-quality costs are
-granted as concessions (Section 2). Case A assumes I/O operations return
+<code>task&lt;T&gt;</code>. Case A assumes I/O operations return
 awaitables. Case B assumes I/O operations return senders.</p>
 <table>
 <colgroup>
@@ -1304,7 +1302,7 @@ sender type is the same <code>task</code> type. For the common I/O case
 - a chain of <code>task&lt;T, IoEnv&gt;</code> coroutines all running on
 the same executor - no scheduler comparison is needed on the completion
 path.</p>
-<p>The completion path cost is granted as a concession.</p>
+<p>The completion path cost is not analyzed further.</p>
 <h3 id="the-combinator-gap">5.5 The Combinator Gap</h3>
 <p>A purported benefit of the unified sender model is that combinator
 algorithms like <code>when_all</code> need only be written once. One
