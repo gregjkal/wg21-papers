@@ -866,12 +866,17 @@ outline: none;
   <li><a href="#disclosure" id="toc-disclosure">1. Disclosure</a></li>
   <li><a href="#the-concessions" id="toc-the-concessions">2. The
   Concessions</a></li>
-  <li><a href="#two-paths" id="toc-two-paths">3. Two Paths</a>
+  <li><a href="#three-paths" id="toc-three-paths">3. Three Paths</a>
   <ul>
-  <li><a href="#path-a-coroutine-native-task" id="toc-path-a-coroutine-native-task">3.1 Path A: Coroutine-Native
-  Task</a></li>
-  <li><a href="#path-b-stdexecutiontaskt-ioenv" id="toc-path-b-stdexecutiontaskt-ioenv">3.2 Path B:
-  <code>std::execution::task&lt;T, IoEnv&gt;</code></a></li>
+  <li><a href="#coroutine-native-task" id="toc-coroutine-native-task">3.1 Coroutine-Native Task</a></li>
+  <li><a href="#case-a-stdexecutiontaskt-ioenv-with-io-awaitables" id="toc-case-a-stdexecutiontaskt-ioenv-with-io-awaitables">3.2 Case A:
+  <code>std::execution::task&lt;T, IoEnv&gt;</code> with I/O
+  Awaitables</a></li>
+  <li><a href="#case-b-stdexecutiontaskt-ioenv-with-io-senders" id="toc-case-b-stdexecutiontaskt-ioenv-with-io-senders">3.3 Case B:
+  <code>std::execution::task&lt;T, IoEnv&gt;</code> with I/O
+  Senders</a></li>
+  <li><a href="#spec-mandated-costs-per-task-to-task-co_await" id="toc-spec-mandated-costs-per-task-to-task-co_await">3.4
+  Spec-Mandated Costs (per task-to-task <code>co_await</code>)</a></li>
   </ul></li>
   <li><a href="#the-gap" id="toc-the-gap">4. The Gap</a></li>
   <li><a href="#the-gap-explained" id="toc-the-gap-explained">5. The Gap
@@ -889,7 +894,8 @@ outline: none;
   Combinator Gap</a></li>
   <li><a href="#io_env-indirection" id="toc-io_env-indirection">5.6
   <code>io_env</code> Indirection</a></li>
-  <li><a href="#stop-token-propagation" id="toc-stop-token-propagation">5.7 Stop Token Propagation</a></li>
+  <li><a href="#io-operations-as-senders-case-b" id="toc-io-operations-as-senders-case-b">5.7 I/O Operations as Senders
+  (Case B)</a></li>
   </ul></li>
   <li><a href="#the-shipping-schedule-risk" id="toc-the-shipping-schedule-risk">6. The Shipping Schedule
   Risk</a></li>
@@ -908,8 +914,15 @@ they do not need.</p>
 engineering fix that has been proposed or discussed, assumes they all
 ship, and compares against the best possible conforming implementation
 of <code>std::execution::task</code> - one that eliminates every cost
-not mandated by [exec.task]. The gap is in the task-to-task suspend
-path. It is spec-mandated.</p>
+not mandated by [exec.task]. Two cases are examined. Case A: I/O
+operations return awaitables. The gap is in the task-to-task suspend
+path - <code>state&lt;Rcvr&gt;</code> construction and scheduler
+extraction per child task, spec-mandated. Case B: I/O operations return
+senders, the stated direction for networking. The gap extends to every
+I/O operation - every read, every write, every timer, every DNS lookup
+pays
+<code>connect</code>/<code>start</code>/<code>state&lt;Rcvr&gt;</code>
+overhead that does not exist in the coroutine-native model.</p>
 <hr />
 <h2 id="revision-history">Revision History</h2>
 <h3 id="r0-march-2026-post-croydon-mailing">R0: March 2026 (post-Croydon
@@ -935,9 +948,18 @@ removing, delaying, or diminishing <code>std::execution</code>.</p>
 fix that has been proposed, discussed, or implied. The following are
 assumed to ship:</p>
 <ul>
-<li>I/O operations return awaitables, not senders. The template
-operation state problem (<a href="https://isocpp.org/files/papers/P4088R0.pdf">P4088R0</a><sup>[6]</sup>
-Section 6.1) does not arise.</li>
+<li><strong>Case A (concession):</strong> I/O operations return
+awaitables, not senders. The template operation state problem (<a href="https://isocpp.org/files/papers/P4088R0.pdf">P4088R0</a><sup>[6]</sup>
+Section 6.1) does not arise. This is the generous case.</li>
+<li><strong>Case B (stated direction):</strong> I/O operations return
+senders. It has been stated in internal discussions that the plan is for
+I/O primitives to be senders. Under Case B, every <code>co_await</code>
+of an I/O sender inside a <code>task&lt;T, IoEnv&gt;</code> goes through
+<code>connect</code>/<code>start</code>/<code>state&lt;Rcvr&gt;</code>.
+The <code>state&lt;Rcvr&gt;</code> lives on the coroutine frame (no
+separate allocation), but the CPU cost of construction and environment
+extraction is per I/O operation. The narrow task-to-task fix (LWG4348)
+does not apply because the I/O operation is not a task.</li>
 <li>Symmetric transfer works task-to-task. The stack overflow
 vulnerability (<a href="https://wg21.link/p3801r0">P3801R0</a><sup>[7]</sup>) is
 resolved.</li>
@@ -957,8 +979,10 @@ blocking symmetric transfer is not needed.</li>
 carrying a type-erased executor and a stop token.</li>
 <li>The promise delivers <code>IoEnv</code> to I/O awaitables through
 <code>await_transform</code>.</li>
-<li>Type-erased streams work under both models. Zero per-operation
-allocation.</li>
+<li>Type-erased streams work under both models under Case A. Zero
+per-operation allocation. Under Case B, type-erased streams returning
+senders require <code>any_sender</code>, which allocates per operation -
+see Section 5.7.</li>
 <li>Separate compilation works under both models. I/O functions go in
 <code>.cpp</code> files.</li>
 <li>ABI stability works under both models. The vtable layout does not
@@ -979,18 +1003,22 @@ interoperation.</li>
 <li>Compound I/O results are routed through
 <code>set_error(tuple(ec, T...))</code> on failure and
 <code>set_value(T...)</code> on success. The standard
-<code>when_all</code> works correctly with this routing. Both values are
-preserved in the error payload.</li>
+<code>when_all</code> cancels siblings on I/O error under this routing.
+Both values are preserved in the error payload. Downstream composition
+costs are examined in Section 5.5.3.</li>
 <li>The reference implementation of <a href="https://wg21.link/p3552r3">P3552R3</a><sup>[1]</sup> is a work in
 progress. It introduces costs beyond what [exec.task] mandates. This
 paper does not compare against any existing implementation. It compares
 against the best possible conforming implementation - one that
-eliminates every cost not mandated by the normative text of
-[exec.task].</li>
+eliminates every cost not mandated by the normative text of [exec.task].
+This paper analyzes the normative text and identifies operations that no
+conforming implementation can skip. Implementers who believe a
+conforming implementation can eliminate any of these operations are
+invited to demonstrate which normative requirement is not binding.</li>
 </ul>
 <p>Everything above is granted without reservation.</p>
 <hr />
-<h2 id="two-paths">3. Two Paths</h2>
+<h2 id="three-paths">3. Three Paths</h2>
 <p>Both models require an I/O environment - a bundle of state that every
 I/O operation needs: a type-erased executor (to submit work to the
 reactor), a stop token (for cancellation), and optionally a frame
@@ -1002,9 +1030,11 @@ carries <code>io_env</code> directly. In the sender model, the
 <code>std::execution::task</code> serves this role; this paper uses
 <code>IoEnv</code> to denote an <code>Environment</code> specialized for
 I/O.</p>
-<p>The same I/O operation. The same user code. Two task types.</p>
-<h3 id="path-a-coroutine-native-task">3.1 Path A: Coroutine-Native
-Task</h3>
+<p>The same I/O operation. The same user code. Three paths: the
+coroutine-native model, <code>task&lt;T, IoEnv&gt;</code> with I/O
+awaitables (Case A), and <code>task&lt;T, IoEnv&gt;</code> with I/O
+senders (Case B).</p>
+<h3 id="coroutine-native-task">3.1 Coroutine-Native Task</h3>
 <div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>io<span class="op">::</span>task<span class="op">&lt;</span><span class="dt">void</span><span class="op">&gt;</span> session<span class="op">(</span>tcp_socket<span class="op">&amp;</span> sock<span class="op">)</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">char</span> buf<span class="op">[</span><span class="dv">1024</span><span class="op">];</span></span>
@@ -1021,8 +1051,9 @@ a pointer to it.</p>
 <p>When <code>session</code> does <code>co_await process(buf, n)</code>
 - a child task - the awaiter stores the continuation handle and returns
 the child’s handle. Symmetric transfer. Two pointer stores.</p>
-<h3 id="path-b-stdexecutiontaskt-ioenv">3.2 Path B:
-<code>std::execution::task&lt;T, IoEnv&gt;</code></h3>
+<h3 id="case-a-stdexecutiontaskt-ioenv-with-io-awaitables">3.2 Case A:
+<code>std::execution::task&lt;T, IoEnv&gt;</code> with I/O
+Awaitables</h3>
 <div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="bu">std::</span>execution::task<span class="op">&lt;</span><span class="dt">void</span><span class="op">,</span> IoEnv<span class="op">&gt;</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>session<span class="op">(</span>tcp_socket<span class="op">&amp;</span> sock<span class="op">)</span></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
@@ -1033,11 +1064,64 @@ the child’s handle. Symmetric transfer. Two pointer stores.</p>
 <span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">co_return</span><span class="op">;</span></span>
 <span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">co_await</span> process<span class="op">(</span>buf<span class="op">,</span> n<span class="op">);</span></span>
 <span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
-<p>Two template parameters. When <code>session</code> does
-<code>co_await process(buf, n)</code>, the C++26 specification requires
-a sequence of operations that do not exist in Path A.</p>
-<h4 id="spec-mandated-costs-per-task-to-task-co_await">Spec-mandated
-costs (per task-to-task <code>co_await</code>)</h4>
+<p>Two template parameters. The
+<code>co_await sock.read_some(...)</code> is an awaitable - two pointer
+stores, same as the coroutine-native model. The gap is in
+<code>co_await process(buf, n)</code> - a child task.</p>
+<h3 id="case-b-stdexecutiontaskt-ioenv-with-io-senders">3.3 Case B:
+<code>std::execution::task&lt;T, IoEnv&gt;</code> with I/O Senders</h3>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="bu">std::</span>execution::task<span class="op">&lt;</span><span class="dt">void</span><span class="op">,</span> IoEnv<span class="op">&gt;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>session<span class="op">(</span>tcp_socket<span class="op">&amp;</span> sock<span class="op">)</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">char</span> buf<span class="op">[</span><span class="dv">1024</span><span class="op">];</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> <span class="op">[</span>ec<span class="op">,</span> n<span class="op">]</span> <span class="op">=</span> <span class="cf">co_await</span> sock<span class="op">.</span>async_read_some<span class="op">(</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>        mutable_buffer<span class="op">(</span>buf<span class="op">,</span> <span class="kw">sizeof</span> buf<span class="op">));</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>ec<span class="op">)</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">co_return</span><span class="op">;</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">co_await</span> process<span class="op">(</span>buf<span class="op">,</span> n<span class="op">);</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>The user code is identical. The difference is underneath:
+<code>async_read_some</code> returns a sender. The <code>co_await</code>
+of the I/O sender goes through the same sender machinery as the
+<code>co_await</code> of the child task:</p>
+<ol type="1">
+<li><code>await_transform</code> ([task.promise] paragraph 9) intercepts
+the I/O sender.</li>
+<li>Wraps it in <code>affine_on(sender, SCHED(*this))</code> - produces
+a new sender type.</li>
+<li><code>as_awaitable</code> produces a
+<code>sender-awaitable</code>.</li>
+<li><code>sender-awaitable</code> calls
+<code>connect(affine_on_sender, awaitable-receiver)</code> - constructs
+<code>state&lt;awaitable-receiver&gt;</code> on the coroutine
+frame.</li>
+<li><code>await_suspend</code> calls <code>start(state)</code> -
+scheduler extraction, stop token setup, then the actual I/O
+submission.</li>
+<li>I/O completes. The I/O sender calls <code>set_value</code> on
+<code>awaitable-receiver</code>.</li>
+<li><code>awaitable-receiver</code> stores the result in a variant,
+calls <code>continuation.resume()</code> (no symmetric transfer -
+<code>set_value</code> is void-returning).</li>
+<li><code>await_resume</code> extracts the result from the variant.</li>
+</ol>
+<p>In the coroutine-native model, the same I/O operation:</p>
+<ol type="1">
+<li><code>await_transform</code> passes <code>io_env*</code> to the
+awaitable.</li>
+<li><code>await_suspend</code> stores the continuation handle, submits
+I/O to the OS, returns <code>coroutine_handle&lt;&gt;</code> (symmetric
+transfer).</li>
+<li>I/O completes. Reactor resumes the coroutine via the stored
+handle.</li>
+<li><code>await_resume</code> returns
+<code>io_result&lt;size_t&gt;</code> directly.</li>
+</ol>
+<p>Under Case B, both <code>co_await sock.async_read_some(...)</code>
+and <code>co_await process(buf, n)</code> pay the sender protocol cost.
+Under Case A, only <code>co_await process(buf, n)</code> does.</p>
+<h3 id="spec-mandated-costs-per-task-to-task-co_await">3.4 Spec-Mandated
+Costs (per task-to-task <code>co_await</code>)</h3>
 <p>The <code>co_await</code> goes through <code>await_transform</code>
 ([task.promise] paragraph 9), which calls <code>as_awaitable</code>. The
 awaiter calls <code>connect</code> ([task.members] paragraph 3-4), which
@@ -1054,43 +1138,44 @@ from <code>get_env(rcvr)</code>, or default).</li>
 <li>Initialize <code>SCHED(prom)</code> with
 <code>scheduler_type(get_scheduler(get_env(rcvr)))</code> - extract the
 scheduler from the receiver’s environment.</li>
-<li>Set up stop token bridging: initialize <code>prom.token</code> and
-<code>prom.source</code> such that stop requests from the parent
-propagate to the child.</li>
 <li>Call <code>handle.resume()</code>.</li>
 </ol>
-<p>The promise also carries an <code>error-variant</code>
-([task.promise] paragraph 2) - a
-<code>variant&lt;monostate, Es..., exception_ptr&gt;</code> with all
-possible error types. This is constructed once per promise, not per
-<code>co_await</code>, but it is present in every sender-aware task and
-absent from the coroutine-native task.</p>
-<p>These costs are normative. No conforming implementation can eliminate
-them.</p>
-<p>These costs are normative. No conforming implementation can eliminate
-them. The analysis that follows compares Capy’s
-<code>task&lt;T&gt;</code> against the best possible conforming
-<code>task&lt;T, IoEnv&gt;</code>. All implementation-quality costs
-beyond the spec - virtual dispatch, scheduler comparison on resume,
-reschedule cycles - are granted as concessions (Section 2).</p>
+<p>These costs are normative. The as-if rule permits an implementation
+to elide observable operations when the program cannot detect the
+difference. For the sender protocol costs identified here, the as-if
+rule does not help: the scheduler extraction calls
+<code>get_scheduler(get_env(rcvr))</code>, which traverses a type-erased
+environment in separately compiled code. The compiler cannot see through
+the type erasure boundary to prove the result is unchanged. The
+<code>state&lt;Rcvr&gt;</code> constructor stores the receiver and
+constructs <code>own-env</code> from it - these are not dead stores
+because the child promise reads them.</p>
+<p>The analysis that follows compares Capy’s <code>task&lt;T&gt;</code>
+against the best possible conforming <code>task&lt;T, IoEnv&gt;</code>.
+All implementation-quality costs beyond the spec - virtual dispatch,
+scheduler comparison on resume, reschedule cycles - are granted as
+concessions (Section 2).</p>
 <hr />
 <h2 id="the-gap">4. The Gap</h2>
 <p>The table below shows the spec-mandated costs that exist in
 <code>task&lt;T, IoEnv&gt;</code> but not in the coroutine-native
 <code>task&lt;T&gt;</code>. These are irreducible: no conforming
 implementation can eliminate them. All implementation-quality costs are
-granted as concessions (Section 2).</p>
+granted as concessions (Section 2). Case A assumes I/O operations return
+awaitables. Case B assumes I/O operations return senders.</p>
 <table>
 <colgroup>
-<col style="width: 37%" />
-<col style="width: 23%" />
-<col style="width: 39%" />
+<col style="width: 26%" />
+<col style="width: 16%" />
+<col style="width: 28%" />
+<col style="width: 28%" />
 </colgroup>
 <thead>
 <tr>
 <th>Property</th>
 <th>Coroutine-native <code>task&lt;T&gt;</code></th>
-<th>Best <code>task&lt;T, IoEnv&gt;</code></th>
+<th>Best <code>task&lt;T, IoEnv&gt;</code> Case A</th>
+<th>Best <code>task&lt;T, IoEnv&gt;</code> Case B</th>
 </tr>
 </thead>
 <tbody>
@@ -1098,10 +1183,12 @@ granted as concessions (Section 2).</p>
 <td>Template parameters</td>
 <td>1</td>
 <td>2</td>
+<td>2</td>
 </tr>
 <tr>
 <td>Sender concept instantiation per task</td>
 <td>0</td>
+<td>1 per task type in chain</td>
 <td>1 per task type in chain</td>
 </tr>
 <tr>
@@ -1109,16 +1196,33 @@ granted as concessions (Section 2).</p>
 <td>2 pointer stores</td>
 <td><code>state&lt;Rcvr&gt;</code> construction + scheduler
 extraction</td>
+<td><code>state&lt;Rcvr&gt;</code> construction + scheduler
+extraction</td>
 </tr>
 <tr>
-<td>Task-to-task <code>co_await</code> stop token setup</td>
-<td>0 (already in <code>io_env*</code>)</td>
-<td>Bridge parent token to <code>prom.source</code></td>
+<td>I/O <code>co_await</code> suspend</td>
+<td>2 pointer stores</td>
+<td>2 pointer stores</td>
+<td><code>state&lt;Rcvr&gt;</code> construction + scheduler
+extraction</td>
 </tr>
 <tr>
-<td>Error storage in promise</td>
-<td>Bare <code>exception_ptr</code></td>
-<td><code>variant&lt;monostate, Es..., exception_ptr&gt;</code></td>
+<td>I/O <code>co_await</code> <code>affine_on</code> wrapping</td>
+<td>0</td>
+<td>0</td>
+<td>1 per I/O operation</td>
+</tr>
+<tr>
+<td>I/O <code>co_await</code> symmetric transfer</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>No (void-returning <code>set_value</code>)</td>
+</tr>
+<tr>
+<td>Type-erased stream I/O allocation</td>
+<td>0</td>
+<td>0</td>
+<td>1 heap allocation per I/O operation</td>
 </tr>
 </tbody>
 </table>
@@ -1169,26 +1273,22 @@ the handle and receiver, constructs <code>own-env</code> from
 <code>SCHED(prom)</code> with
 <code>scheduler_type(get_scheduler(get_env(rcvr)))</code> - the
 scheduler must be extracted from the receiver’s environment.</li>
-<li><code>state::start</code> ([task.state] paragraph 4.4-4.6) sets up
-stop token bridging: <code>prom.token</code> and
-<code>prom.source</code> must be initialized so that stop requests
-propagate from the parent.</li>
 <li><code>state::start</code> calls <code>handle.resume()</code>.</li>
 </ol>
-<p>Steps 2-5 are normative requirements. No conforming implementation
-can skip them. The <code>state&lt;Rcvr&gt;</code> object, the scheduler
-extraction, and the stop token setup exist because the sender protocol
-requires <code>connect</code>/<code>start</code> to establish the
-execution context for the child.</p>
+<p>Steps 2-4 are normative requirements. No conforming implementation
+can skip them. The <code>state&lt;Rcvr&gt;</code> object and the
+scheduler extraction exist because the sender protocol requires
+<code>connect</code>/<code>start</code> to establish the execution
+context for the child.</p>
 <p>In the coroutine-native model, the execution context is established
 by passing an <code>io_env</code> pointer - one store. The
 <code>io_env</code> already carries the executor, stop token, and frame
-allocator. No construction, no extraction, no bridging.</p>
+allocator. No construction, no extraction.</p>
 <p>Per <code>co_await</code> of a child task. Multiplied by N in a chain
 of N coroutines.</p>
-<p>The <code>state&lt;Rcvr&gt;</code> construction, scheduler
-extraction, and stop token setup are spec-mandated and remain in any
-conforming implementation.</p>
+<p>The <code>state&lt;Rcvr&gt;</code> construction and scheduler
+extraction are spec-mandated and remain in any conforming
+implementation.</p>
 <h3 id="completion-cost">5.4 Completion Cost</h3>
 <p>In the coroutine-native model, when a child task completes,
 <code>final_suspend</code> returns the parent’s coroutine handle.
@@ -1217,56 +1317,56 @@ Completion Handler</h4>
 specifies <code>when_all</code>’s completion logic in
 <code>impls-for&lt;when_all_t&gt;::complete</code>. The handler
 dispatches on the completion channel tag:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="op">[]&lt;</span><span class="kw">class</span> Index<span class="op">,</span> <span class="kw">class</span> State<span class="op">,</span> <span class="kw">class</span> Rcvr<span class="op">,</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">class</span> Set<span class="op">,</span> <span class="kw">class</span><span class="op">...</span> Args<span class="op">&gt;(</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">this</span> <span class="kw">auto</span><span class="op">&amp;</span> complete<span class="op">,</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    Index<span class="op">,</span> State<span class="op">&amp;</span> state<span class="op">,</span> Rcvr<span class="op">&amp;</span> rcvr<span class="op">,</span></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    Set<span class="op">,</span> Args<span class="op">&amp;&amp;...</span> args<span class="op">)</span> <span class="kw">noexcept</span></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">-&gt;</span> <span class="dt">void</span></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span></span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>        same_as<span class="op">&lt;</span>Set<span class="op">,</span> <span class="dt">set_error_t</span><span class="op">&gt;)</span></span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>disposition<span class="op">::</span>error <span class="op">!=</span></span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>            state<span class="op">.</span>disp<span class="op">.</span>exchange<span class="op">(</span></span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>                disposition<span class="op">::</span>error<span class="op">))</span></span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>            state<span class="op">.</span>stop_src<span class="op">.</span>request_stop<span class="op">();</span></span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>            TRY<span class="op">-</span>EMPLACE<span class="op">-</span>ERROR<span class="op">(</span>state<span class="op">.</span>errors<span class="op">,</span></span>
-<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>                forward<span class="op">&lt;</span>Args<span class="op">&gt;(</span>args<span class="op">)...);</span></span>
-<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span> <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span></span>
-<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>        same_as<span class="op">&lt;</span>Set<span class="op">,</span> <span class="dt">set_stopped_t</span><span class="op">&gt;)</span></span>
-<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>        <span class="kw">auto</span> expected <span class="op">=</span></span>
-<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>            disposition<span class="op">::</span>started<span class="op">;</span></span>
-<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>state<span class="op">.</span>disp</span>
-<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>                <span class="op">.</span>compare_exchange_strong<span class="op">(</span></span>
-<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>                    expected<span class="op">,</span></span>
-<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>                    disposition<span class="op">::</span>stopped<span class="op">))</span></span>
-<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
-<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>            state<span class="op">.</span>stop_src<span class="op">.</span>request_stop<span class="op">();</span></span>
-<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span> <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span></span>
-<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>        <span class="op">!</span>same_as<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>State<span class="op">::</span>values<span class="op">),</span></span>
-<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>                 tuple<span class="op">&lt;&gt;&gt;)</span></span>
-<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>state<span class="op">.</span>disp <span class="op">==</span></span>
-<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>            disposition<span class="op">::</span>started<span class="op">)</span></span>
-<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
-<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a>            <span class="kw">auto</span><span class="op">&amp;</span> opt <span class="op">=</span></span>
-<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a>                get<span class="op">&lt;</span>Index<span class="op">::</span>value<span class="op">&gt;(</span></span>
-<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a>                    state<span class="op">.</span>values<span class="op">);</span></span>
-<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a>            TRY<span class="op">-</span>EMPLACE<span class="op">-</span>VALUE<span class="op">(</span>complete<span class="op">,</span></span>
-<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a>                opt<span class="op">,</span></span>
-<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a>                forward<span class="op">&lt;</span>Args<span class="op">&gt;(</span>args<span class="op">)...);</span></span>
-<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a>    state<span class="op">.</span>arrive<span class="op">(</span>rcvr<span class="op">);</span></span>
-<span id="cb3-50"><a href="#cb3-50" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="op">[]&lt;</span><span class="kw">class</span> Index<span class="op">,</span> <span class="kw">class</span> State<span class="op">,</span> <span class="kw">class</span> Rcvr<span class="op">,</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">class</span> Set<span class="op">,</span> <span class="kw">class</span><span class="op">...</span> Args<span class="op">&gt;(</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">this</span> <span class="kw">auto</span><span class="op">&amp;</span> complete<span class="op">,</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    Index<span class="op">,</span> State<span class="op">&amp;</span> state<span class="op">,</span> Rcvr<span class="op">&amp;</span> rcvr<span class="op">,</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    Set<span class="op">,</span> Args<span class="op">&amp;&amp;...</span> args<span class="op">)</span> <span class="kw">noexcept</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">-&gt;</span> <span class="dt">void</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>        same_as<span class="op">&lt;</span>Set<span class="op">,</span> <span class="dt">set_error_t</span><span class="op">&gt;)</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>disposition<span class="op">::</span>error <span class="op">!=</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>            state<span class="op">.</span>disp<span class="op">.</span>exchange<span class="op">(</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>                disposition<span class="op">::</span>error<span class="op">))</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>            state<span class="op">.</span>stop_src<span class="op">.</span>request_stop<span class="op">();</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>            TRY<span class="op">-</span>EMPLACE<span class="op">-</span>ERROR<span class="op">(</span>state<span class="op">.</span>errors<span class="op">,</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>                forward<span class="op">&lt;</span>Args<span class="op">&gt;(</span>args<span class="op">)...);</span></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span> <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>        same_as<span class="op">&lt;</span>Set<span class="op">,</span> <span class="dt">set_stopped_t</span><span class="op">&gt;)</span></span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>        <span class="kw">auto</span> expected <span class="op">=</span></span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>            disposition<span class="op">::</span>started<span class="op">;</span></span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>state<span class="op">.</span>disp</span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>                <span class="op">.</span>compare_exchange_strong<span class="op">(</span></span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>                    expected<span class="op">,</span></span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>                    disposition<span class="op">::</span>stopped<span class="op">))</span></span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a>            state<span class="op">.</span>stop_src<span class="op">.</span>request_stop<span class="op">();</span></span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span> <span class="cf">if</span> <span class="kw">constexpr</span> <span class="op">(</span></span>
+<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a>        <span class="op">!</span>same_as<span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(</span>State<span class="op">::</span>values<span class="op">),</span></span>
+<span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a>                 tuple<span class="op">&lt;&gt;&gt;)</span></span>
+<span id="cb4-36"><a href="#cb4-36" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb4-37"><a href="#cb4-37" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>state<span class="op">.</span>disp <span class="op">==</span></span>
+<span id="cb4-38"><a href="#cb4-38" aria-hidden="true" tabindex="-1"></a>            disposition<span class="op">::</span>started<span class="op">)</span></span>
+<span id="cb4-39"><a href="#cb4-39" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
+<span id="cb4-40"><a href="#cb4-40" aria-hidden="true" tabindex="-1"></a>            <span class="kw">auto</span><span class="op">&amp;</span> opt <span class="op">=</span></span>
+<span id="cb4-41"><a href="#cb4-41" aria-hidden="true" tabindex="-1"></a>                get<span class="op">&lt;</span>Index<span class="op">::</span>value<span class="op">&gt;(</span></span>
+<span id="cb4-42"><a href="#cb4-42" aria-hidden="true" tabindex="-1"></a>                    state<span class="op">.</span>values<span class="op">);</span></span>
+<span id="cb4-43"><a href="#cb4-43" aria-hidden="true" tabindex="-1"></a>            TRY<span class="op">-</span>EMPLACE<span class="op">-</span>VALUE<span class="op">(</span>complete<span class="op">,</span></span>
+<span id="cb4-44"><a href="#cb4-44" aria-hidden="true" tabindex="-1"></a>                opt<span class="op">,</span></span>
+<span id="cb4-45"><a href="#cb4-45" aria-hidden="true" tabindex="-1"></a>                forward<span class="op">&lt;</span>Args<span class="op">&gt;(</span>args<span class="op">)...);</span></span>
+<span id="cb4-46"><a href="#cb4-46" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb4-47"><a href="#cb4-47" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb4-48"><a href="#cb4-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-49"><a href="#cb4-49" aria-hidden="true" tabindex="-1"></a>    state<span class="op">.</span>arrive<span class="op">(</span>rcvr<span class="op">);</span></span>
+<span id="cb4-50"><a href="#cb4-50" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 <p>Three branches. Three behaviors:</p>
 <ul>
 <li><strong><code>set_error</code></strong>: calls
@@ -1330,34 +1430,45 @@ tuple.</p>
 <tr>
 <td><code>set_error(tuple(ec, n))</code> - error channel</td>
 <td>Both values</td>
-<td>–</td>
+<td>Corrupts downstream error types (Section 5.5.3)</td>
 </tr>
 </tbody>
 </table>
-<p>With the fourth routing, the standard <code>when_all</code> works
-correctly for I/O. The “write it once” argument holds. This paper grants
-this routing as a concession.</p>
+<p>With the fourth routing, the standard <code>when_all</code> cancels
+siblings on I/O error. Whether the “write it once” argument holds
+depends on what happens downstream - see Section 5.5.3.</p>
 <h4 id="the-remaining-difference">5.5.3 The Remaining Difference</h4>
-<p>The combinator gap is ergonomic, not structural. Both models can
-express the same semantics. The coroutine-native model provides a more
-convenient return type - <code>io_result&lt;R1, ..., Rn&gt;</code> with
-a single <code>ec</code> and flat destructuring - while the sender model
-returns <code>tuple&lt;R1, ..., Rn&gt;</code> on the value path and
-<code>set_error(tuple(ec, T...))</code> on the error path. The
-information is the same; the packaging differs.</p>
-<p>The coroutine-native model’s runner coroutine has direct access to
-the result value after <code>co_await</code>:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> result <span class="op">=</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">co_await</span> <span class="bu">std::</span>move<span class="op">(</span>inner<span class="op">);</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="bu">std::</span>get<span class="op">&lt;</span>Index<span class="op">&gt;(</span></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    state<span class="op">-&gt;</span><span class="va">results_</span><span class="op">).</span>set<span class="op">(</span>result<span class="op">);</span></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>result<span class="op">.</span>ec<span class="op">)</span></span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    state<span class="op">-&gt;</span><span class="va">core_</span></span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>        <span class="op">.</span><span class="va">stop_source_</span><span class="op">.</span>request_stop<span class="op">();</span></span></code></pre></div>
-<p>The sender model achieves the same cancellation through channel
-dispatch.</p>
+<p>The fourth routing makes <code>when_all</code> cancel siblings on I/O
+error. It does not make the composition clean. Downstream algorithms -
+<code>upon_error</code>, <code>let_error</code>, <code>retry</code> -
+now receive <code>tuple&lt;error_code, size_t&gt;</code> instead of
+<code>error_code</code>. Every handler must branch on the error type
+with <code>if constexpr</code>. Partial transfer data (bytes read before
+the error) is semantically misplaced inside the error channel.
+<code>retry</code> sees the tuple and retries the whole operation; the
+byte count is lost. <a href="https://wg21.link/d4124r0">D4124R0</a><sup>[20]</sup> examines
+these problems in detail and shows that the first three routing
+strategies fail to achieve correct I/O error handling, and that the
+fourth corrupts downstream composition, without a domain-aware
+combinator.</p>
+<p>The coroutine-native model’s combinator has direct access to the
+result value after <code>co_await</code>:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span> result <span class="op">=</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">co_await</span> <span class="bu">std::</span>move<span class="op">(</span>inner<span class="op">);</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="bu">std::</span>get<span class="op">&lt;</span>Index<span class="op">&gt;(</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    state<span class="op">-&gt;</span><span class="va">results_</span><span class="op">).</span>set<span class="op">(</span>result<span class="op">);</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>result<span class="op">.</span>ec<span class="op">)</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    state<span class="op">-&gt;</span><span class="va">core_</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>        <span class="op">.</span><span class="va">stop_source_</span><span class="op">.</span>request_stop<span class="op">();</span></span></code></pre></div>
+<p>No channel routing. No adapter. No extra allocations. The combinator
+inspects the value, not the channel tag. The sender model can achieve
+the same cancellation through the fourth routing, but at the cost of
+corrupting the error type and requiring per-call-site adaptation. The
+“write it once” argument inverts: one generic <code>when_all</code> plus
+N adapters is more total code than two implementations (one generic, one
+I/O-aware) plus zero adapters.</p>
 <h3 id="io_env-indirection">5.6 <code>io_env</code> Indirection</h3>
 <p>In the coroutine-native model, the promise carries
 <code>io_env</code> directly. The type-erased executor is constructed
@@ -1368,107 +1479,108 @@ The <code>state&lt;Rcvr&gt;</code> object stores
 <code>Environment</code> directly ([task.state] paragraph 2). A
 conforming implementation can provide direct access without indirection.
 This paper grants that the best-case implementation does so.</p>
-<h3 id="stop-token-propagation">5.7 Stop Token Propagation</h3>
-<p>Cancellation in <code>when_all</code> requires propagating a stop
-signal from the shared stop source to each child’s I/O operations. Both
-models create a stop source and bridge the parent’s stop token to
-it.</p>
-<p><strong>Coroutine-native model</strong> (6 steps):</p>
+<h3 id="io-operations-as-senders-case-b">5.7 I/O Operations as Senders
+(Case B)</h3>
+<p>Sections 5.1 through 5.6 analyze the task-to-task path. Under Case A,
+I/O operations are awaitables and the task-to-task path is the only
+source of sender protocol overhead. Under Case B, the overhead extends
+to every I/O operation.</p>
+<p>When <code>co_await sock.async_read_some(buf)</code> appears inside a
+<code>task&lt;T, IoEnv&gt;</code> and the I/O operation returns a
+sender, the <code>co_await</code> traverses the same sender machinery as
+a child task:</p>
 <ol type="1">
-<li><code>when_all_core</code> creates a <code>stop_source_</code>.</li>
-<li>A <code>stop_callback</code> bridges the parent’s stop token to the
-shared stop source.</li>
-<li><code>launch_one</code> passes <code>stop_source_.get_token()</code>
-in <code>io_env</code> to each child.</li>
-<li>The child’s I/O awaitable reads <code>env-&gt;stop_token</code>
-directly.</li>
-<li>On error, the runner calls
-<code>stop_source_.request_stop()</code>.</li>
-<li>Siblings see <code>stop_requested()</code> in their
-<code>io_env.stop_token</code>.</li>
+<li><code>await_transform</code> ([task.promise] paragraph 9) intercepts
+the I/O sender.</li>
+<li>Wraps it in <code>affine_on(sender, SCHED(*this))</code>.</li>
+<li><code>as_awaitable</code> produces a
+<code>sender-awaitable</code>.</li>
+<li><code>sender-awaitable</code> calls
+<code>connect(affine_on_sender, awaitable-receiver)</code> - constructs
+<code>state&lt;awaitable-receiver&gt;</code> on the coroutine
+frame.</li>
+<li><code>await_suspend</code> calls <code>start(state)</code> -
+scheduler extraction, stop token setup, then I/O submission to the
+OS.</li>
+<li>I/O completes. The sender calls <code>set_value</code> on
+<code>awaitable-receiver</code>.</li>
+<li><code>awaitable-receiver</code> stores the result in a variant,
+calls <code>continuation.resume()</code>.</li>
+<li><code>await_resume</code> extracts the result from the variant.</li>
 </ol>
-<p>One stop source. One parent bridge. One hop from stop source to
-child. The <code>io_env</code> carries the token directly.</p>
-<p><strong>Sender model</strong> (best case, per <a href="https://wg21.link/p2300r10">P2300R10</a><sup>[14]</sup> and
-[exec.task]):</p>
+<p>The coroutine-native path for the same I/O operation:</p>
 <ol type="1">
-<li>[exec.when.all] paragraph 13: <code>when_all</code> creates an
-<code>inplace_stop_source</code> in its state object.</li>
-<li>[exec.when.all] paragraph 18: <code>start</code> registers a stop
-callback bridging the parent receiver’s stop token to the
-<code>inplace_stop_source</code>.</li>
-<li>[exec.when.all] paragraph 12: each child receives an environment
-where <code>get_stop_token</code> returns the
-<code>inplace_stop_source</code>’s token.</li>
-<li>[exec.when.all] paragraph 19: <code>when_all</code> calls
-<code>start</code> on each child’s operation state.</li>
-<li>[task.state] paragraph 4: <code>state::start</code> initializes
-<code>prom.token</code> and <code>prom.source</code> such that stop
-requests from the receiver’s token propagate to the child’s token
-([task.state] paragraph 4.4-4.6). This is a per-child stop bridge.</li>
-<li>[task.promise] paragraph 16.3: <code>get_env</code> returns
-<code>prom.token</code> via <code>get_stop_token</code>.</li>
-<li>The child’s I/O awaitable reads the stop token from the promise
-environment.</li>
-<li>On error: [exec.when.all] paragraph 19 calls
-<code>stop_src.request_stop()</code>.</li>
-<li>The stop request propagates through step 2’s bridge to the
-<code>inplace_stop_source</code>.</li>
-<li>The <code>inplace_stop_source</code> propagates through step 5’s
-per-child bridges to each child’s <code>prom.source</code>.</li>
-<li>The I/O awaitable sees <code>stop_requested()</code>.</li>
+<li><code>await_transform</code> passes <code>io_env*</code> to the
+awaitable.</li>
+<li><code>await_suspend</code> stores the continuation handle, submits
+I/O, returns <code>coroutine_handle&lt;&gt;</code> (symmetric
+transfer).</li>
+<li>I/O completes. Reactor resumes via stored handle.</li>
+<li><code>await_resume</code> returns
+<code>io_result&lt;size_t&gt;</code> directly.</li>
 </ol>
-<table>
-<colgroup>
-<col style="width: 44%" />
-<col style="width: 21%" />
-<col style="width: 33%" />
-</colgroup>
-<thead>
-<tr>
-<th>Property</th>
-<th>Coroutine-native</th>
-<th>Sender (best case)</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Stop sources</td>
-<td>1</td>
-<td>1 + 1 per child</td>
-</tr>
-<tr>
-<td>Parent stop bridge</td>
-<td>1</td>
-<td>1</td>
-</tr>
-<tr>
-<td>Per-child stop bridges</td>
-<td>0</td>
-<td>1 per child</td>
-</tr>
-<tr>
-<td>Steps to propagate stop</td>
-<td>6</td>
-<td>11</td>
-</tr>
-<tr>
-<td>Spec reference</td>
-<td>–</td>
-<td>[task.state] paragraph 4</td>
-</tr>
-</tbody>
-</table>
-<p>The coroutine-native model passes the shared stop token directly in
-<code>io_env</code> - one hop. The sender model must bridge the token
-through <code>state::start</code> for each child because [task.state]
-paragraph 4.4-4.6 requires <code>prom.token</code> and
-<code>prom.source</code> to be initialized per-child so that stop
-requests propagate. This is a normative requirement of [exec.task].</p>
+<p>Three properties of Case B deserve attention.</p>
+<p><strong>No separate allocation.</strong> The
+<code>state&lt;awaitable-receiver&gt;</code> is a local variable inside
+<code>sender-awaitable</code>, which lives on the coroutine frame. No
+heap allocation occurs. This is the steelman: the “no dynamic memory
+allocation” property of the sender model holds for I/O operations
+co_awaited inside a coroutine. The cost is CPU overhead per I/O
+operation - <code>state&lt;Rcvr&gt;</code> construction, environment
+extraction, <code>affine_on</code> wrapping - not allocation.</p>
+<p>The coroutine frame itself is already allocated. The sender machinery
+adds CPU overhead on top of the same allocation profile. The “no
+allocation” benefit does not materialize for the I/O user because the
+coroutine frame provides the storage regardless of whether the I/O
+operation is a sender or an awaitable.</p>
+<p><strong>No symmetric transfer.</strong> <code>set_value</code> is
+void-returning (<a href="https://wg21.link/p2583r3">P2583R3</a><sup>[19]</sup> documents
+this gap). The <code>awaitable-receiver</code> calls
+<code>continuation.resume()</code> as a function call. In the
+coroutine-native model, <code>await_suspend</code> returns
+<code>coroutine_handle&lt;&gt;</code> and the compiler arranges a tail
+call. The symmetric transfer gap documented in <a href="https://wg21.link/p2583r3">P2583R3</a><sup>[19]</sup> applies to
+every I/O completion under Case B.</p>
+<p><strong>Type-erased streams allocate per operation.</strong> When the
+I/O operation is an awaitable, the awaitable returned by a type-erased
+stream has a fixed, compile-time-known size - a pointer to the vtable
+and a pointer to the buffer. The compiler places it on the coroutine
+frame. No heap allocation.</p>
+<p>When the I/O operation is a sender, type-erasing the stream requires
+<code>any_sender&lt;completion_signatures&lt;...&gt;&gt;</code>. The
+<code>connect</code> call on <code>any_sender</code> must produce an
+operation state whose size depends on the concrete sender type that was
+erased - a size unknown at compile time. The coroutine frame layout is
+fixed before the <code>co_await</code>; it cannot absorb a
+dynamically-sized operation state. The operation state must be
+heap-allocated inside <code>any_sender::connect</code>. This is a
+per-I/O-operation allocation that does not exist in the coroutine-native
+model or under Case A.</p>
+<p>This is the allocator timing problem from <a href="https://isocpp.org/files/papers/P4088R0.pdf">P4088R0</a><sup>[6]</sup>
+Section 6.1 manifesting in a form that cannot be resolved by frame
+allocator fixes. The frame allocator rework in <a href="https://isocpp.org/files/papers/D3980R0.html">D3980R0</a><sup>[8]</sup>
+ensures the allocator reaches <code>promise_type::operator new</code>
+before the frame is allocated. It does not help here because the
+allocation is not the coroutine frame - it is the type-erased operation
+state inside <code>any_sender::connect</code>, which occurs after the
+frame is already allocated.</p>
+<p><strong>The multiplier.</strong> Under Case A, the sender protocol
+overhead is per task-to-task transition. A five-coroutine session chain
+has five transitions. Under Case B, the overhead is per task-to-task
+transition plus per I/O operation. Every <code>co_await</code> of a
+socket read, a socket write, a timer wait, a DNS lookup, a TLS handshake
+step pays <code>state&lt;Rcvr&gt;</code> construction and scheduler
+extraction that the coroutine-native model does not pay. A minimal HTTP
+request-response - accept, TLS handshake (multiple round trips), read
+headers, read body, write headers, write body - is 6-15 I/O operations.
+A WebSocket session with streaming: hundreds. A long-lived connection
+with keep-alive: thousands over its lifetime. Per session. Multiplied by
+the number of concurrent sessions.</p>
 <hr />
 <h2 id="the-shipping-schedule-risk">6. The Shipping Schedule Risk</h2>
-<p>The concessions in Section 2 assume six engineering fixes ship. <a href="https://wg21.link/p3552r3">P3552R3</a><sup>[1]</sup> is the
-vehicle. The C++26 cycle is closing. The fixes are not in <a href="https://wg21.link/p3552r3">P3552R3</a><sup>[1]</sup> today:</p>
+<p>The concessions in Section 2 assume several engineering fixes ship.
+<a href="https://wg21.link/p3552r3">P3552R3</a><sup>[1]</sup> is the
+vehicle. The C++26 cycle is closing. The following fixes are not in <a href="https://wg21.link/p3552r3">P3552R3</a><sup>[1]</sup> today:</p>
 <ul>
 <li>Symmetric transfer: <a href="https://wg21.link/p3801r0">P3801R0</a><sup>[7]</sup> identified
 the vulnerability. Trampolines are being explored (<a href="https://wg21.link/p3796r1">P3796R1</a><sup>[11]</sup>). Not
@@ -1481,7 +1593,11 @@ specification.</li>
 </ul>
 <p>If <code>task</code> ships in C++26 without these fixes, the
 concessions in Section 2 are hypothetical. The gap in Section 4 would be
-larger - the first seven rows would no longer say “Identical.”</p>
+larger.</p>
+<p>It has been stated in internal discussions that the plan is for I/O
+primitives to be senders. Case A (I/O as awaitables) is therefore more
+generous than the stated direction. Case B (Section 5.7) documents the
+cost under the stated plan.</p>
 <p><a href="https://wg21.link/p2762r0">P2762R0</a><sup>[12]</sup>
 mentioned <code>io_task</code> in one paragraph:</p>
 <blockquote>
@@ -1523,10 +1639,9 @@ hand.’”</p>
 </blockquote>
 <p>Part (b) applies here. The user is using a task abstraction for I/O.
 A coroutine-native task performs the same I/O without
-<code>state&lt;Rcvr&gt;</code> construction, without scheduler
-extraction, and without per-child stop token bridging. The overhead
-documented in Sections 4 and 5 exists because of the sender protocol,
-not because of the I/O operation.</p>
+<code>state&lt;Rcvr&gt;</code> construction and without scheduler
+extraction. The overhead documented in Sections 4 and 5 exists because
+of the sender protocol, not because of the I/O operation.</p>
 <p><a href="https://wg21.link/p3406r0">P3406R0</a><sup>[17]</sup>
 continues:</p>
 <blockquote>
@@ -1539,27 +1654,29 @@ numbers are available or possible, the committee should be extremely
 suspicious and in particular, never just assume that optimizations will
 emerge over time. This should be a formal requirement.”</p>
 </blockquote>
-<p>This paper is that written discussion. The measurements are in
-Sections 4 and 5. The current and likely alternative is the
-coroutine-native task. The overheads are spec-mandated and cannot be
-assumed away by future optimizations.</p>
+<p>This paper is that written discussion. The analysis is in Sections 4
+and 5. The current and likely alternative is the coroutine-native task.
+The overheads are spec-mandated and cannot be assumed away by future
+optimizations.</p>
 <hr />
 <h2 id="conclusion">8. Conclusion</h2>
 <p>This paper grants every proposed fix and compares against the best
 possible conforming implementation of
 <code>std::execution::task</code>.</p>
 <p>Per [exec.task], every <code>co_await</code> of a child task must
-construct a <code>state&lt;Rcvr&gt;</code> object, extract the scheduler
-from the receiver’s environment, and set up stop token bridging. In the
-coroutine-native model, the same path stores two pointers. The sender
-protocol requires <code>connect</code>/<code>start</code> to establish
-the execution context per-child. The coroutine-native model passes an
+construct a <code>state&lt;Rcvr&gt;</code> object and extract the
+scheduler from the receiver’s environment. In the coroutine-native
+model, the same path stores two pointers. The sender protocol requires
+<code>connect</code>/<code>start</code> to establish the execution
+context per-child. The coroutine-native model passes an
 <code>io_env</code> pointer because the execution context is propagated,
 not reconstructed.</p>
 <p>The gap is spec-mandated and cannot be optimized away by a better
 implementation. A typical I/O session - accept, authenticate, read
-request, process, write response - is a chain of roughly 5 coroutines.
-The per-session cost:</p>
+request, process, write response - is a chain of roughly 5 coroutines
+performing roughly 10 I/O operations. The per-session cost:</p>
+<p><strong>Case A: I/O operations return awaitables
+(concession)</strong></p>
 <table>
 <colgroup>
 <col style="width: 43%" />
@@ -1586,9 +1703,9 @@ The per-session cost:</p>
 <td style="text-align: right;">5</td>
 </tr>
 <tr>
-<td>Stop token bridges</td>
+<td><code>affine_on</code> wrappings</td>
 <td style="text-align: right;">0</td>
-<td style="text-align: right;">5</td>
+<td style="text-align: right;">0</td>
 </tr>
 <tr>
 <td>Pointer stores</td>
@@ -1597,9 +1714,77 @@ The per-session cost:</p>
 </tr>
 </tbody>
 </table>
-<p>Multiplied by the number of concurrent sessions. The coroutine-native
-model pays 10 pointer stores. The sender model pays the same 10 pointer
-stores plus 15 additional operations mandated by [exec.task].</p>
+<p><strong>Case B: I/O operations return senders (stated
+direction)</strong></p>
+<table>
+<colgroup>
+<col style="width: 43%" />
+<col style="width: 24%" />
+<col style="width: 31%" />
+</colgroup>
+<thead>
+<tr>
+<th>Operation</th>
+<th style="text-align: right;">Coroutine-native</th>
+<th style="text-align: right;">Best
+<code>task&lt;T, IoEnv&gt;</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>state&lt;Rcvr&gt;</code> constructions</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">15</td>
+</tr>
+<tr>
+<td>Scheduler extractions</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">15</td>
+</tr>
+<tr>
+<td><code>affine_on</code> wrappings</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">10</td>
+</tr>
+<tr>
+<td>Symmetric transfer on I/O</td>
+<td style="text-align: right;">Yes</td>
+<td style="text-align: right;">No</td>
+</tr>
+<tr>
+<td>Type-erased stream allocation</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1 per I/O operation</td>
+</tr>
+<tr>
+<td>Pointer stores</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">10</td>
+</tr>
+</tbody>
+</table>
+<p>Under Case A, the coroutine-native model pays 10 pointer stores. The
+sender model pays the same 10 pointer stores plus 10 additional
+operations mandated by [exec.task]. Under Case B, the sender model pays
+10 pointer stores plus 40 additional operations - because every I/O
+read, write, timer, and DNS lookup pays <code>state&lt;Rcvr&gt;</code>
+construction, scheduler extraction, and <code>affine_on</code> wrapping
+that the coroutine-native model does not pay. Symmetric transfer is
+unavailable on the I/O completion path because <code>set_value</code> is
+void-returning. Type-erased streams incur a heap allocation per I/O
+operation because <code>any_sender::connect</code> must allocate a
+dynamically-sized operation state that the coroutine frame cannot absorb
+(Section 5.7).</p>
+<p>The operation counts above are theoretical. This paper does not claim
+to know the wall-clock cost of a <code>state&lt;Rcvr&gt;</code>
+construction or a scheduler extraction. The magnitude of each operation
+depends on the implementation, the optimizer, and the target
+architecture. What this paper does claim is that the cost is not zero.
+The operations are spec-mandated, they execute code that the
+coroutine-native model does not execute, and they scale with the number
+of I/O operations per session. Whether the per-operation cost is 5
+nanoseconds or 50 is an empirical question. That it exists is a
+normative one.</p>
 <p>The committee has the information to evaluate whether the gap
 justifies a separate task type for I/O. This paper provides the
 evidence. The committee decides.</p>
@@ -1607,8 +1792,10 @@ evidence. The committee decides.</p>
 <h2 id="acknowledgments">Acknowledgments</h2>
 <p>The author thanks Bjarne Stroustrup for <a href="https://wg21.link/p3406r0">P3406R0</a> and for articulating the
 standard to which this paper holds itself; Herb Sutter for the two-part
-definition of zero overhead in <a href="https://wg21.link/p0709r4">P0709R4</a>; Dietmar Kühl for <a href="https://wg21.link/p3552r3">P3552R3</a> and <a href="https://wg21.link/p3796r1">P3796R1</a> and for
-<code>beman::execution</code>; Jonathan Müller for <a href="https://wg21.link/p3801r0">P3801R0</a> and for documenting the
+definition of zero overhead in <a href="https://wg21.link/p0709r4">P0709R4</a>; Dietmar Kühl for <a href="https://wg21.link/p3552r3">P3552R3</a> and <a href="https://wg21.link/p3796r1">P3796R1</a>, for
+<code>beman::execution</code>, and for clarifying the stop token
+bridging resolution on the LEWG reflector; Jens Maurer for clarifying
+the stated direction for I/O primitives; Jonathan Müller for <a href="https://wg21.link/p3801r0">P3801R0</a> and for documenting the
 symmetric transfer gap; Chris Kohlhoff for identifying the
 partial-success problem in <a href="https://wg21.link/p2430r0">P2430R0</a>; Eric Niebler, Lewis Baker,
 and Kirk Shoop for <code>std::execution</code>; Steve Gerbino for
@@ -1673,6 +1860,11 @@ https://wg21.link/p3406r0</p></li>
 <li><p><a href="https://wg21.link/p0709r4">P0709R4</a> - “Zero-overhead
 deterministic exceptions: Throwing values” (Herb Sutter, 2019).
 https://wg21.link/p0709r4</p></li>
+<li><p><a href="https://wg21.link/p2583r3">P2583R3</a> - “Symmetric
+Transfer and Sender Composition” (Mungo Gill, Vinnie Falco, 2026).
+https://wg21.link/p2583r3</p></li>
+<li><p><a href="https://wg21.link/d4124r0">D4124R0</a> - “Domain-Aware
+Combinators” (Vinnie Falco, 2026). https://wg21.link/d4124r0</p></li>
 </ol>
 
 </body>
