@@ -3,8 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>P4125R1: Field Report: Coroutine-Native I/O at a Derivatives
-Exchange</title>
+  <title>P3984R0: A type-safety profile</title>
   <style type="text/css">
 
 @font-face {
@@ -843,15 +842,14 @@ outline: none;
   <div class="header-text">WG21 Proposal</div>
 </header>
 
-<h1>Field Report: Coroutine-Native I/O at a Derivatives Exchange</h1>
+<h1>A type-safety profile</h1>
 
 <!-- Document Metadata -->
 <div class="document-info">
-  <p><strong>Document Number:</strong> P4125R1</p>
-  <p><strong>Date:</strong> 2026-03-17</p>
-  <p><strong>Audience:</strong> SG14, LEWG</p>
-  <p><strong>Reply-to:</strong> Mungo Gill <a href="mailto:mungo.gill@me.com" class="email">mungo.gill@me.com</a><br><strong></strong> C++ Alliance
-Proposal Team</p>
+  <p><strong>Document Number:</strong> P3984R0</p>
+  <p><strong>Date:</strong> 2026-02-22</p>
+  <p><strong>Audience:</strong> EWG, SG12, SG20, SG23</p>
+  <p><strong>Reply-to:</strong> Bjarne Stroustrup <a href="mailto:bjarne@stroustrup.com" class="email">bjarne@stroustrup.com</a></p>
 </div>
 
 <!-- Table of Contents -->
@@ -862,358 +860,581 @@ Proposal Team</p>
   <li><a href="#revision-history" id="toc-revision-history">Revision
   History</a>
   <ul>
-  <li><a href="#r0-march-2026" id="toc-r0-march-2026">R0: March
+  <li><a href="#r0-february-2026" id="toc-r0-february-2026">R0: February
   2026</a></li>
   </ul></li>
-  <li><a href="#disclosure" id="toc-disclosure">1. Disclosure</a></li>
-  <li><a href="#background" id="toc-background">2. Background</a>
+  <li><a href="#introduction" id="toc-introduction">1. Introduction</a>
   <ul>
-  <li><a href="#the-integration-partner" id="toc-the-integration-partner">2.1 The Integration Partner</a></li>
-  <li><a href="#the-libraries-under-test" id="toc-the-libraries-under-test">2.2 The Libraries Under
-  Test</a></li>
-  <li><a href="#scope-and-limitations-of-the-integration" id="toc-scope-and-limitations-of-the-integration">2.3 Scope and
-  Limitations of the Integration</a></li>
+  <li><a href="#alternatives-to-profiles" id="toc-alternatives-to-profiles">1.1 Alternatives to
+  Profiles</a></li>
   </ul></li>
-  <li><a href="#methodology" id="toc-methodology">3.
-  Methodology</a></li>
-  <li><a href="#callback-to-coroutine-migration" id="toc-callback-to-coroutine-migration">4. Callback-to-Coroutine
-  Migration</a>
+  <li><a href="#specification" id="toc-specification">2.
+  Specification</a>
   <ul>
-  <li><a href="#transition-difficulty" id="toc-transition-difficulty">4.1 Transition Difficulty</a></li>
-  <li><a href="#incremental-adoption" id="toc-incremental-adoption">4.2
-  Incremental Adoption</a></li>
-  <li><a href="#coroutine-only-design" id="toc-coroutine-only-design">4.3 Coroutine-Only Design</a></li>
+  <li><a href="#object" id="toc-object">2.1 Object</a></li>
+  <li><a href="#resource" id="toc-resource">2.2 Resource</a></li>
+  <li><a href="#constructorsdestructors" id="toc-constructorsdestructors">2.3 Constructors/Destructors</a></li>
+  <li><a href="#copies-and-moves" id="toc-copies-and-moves">2.4 Copies
+  and Moves</a></li>
+  <li><a href="#ranges-and-nullptr" id="toc-ranges-and-nullptr">2.5
+  Ranges and <code>nullptr</code></a></li>
+  <li><a href="#invalidation" id="toc-invalidation">2.6
+  Invalidation</a></li>
   </ul></li>
-  <li><a href="#error-handling" id="toc-error-handling">5. Error
-  Handling</a></li>
-  <li><a href="#early-assessment" id="toc-early-assessment">6. Early
-  Assessment</a></li>
-  <li><a href="#observations" id="toc-observations">7. Observations</a>
-  <ul>
-  <li><a href="#error-return-paths" id="toc-error-return-paths">7.1
-  Error Return Paths</a></li>
-  <li><a href="#coroutine-native-io-in-practice" id="toc-coroutine-native-io-in-practice">7.2 Coroutine-Native I/O in
-  Practice</a></li>
-  <li><a href="#accessibility" id="toc-accessibility">7.3
-  Accessibility</a></li>
-  </ul></li>
-  <li><a href="#limitations-of-this-study" id="toc-limitations-of-this-study">8. Limitations of This
-  Study</a></li>
+  <li><a href="#the-profiles-framework" id="toc-the-profiles-framework">3. The Profiles Framework</a></li>
+  <li><a href="#other-profiles" id="toc-other-profiles">4. Other
+  Profiles</a></li>
+  <li><a href="#what-needs-to-be-done-soon" id="toc-what-needs-to-be-done-soon">5. What Needs to Be Done
+  Soon</a></li>
   <li><a href="#acknowledgements" id="toc-acknowledgements">Acknowledgements</a></li>
   <li><a href="#references" id="toc-references">References</a></li>
   </ul>
 </nav>
 
 <h2 id="abstract">Abstract</h2>
-<p>A derivatives exchange is porting from Asio callbacks to
-coroutine-native I/O. Early results: it works.</p>
-<p>The paper reports qualitative findings from two structured interviews
-with the engineering team. The results are preliminary - the integration
-covers a subset of the platform and no performance benchmarks have been
-completed - but the field evidence is reported here for the committee’s
-consideration.</p>
+<p>Two profiles can guarantee type safety and resource safety for C++
+application code without abandoning compatibility or the zero-overhead
+principle.</p>
+<p>The concept of and rationale for Profiles<sup>[1, 2, 3]</sup> are
+summarized and some suggested alternatives are mentioned. The
+type-safety and resource-safety profiles are presented in some detail as
+an example to illustrate the specification and implementation
+requirements of two of the most essential and difficult profiles.</p>
+<p>This is a description of Profiles in general terms aimed at
+understanding, not a standards text aimed at standards experts only.
+However, it is sufficiently detailed to be translated in “standardese”
+with relatively few technical changes. What is described has been
+prototyped<sup>[4, 5, 6]</sup> and some parts used in the form of
+guidelines.</p>
+<p>A plan for progress is outlined (Section 5).</p>
 <hr />
 <h2 id="revision-history">Revision History</h2>
-<h3 id="r0-march-2026">R0: March 2026</h3>
+<h3 id="r0-february-2026">R0: February 2026</h3>
 <ul>
-<li>Initial version. Early-stage qualitative findings only.</li>
+<li>Initial version.</li>
 </ul>
 <hr />
-<h2 id="disclosure">1. Disclosure</h2>
-<p>The author is affiliated with the C++ Alliance, which develops <a href="https://github.com/cppalliance/capy">Capy</a><sup>[1]</sup> and <a href="https://github.com/cppalliance/corosio">Corosio</a><sup>[2]</sup>,
-the libraries under test. The integration partner is an independent
-commercial entity. The author has papers before the committee proposing
-coroutine-based I/O (<a href="https://wg21.link/p4003r0">P4003R0</a>
-“Coroutines for I/O”<sup>[3]</sup>) and analysing
-<code>std::execution</code> (<a href="https://isocpp.org/files/papers/P4007R1.pdf">P4007R1</a> “Open
-Issues in std::execution::task”<sup>[4]</sup>, <a href="https://wg21.link/p4014r0">P4014R0</a> “The Sender
-Sub-Language”<sup>[5]</sup>).</p>
-<p>This paper documents findings. It does not propose changes, request
-committee time, or advocate for a position. The evidence is early-stage
-and the authors acknowledge its limitations explicitly in Section8.</p>
-<hr />
-<h2 id="background">2. Background</h2>
-<p>The integration involves a commercial derivatives exchange operator
-porting from Boost.Asio to a coroutine-native library developed by the
-C++ Alliance.</p>
-<h3 id="the-integration-partner">2.1 The Integration Partner</h3>
-<p>The integration partner has developed one of the world’s highest
-performance derivatives exchange platforms. The platform supports 24/7
-markets across all major asset types and is considered “equities grade”
-but with full derivative support including options. It was built by
-engineers who pioneered modern exchange architecture and who were behind
-the tech stacks that underpin markets such as NYSE, NASDAQ, and
-HKEx.</p>
-<p>The primary codebase comprises numerous repositories (primarily C++),
-with Boost.Asio as a foundational process building block for application
-pipelines and session management. The majority of the code uses Asio
-callbacks; a small island of coroutine code exists in the most
-performance-critical path. As is standard practice in low-latency
-financial markets infrastructure, the organisation does not use
-exceptions in production code.</p>
-<h3 id="the-libraries-under-test">2.2 The Libraries Under Test</h3>
-<p>Capy is a C++ library providing async/coroutine building blocks and
-executor models. Corosio is a networking library built on Capy,
-providing async socket operations. Both are designed with C++20
-coroutines as first-class citizens and are described in detail in <a href="https://wg21.link/p4003r0">P4003R0</a><sup>[3]</sup>. The key
-design commitment is: coroutines only. No callbacks, futures, or
-sender/receiver interfaces. Every I/O operation returns an
-awaitable.</p>
-<h3 id="scope-and-limitations-of-the-integration">2.3 Scope and
-Limitations of the Integration</h3>
-<p>The initial port focuses on a subset of repositories needed to re-run
-the partner’s matching facility benchmark tests with Corosio replacing
-Asio. The scope covers core executor, IO context, and TCP socket
-functionality. UDP and WebSocket support - required for market data
-feeds and external client connectivity respectively - are not yet
-available in Corosio and are excluded from this evaluation.</p>
-<p>The project is structured in phases: foundational library porting
-first, then TCP client/server components, then benchmark execution. The
-central research question is whether a coroutine-native I/O library can
-match or exceed Asio’s performance in a mission-critical production
-system. The benchmarking phase has not yet begun.</p>
-<hr />
-<h2 id="methodology">3. Methodology</h2>
-<p>Two structured interviews were conducted with members of the
-integration partner’s engineering team in March 2026:</p>
+<h2 id="introduction">1. Introduction</h2>
+<p>My initial motivation to develop C++ was to combine the best of C and
+Simula:</p>
 <ul>
-<li><strong>Engineer A</strong> (CEO, highly experienced C++ engineer):
-~90 minute interview covering build integration, incremental adoption
-strategy, and architectural assessment.</li>
-<li><strong>Engineer B</strong> (platform architect): ~70 minute
-interview covering callback-to-coroutine migration, error handling, and
-production readiness assessment.</li>
+<li>C’s ability to access hardware and manipulate data without
+overhead.</li>
+<li>Simula’s ability to organize programs and guarantee type
+safety.</li>
 </ul>
-<p>Both engineers had been working with Capy and Corosio for
-approximately two weeks at the time of their interviews. All quotes in
-this paper are verbatim transcriptions. A project journal maintained by
-the engineering team provided supplementary context.</p>
-<p>The interviews were qualitative. No metrics, benchmarks, or automated
-measurements are reported. The findings represent the subjective
-assessments of two experienced engineers at the early stage of an
-ongoing integration. They carry the weight appropriate to their
-scope.</p>
-<p>Both interviews were conducted remotely over video call; the
-Capy/Corosio author was present for technical questions but did not
-participate in the assessment discussions.</p>
-<hr />
-<h2 id="callback-to-coroutine-migration">4. Callback-to-Coroutine
-Migration</h2>
-<p>The partner’s codebase is predominantly callback-based. The following
-subsections report how the transition to coroutines proceeded in
-practice.</p>
-<h3 id="transition-difficulty">4.1 Transition Difficulty</h3>
-<p>Migrating production callback-based code to coroutines was feasible
-and less disruptive than anticipated.</p>
-<blockquote>
-<p>“It was actually easier than expected.” - Engineer B</p>
-</blockquote>
-<blockquote>
-<p>“The actual move from callbacks to coroutines took a bit of thought
-but it was overall not a massive change.” - Engineer B</p>
-</blockquote>
-<blockquote>
-<p>“The changes we’ve had to make haven’t been as drastic as maybe once
-thought.” - Engineer B</p>
-</blockquote>
-<p>Recursive callback patterns (retry loops, reconnection handlers)
-converted naturally to structured coroutine loops, which the engineers
-described as simpler and more readable than the callback originals.</p>
-<h3 id="incremental-adoption">4.2 Incremental Adoption</h3>
-<p>Engineer A designed a “springboard function” approach to insulate the
-existing callback codebase from requiring full coroutine
-propagation:</p>
-<blockquote>
-<p>“Can I just do a springboard function? So if I have a Capy-style
-executor and I need to call a coroutine, can I just wrap that in a box
-and pretend I didn’t do that?” - Engineer A</p>
-</blockquote>
-<blockquote>
-<p>“This might be a path that other people could follow. It’s a
-band-aid. We know that.” - Engineer A</p>
-</blockquote>
-<p>The approach uses an <code>executor_traits</code> abstraction layer
-allowing parallel Asio and Capy implementations. Tests run identically
-against both backends, validating behavioural equivalence. The
-dual-backend approach allowed the team to port incrementally without
-disrupting the existing Asio codebase.</p>
-<h3 id="coroutine-only-design">4.3 Coroutine-Only Design</h3>
-<p>Engineer B endorsed the coroutine-only design philosophy:</p>
-<blockquote>
-<p>“The tradeoffs around callbacks versus coroutines - if you’ve got a
-sufficiently modern codebase, I think there’s a very strong reason that
-you could choose the coroutine route and have very little tradeoff.” -
-Engineer B</p>
-</blockquote>
-<blockquote>
-<p>“Doing one thing and doing it very well and focusing just on that, I
-think, has a lot of merit.” - Engineer B</p>
-</blockquote>
-<hr />
-<h2 id="error-handling">5. Error Handling</h2>
-<p>Engineer B’s primary friction point was error handling. Corosio
-throws exceptions where Asio provides <code>error_code</code>
-overloads.</p>
-<blockquote>
-<p>“In some cases in Corosio and Capy, I think there’s only exceptions.
-It would be actually quite nice if you were able to either pass in an
-error code that gets updated or return an error code. The one I’m
-thinking of is socket set_option - it only throws.” - Engineer B</p>
-</blockquote>
-<blockquote>
-<p>“We don’t use exceptions at all. In some very non-intensive bits of
-code we’ll maybe use exception handling, but overall we don’t use that.
-Having a consistent way to report errors would be a worthwhile set of
-updates.” - Engineer B</p>
-</blockquote>
-<p>The Capy/Corosio author proposed a boundary during the interview:
-exceptions for programmer errors (logic errors, misconfiguration) and
-error codes for runtime conditions. Engineer B found this reasonable in
-principle but probed the boundary:</p>
-<blockquote>
-<p>“Should setting the no-delay flag fail? Is that an exceptional
-circumstance, or is it fine to continue on with the socket open and not
-having set that?” - Engineer B</p>
-</blockquote>
-<p>The exception-vs-error-code boundary is a recurring design question
-in C++ I/O libraries. This question is directly relevant to financial
-markets infrastructure, where exception-free code paths are a standard
-requirement.</p>
-<hr />
-<h2 id="early-assessment">6. Early Assessment</h2>
-<p>Engineer A’s assessment is exploratory - the springboard approach
-needs performance validation:</p>
-<blockquote>
-<p>“We might surprisingly find that actually it is feasible to take this
-approach. And this might be a path that other people could follow.” -
-Engineer A</p>
-</blockquote>
-<p>Engineer B’s assessment is more confident:</p>
-<blockquote>
-<p>“I think this is a viable production replacement. So far, at least
-from what we’ve seen - not that we’ve had gigabytes of traffic flowing
-through this thing yet - but definitely the way it’s been written, the
-way we’ve been porting code across to it, the way the tests continue to
-work… I would be quite confident that it would be robust and a
-reasonable alternative or replacement.” - Engineer B</p>
-</blockquote>
-<blockquote>
-<p>“It doesn’t feel brittle. It feels like it’s been quite well thought
-out, and the changes we’ve had to make around some of this stuff haven’t
-been excruciating.” - Engineer B</p>
-</blockquote>
-<blockquote>
-<p>“I would definitely not steer anyone away from it after what I’ve
-experienced so far.” - Engineer B</p>
-</blockquote>
-<p>Engineer B’s endorsement carries a caveat for teams with deeply
-entrenched Asio codebases - particularly those with complex
-multi-threading and multiple thread pools, where the migration would be
-substantially harder.</p>
-<p>These assessments are based on approximately two weeks of integration
-work covering a subset of the platform. No performance benchmarks have
-been completed. These are early indicators, not final verdicts.</p>
-<hr />
-<h2 id="observations">7. Observations</h2>
-<p>The following observations connect the field findings to topics under
-discussion in the committee. They are stated as observations, not
-recommendations.</p>
-<h3 id="error-return-paths">7.1 Error Return Paths</h3>
-<p><a href="https://isocpp.org/files/papers/P4007R1.pdf">P4007R1</a><sup>[4]</sup>
-identifies error return as a “not fixable post-ship” gap in
-<code>std::execution::task</code>. The integration partner’s experience
-illustrates the practical dimension of this question: production
-financial markets infrastructure requires consistent
-<code>error_code</code> paths. The partner does not use exceptions in
-production code. When Corosio’s <code>socket.set_option()</code> threw
-where Asio provides an <code>error_code</code> overload, it was their
-primary API complaint.</p>
-<p>How errors flow through coroutine pipelines is not an abstract design
-question. It has immediate consequences for adoption in domains where
-exception-free code is a requirement.</p>
-<h3 id="coroutine-native-io-in-practice">7.2 Coroutine-Native I/O in
-Practice</h3>
-<p><a href="https://wg21.link/p4003r0">P4003R0</a><sup>[3]</sup>
-proposes that C++20 coroutines are suited to I/O, and <a href="https://wg21.link/p4014r0">P4014R0</a><sup>[5]</sup> argues that
-coroutines (direct style) are a natural complement to senders
-(continuation-passing style). The integration described in this paper
-provides early qualitative evidence bearing on these claims.</p>
-<p>A derivatives exchange platform with a large, predominantly C++
-codebase and a majority callback-based architecture is porting to a
-coroutine-native library. After two weeks of work, two engineers
-independently found the migration less disruptive than anticipated and
-endorsed the coroutine-only design philosophy. These are preliminary
-impressions from experienced engineers, not validated production
-results.</p>
-<p><a href="https://isocpp.org/files/papers/P4007R1.pdf">P4007R1</a><sup>[4]</sup>
-notes that zero open-source sender-based networking stacks exist, while
-six coroutine-based stacks are in production use. This integration adds
-a seventh data point.</p>
-<h3 id="accessibility">7.3 Accessibility</h3>
-<p><a href="https://wg21.link/p4014r0">P4014R0</a><sup>[5]</sup> argues
-that the sender model constitutes a “sub-language” with its own control
-flow, variable binding, and error handling - creating a learning burden
-distinct from standard C++. Both engineers in this study found a
-coroutine-native API at least as accessible as Asio’s callback model.
-Engineer A observed:</p>
-<blockquote>
-<p>“This library is probably something a new user could turn to and use
-pretty much directly.” - Engineer A</p>
-</blockquote>
-<hr />
-<h2 id="limitations-of-this-study">8. Limitations of This Study</h2>
-<p>This paper reports early-stage, qualitative findings. The following
-limitations apply:</p>
+<p>To this, I immediately added</p>
 <ul>
-<li><strong>Small sample.</strong> Two engineers from one organisation.
-Their experience may not generalise.</li>
-<li><strong>Early stage.</strong> Approximately two weeks of integration
-work. The porting covers a subset of the platform. No production traffic
-has been routed through the coroutine-native code.</li>
-<li><strong>No benchmarks.</strong> The central research question -
-whether coroutine-native I/O can match or exceed Asio’s performance -
-remains unanswered. The benchmarking phase has not begun.</li>
-<li><strong>Qualitative, not quantitative.</strong> All findings are
-based on interview responses. No automated measurements, code metrics,
-or defect counts are reported.</li>
-<li><strong>Author affiliation.</strong> The libraries under test were
-developed by the author’s organisation. The integration partner is
-independent, but the study design and reporting are not.</li>
-<li><strong>Incomplete feature coverage.</strong> UDP and WebSocket
-support are not yet available. The evaluation covers TCP socket
-operations only.</li>
+<li>constructors and destructors to provide the ability to eliminate
+resource leaks and uninitialized objects.</li>
+<li>uniform treatment of built-in types and user-defined types to lay
+the foundation of generic programming.</li>
 </ul>
-<p>A follow-up paper with benchmark results and broader feature coverage
-is planned when the integration reaches that stage.</p>
-<p>The qualitative question - whether a coroutine-native library is
-feasible for this domain - has an early answer. The quantitative
-question remains open.</p>
+<p>C compatibility concerns and the zero overhead principle prevented me
+(and later the C++ standards committee) from enforcing complete type and
+resource safety. I (still) consider compatibility/stability and the
+zero-overhead principle essential for the evolution of C++ and its
+foundational libraries. Where this is not adhered to, problems
+emerge.</p>
+<p>However, not everybody needs every old feature and not everybody
+needs ultimate performance. In fact, many (probably most) C++ users
+don’t need all of the constraints and facilities needed to conform to
+either or both compatibility and performance ideals. Also, they often
+have other concerns, as do I for various projects. This is the
+motivation for all coding guidelines and for the (still evolving)
+Profiles design<sup>[3, 7, 6]</sup>. In particular, we can design a
+Profile to guarantee type safety and resource safety (the absence of
+resource leaks) without imposing inessential overheads.</p>
+<p>These guarantees are the ones I want for most application code:</p>
+<ul>
+<li><strong>Type safety</strong>: Every object is used exclusively
+according to its definition.</li>
+<li><strong>Resource safety</strong>: No resource is leaked.</li>
+</ul>
+<p>We can achieve that by careful use of contemporary C++, but I want a
+Profile to guarantee it, as do important C++ users. Otherwise, the
+approach won’t scale. This implies that code that needs to violate that
+guarantee or can’t be proven not to must be isolated. Examples of such
+necessary code include the implementation of key abstractions (e.g.,
+<code>vector</code>). It also implies that the guarantee must be opt-in
+because essentially no existing code consistently meets the requirements
+needed to provide this guarantee (even correct code because “correct”
+doesn’t mean “provably correct”).</p>
+<p>The fundamental assumptions behind the Profiles design are</p>
+<ul>
+<li>Some people need guaranteed properties of their code.</li>
+<li>Not everybody has the same needs.</li>
+<li>It is impossible to prove an arbitrary program safe for any
+reasonable definition of “safe” in a language able to manipulate
+hardware and implement fundamental abstractions.</li>
+<li>A guarantee must be validated by software, not just by a review by
+developers.</li>
+<li>A desired guarantee must be explicitly requested in code.</li>
+</ul>
+<p>This implies that we need a framework that allows programmers to
+request a variety of guarantees and prevent the use of features deemed
+unsafe for the requested guarantees.</p>
+<p>The fundamental technique for implementing a profile is to subset a
+superset of ISO standard C++<sup>[8, 9]</sup>:</p>
+<ul>
+<li><strong>Superset</strong>: Extend the C++ to be used with the
+abstractions needed to conveniently express what needs to be expressed
+for a given application area.</li>
+<li><strong>Subset</strong>: Restrict the set of facilities to be used
+in application code to what can be used while maintaining the desired
+guarantee (leaving “unsafe” uses to the implementation of the
+abstractions).</li>
+</ul>
+<p>Supersetting is done by adding libraries and eliminating undefined
+behavior (supported by run-time checks where necessary). Subsetting is
+done through static analysis (ideally by the compiler).</p>
+<p>Subsetting alone cannot deliver many of the most desired guarantees
+because the implementation of the abstractions requires use of
+techniques that cannot be verified (e.g., pointer arithmetic and linked
+structures).</p>
+<p>Supersetting alone can’t deliver many of the most desired guarantees
+because the low-level features would still be available to break
+them.</p>
+<p>By supersetting, we create a language that’s easier for analyzers
+(e.g., compilers) to understand. Use of banned features outside
+explicitly trusted sections of code is simply considered errors. This
+solves the problem that large chunks of C++ (especially old-style code)
+are too complex to analyze efficiently relative to a requested
+guarantee.</p>
+<p>By specifying requirements as enforceable profiles, we avoid having
+to rely on developers following guidelines and sprinkling annotations
+all over the code. That approach is labor intensive, error prone, and
+basically not feasible at scale. It doesn’t provide the guarantees
+required by many user organizations.</p>
+<p>Profiles do not interfere with traditional C++ design and
+implementation techniques (e.g., OO, GP, and functional styles) except
+when we define a profile to do so and explicitly require that profile.
+Rather, a good profile eliminates misuses of those techniques.</p>
+<p>The result of compiling a TU using profiles is ISO standard C++ that
+can be linked with other TUs<sup>[6]</sup>.</p>
+<p>A profile cannot change the semantics of a program beyond defining
+the meaning of some forms of undefined behavior. For example, signed
+arithmetic overflow is UB so a profile can define it to be wraparound
+like unsigned arithmetic (though I wouldn’t do that), to be saturated
+arithmetic, or to throw an exception. However, wraparound of unsigned
+arithmetic is well-defined so a profile cannot define it to be anything
+else. This implies that a program without UB will behave identically
+when compiled with or without a profile enforced. The aim of key
+profiles is to insert run-time checks to ensure that an error action is
+triggered rather than reaching the point of UB.</p>
+<p>If a profile needs a language change (e.g., the addition of a new
+standard attribute), then that change must be done to the language
+rather than just to the profile.</p>
+<p>Profiles are not just about “safety” (for a variety of kinds of
+safety). They address the widespread need for support of a better style
+of code (for a variety of definitions of “better”) from both developers
+and educators.</p>
+<p>Some, but not all, profiles will be part of the standard. Profiles is
+an open framework so that profiles serving specific needs can be added
+“locally.” One limiting factor here will be the lack of a standard
+internal representation of C++ (e.g., IPR<sup>[10, 11]</sup>, Clang
+AST<sup>[12]</sup>).</p>
+<h3 id="alternatives-to-profiles">1.1 Alternatives to Profiles</h3>
+<p>Why do we need a framework? After all, people can and do address
+problems with libraries, static analysis, compiler options, pragmas,
+etc. That variety is the problem. These features tend to address limited
+problems, be platform specific, be incompatible, require detailed
+understanding of compilation and build systems, be poorly specified, be
+non-portable, require consistent use of coding guidelines, be
+non-standard, and the like. The variety of genuinely helpful facilities
+that differ in their style of invocation is a recipe for chaos. For the
+key facilities that we want to be part of the standard, we need a
+standard way to specify them and document their use in the code. For all
+facilities that are not simply sets of libraries, we need a standard way
+of requesting their use.</p>
+<p>Offering long lists of specific tests and restrictions for developers
+to select from are ever-popular among people who desire maximal freedom
+of choice. However, having hundreds of thousands of developers choosing
+from a set of (say) 70 options leads to unreadable code, incompatible
+code, and sets of options that do not add up to a guarantee that can be
+understood, named, and remembered. Languages, libraries, and systems
+have failed, being rejected in favor of simpler alternatives. Part of
+the aim of profiles is to reduce the set of alternatives to something
+manageable; to move management of complexity from implementation details
+to language and library design.</p>
+<p>By defining sets of optional libraries, tests, and implementation
+alternatives, rather than defining guarantees as language features, we
+could not just avoid making potentially erroneous design decisions, we
+could also avoid problems of evolving guarantees. If we in the future
+find a profile needs changing (as we surely will), we have exactly the
+same options as when we find that a language feature or a standard
+library needs a change:</p>
+<ul>
+<li>Vote in a change, trying to minimize impact on existing code (e.g.,
+making it a pure extension).</li>
+<li>Make a new profile with a new name and potentially deprecate the old
+one (as we did when replacing <code>auto_ptr</code> with
+<code>unique_ptr</code>).</li>
+</ul>
+<p>Evolution is difficult, but none of the problems are unique to
+profiles. Making design decisions is a key part of language design.</p>
+<hr />
+<h2 id="specification">2. Specification</h2>
+<p>As an example, consider</p>
+<ul>
+<li><strong>Type safety</strong>: Every object is used exclusively
+according to its definition.</li>
+<li><strong>Resource safety</strong>: No resource is leaked.</li>
+</ul>
+<p>That’s the definition of two profiles. In principle, from these
+simple definitions, we could implement Profiles to enforce these
+requirements just as we write compilers and libraries to implement
+specifications. That is, the detailed requirements can in most cases be
+deduced from the general requirements. However, it is not fair, safe, or
+manageable to leave the interpretation of these requirements to
+implementers. In particular, we need a clear definition of “object” and
+“resource.” Beyond that, we need detailed implementation guidance to
+avoid implementers (possibly ourselves) having to repeatedly reinvent
+techniques and rediscover problem areas.</p>
+<p>The border between what should be specified in the standards document
+and what should be in an implementation guide is not trivial to define.
+Different profiles will require different degrees of detail.</p>
+<p>That’s not a new problem. However, not everybody - not even in WG21 -
+is used to thinking about this in the context of defining a language
+feature or a library component.</p>
+<p>Code examples can be found in the references.</p>
+<h3 id="object">2.1 Object</h3>
+<p>An object is a region of memory that has been given a type and been
+initialized according to the definition of that type.</p>
+<p>Accessing an object exclusively according to its definition implies
+that we must not access</p>
+<ul>
+<li>an area of memory as an object before its
+initialization/construction has completed (except from within its
+constructor). That is, before it becomes an object.</li>
+<li>an object after its destruction has started (except from within its
+destructor). That is, after it ceases to be an object.</li>
+<li>an area of memory that has not been initialized/constructed
+according to the type we use to access it. That is, where it might not
+be an object, or it might be an object of a different type.</li>
+</ul>
+<p>That last point implies that we must eliminate range errors and
+access through dangling pointers.</p>
+<h3 id="resource">2.2 Resource</h3>
+<p>A resource is an entity that must be acquired before use and released
+after its last use.</p>
+<p>That’s a very broad definition that cannot be directly translated
+into a verifiable rule. For example, a <code>FILE</code> (a C stream) is
+a resource because it needs to be opened before use and closed (possibly
+implicitly at the end of a program). Even an <code>int</code> can be a
+resource. For example, it could be required that it be increased when a
+scope is entered and decreased as that scope is exited.</p>
+<p>To achieve this in a reasonably simple way, we must require that to
+be considered a resource an entity must have a constructor and a
+destructor that manages it. That is, an entity that requires explicit
+acquisition and/or explicit release is simply not considered a resource
+until it has been encapsulated in a type with a constructor/destructor
+pair.</p>
+<h3 id="constructorsdestructors">2.3 Constructors/Destructors</h3>
+<p>A constructor is supposed to correctly initialize an object, and a
+destructor is supposed to release every resource. To what extent are we
+willing to trust that?</p>
+<p>We can ensure that every member is initialized in a constructor
+(except members explicitly marked to remain uninitialized). There should
+be a separate profile to guarantee initialization for people who cannot
+adopt the complete type-and-resource profile. That initialization
+profile should then be used as part of the type-and-resource
+profile.</p>
+<p>The easiest way of ensuring that a destructor matches a constructor
+is to use only resources managed by constructor/destructor pairs. That
+is, have only members of types that do not require explicit destruction.
+For example, using a <code>vector</code> or a <code>unique_ptr</code>
+rather than a (pointer, size) pair to represent owned memory. However,
+that solution doesn’t cover every case, e.g., <code>unique_ptr</code>’s
+constructors and destructors.</p>
+<p>We can</p>
+<ul>
+<li>Trust the definition of constructors and destructors to be correct
+(e.g., not leak).</li>
+<li>Require non-trivial constructor/destructor pairs to use explicitly
+unverified code.</li>
+</ul>
+<p>The latter is the most theoretically correct solution. The former
+would be manageable.</p>
+<p>How do we handle errors in destructors caused by an inability to
+release a resource? For example, a socket that can’t be closed because
+the other end of a communication channel won’t cooperate. We can handle
+that with the techniques we do today, such as transferring the
+obligation to close an uncooperative socket to some other code, e.g., by
+putting it on a to-be-handled-later error list.</p>
+<h3 id="copies-and-moves">2.4 Copies and Moves</h3>
+<p>To be handled similar to constructors and destructors.</p>
+<h3 id="ranges-and-nullptr">2.5 Ranges and <code>nullptr</code></h3>
+<p>The two obvious ways of avoiding accessing an object that is not of
+the right type (or no type at all) is to prevent</p>
+<ul>
+<li>Range errors</li>
+<li>Access through <code>nullptr</code></li>
+</ul>
+<p>This is (relatively) easily done by using hardened libraries doing
+range checking for types for which the number of elements is known
+(e.g., <code>vector</code> and <code>span</code><sup>[13]</sup>) and a
+pointer type that is checked for <code>nullptr</code> (e.g.,
+<code>gsl::not_null</code><sup>[5]</sup>).</p>
+<p>That solves half of the problem. The other half is to ensure that
+unsafe operations are not used (e.g., subscripting a pointer for which
+the number of elements pointed to is unknown). For that, we need simple
+static analysis (e.g., the compiler) to ban or restrict</p>
+<ul>
+<li>Pointer arithmetic</li>
+<li>Subscripting raw pointers</li>
+</ul>
+<p>Together, these two approaches are a classical example of the
+subset-of-superset technique. Without the hardened library, we couldn’t
+ban those basic uses of raw pointers and without the ban of those basic
+uses of raw pointers we couldn’t guarantee the absence of range errors
+and <code>nullptr</code> violations.</p>
+<h3 id="invalidation">2.6 Invalidation</h3>
+<p>There is a nasty third way that we might access an object of the
+wrong type (or no type at all):</p>
+<ul>
+<li>access through an invalidated pointer; that is, a pointer to an
+object that had been deleted or gone out of scope</li>
+</ul>
+<p>That’s also known as the dangling pointer problem. Preventing
+invalidation by run-time measures implies complications and overheads
+(e.g., garbage collection). However, it is possible to eliminate access
+through invalid pointers through static analysis<sup>[14, 15, 5]</sup>.
+That technique has been prototyped and is currently used as a guideline
+(at best partly enforced).</p>
+<p>Here is an example that must be rejected because it invalidates:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> f<span class="op">(</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;&amp;</span> v<span class="op">)</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    v<span class="op">.</span>push_back<span class="op">(</span><span class="dv">7</span><span class="op">);</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> g<span class="op">()</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> v <span class="op">=</span> <span class="op">{</span><span class="dv">1</span><span class="op">,</span> <span class="dv">2</span><span class="op">};</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span> p <span class="op">=</span> <span class="op">&amp;</span>v<span class="op">[</span><span class="dv">1</span><span class="op">];</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    f<span class="op">(</span>v<span class="op">);</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>p <span class="op">=</span> <span class="dv">3</span><span class="op">;</span>    <span class="co">// must be prevented</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>The problem/error occurs because an alias (<code>p</code> for
+<code>&amp;v[1]</code>) is used after the object it referred to has been
+moved. The basic solution is relatively simple and completely compile
+time.</p>
+<p>When analyzing a function:</p>
+<ul>
+<li>Don’t access through an invalid pointer.</li>
+<li>Don’t let a pointer to a deleted object or to an object that is
+about to be destroyed out of the function.</li>
+<li>If an alias to an object has been taken, don’t call a function that
+can invalidate it.</li>
+<li>Return only pointers that are known to:
+<ul>
+<li>Have been received as arguments</li>
+<li>Point to something static</li>
+<li>Point to something on the free store</li>
+</ul></li>
+</ul>
+<p>By “pointer”, we include anything that refers to an object (e.g.,
+references and lambda captures). By “return”, we include any way of
+passing a pointer out of a scope (e.g., assigning to a static
+object).</p>
+<p>When analyzing a set of functions:</p>
+<ul>
+<li>Assume that a non-<code>const</code> function and a function
+accessing an object through a non-<code>const</code> pointer argument
+invalidates.</li>
+<li>Assume that a <code>const</code> function and a function accessing
+an object through a <code>const</code> pointer argument doesn’t
+invalidate.</li>
+<li>Add a <code>[[not_invalidating]]</code> attribute to be used to
+speed up analysis by marking non-<code>const</code> functions and
+functions that take non-<code>const</code> pointer arguments that don’t
+invalidate (e.g.,
+<code>vector&lt;T&gt;::size()</code>)<sup>[16]</sup>.</li>
+</ul>
+<p>Note that a <code>[[not_invalidating]]</code> attribute can be
+verified when the function definition is compiled. It is not an
+annotation that relies on programmers using it correctly, just an
+optimization to save work for the compiler.</p>
+<p>The implementation problem here is that what is returned from a
+function and what has been deleted can be flow-dependent. So, we must
+accept only code that’s not too complex to analyze.</p>
+<ul>
+<li>Some examples are fundamentally impossible to statically
+analyze.</li>
+<li>Some examples are so complex that a static analyzer would slow down
+compilation to an unacceptable degree.</li>
+</ul>
+<p>An example of code that is fundamentally too complex to accept:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> glob <span class="op">=</span> <span class="dv">7</span><span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span><span class="op">*</span> f<span class="op">(</span><span class="dt">int</span> i<span class="op">)</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> x <span class="op">=</span> <span class="dv">5</span><span class="op">;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">(</span><span class="dv">0</span> <span class="op">&lt;</span> i<span class="op">)</span> <span class="op">?</span> <span class="op">&amp;</span>glob <span class="op">:</span> <span class="op">&amp;</span>x<span class="op">;</span>  <span class="co">// might return pointer</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>                                   <span class="co">// to destroyed object</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>We need implementer input to choose what limitation is practical. In
+particular, to preserve portability, we need a definition of “too
+complex” so that all compilers agree on what to reject. I suggest:</p>
+<ul>
+<li>If a condition cannot be evaluated at compile time, whatever is
+guarded by that condition is assumed to be executed.</li>
+</ul>
+<p>That is, conditional use of some constructs is treated as
+unconditional:</p>
+<ul>
+<li>creation of an alias,</li>
+<li>the return of an invalid pointer,</li>
+<li>the invalidation of a pointer,</li>
+<li>the call of an invalidating function, or</li>
+<li>the use of an invalid pointer.</li>
+</ul>
+<p>In older code and code written in older styles, this limitation will
+be a burden, but encouraging the use of simpler code is beneficial in
+its own right.</p>
+<hr />
+<h2 id="the-profiles-framework">3. The Profiles Framework</h2>
+<p>The Profiles framework (based on the subset-of-superset strategy
+described in Section 1<sup>[8, 9]</sup>) has been developed over several
+years to cover a wide range of requests involving a variety of notions
+of safety and style involving combinations of compile-time and run-time
+techniques<sup>[17]</sup>. The Framework, complete with syntax and
+working paper wording, is described in detail in <a href="https://wg21.link/p3589r2">P3589R2</a><sup>[6]</sup>. In
+particular, it introduces notation for enforcing, requiring, and
+suppressing profiles.</p>
+<p>The framework is to be common to all profiles and independent of any
+particular profile.</p>
+<hr />
+<h2 id="other-profiles">4. Other Profiles</h2>
+<p>To be complete the type-and-resource profile will depend on other
+profiles. To allow gradual adoption of profiles, such profiles should be
+independently defined so that they can be used on their
+own<sup>[18]</sup>. Examples of possible standard profiles are:</p>
+<ul>
+<li><strong>initialization</strong>: every object is properly
+constructed/initialized (or explicitly declared not to be).</li>
+<li><strong>casting</strong>: no old-style non-verifiable casts.</li>
+<li><strong>union</strong>: no union use.</li>
+<li><strong>ranges</strong>: all pointer arithmetic and all subscripting
+are checked for range errors.</li>
+</ul>
+<p>Obviously, when some construct is banned (outside unverified/trusted
+code), alternatives must be provided, e.g., <code>variant</code>s
+instead of <code>union</code>s. The profiles listed above are relatively
+easy to specify and thus good candidates for early implementation.</p>
+<p>Most likely separate from the type-and-resource profile, but related,
+we need:</p>
+<ul>
+<li><strong>arithmetic</strong>: eliminate implicit narrowing
+conversions, overflow, and underflow.</li>
+<li><strong>algorithms</strong>: use only ranges (rather than iterator
+pairs) and prevent dereferencing of <code>end()</code> iterators.</li>
+<li><strong>concurrency</strong>: The type-and-resource profile assumes
+that there are no data races. To ensure that, a separate concurrency
+profile is needed. Specifying that is non-trivial and beyond the scope
+of this paper. There must eventually be a concurrency profile and part
+of that will undoubtedly be ways of minimizing
+sharing<sup>[5]</sup>.</li>
+</ul>
+<p>These profiles are important, but harder to specify. Note that
+libraries for checking arithmetic exist (e.g.<sup>[19, 20]</sup>).</p>
+<hr />
+<h2 id="what-needs-to-be-done-soon">5. What Needs to Be Done Soon</h2>
+<p>To make progress, we need to specify, implement, and try out a few
+simple profiles to gain experience. To avoid chaos, we urgently need the
+framework to be approved<sup>[21]</sup>. Many ideas that are part of
+profiles have been prototyped and/or used, but to make progress we must
+build on the proposed Profiles framework <a href="https://wg21.link/p3589r2">P3589R2</a><sup>[6]</sup> and start
+experimenting with specific profiles within that framework.</p>
+<p>For that to happen, we need the framework available and accessible on
+one or more C++ implementations, ideally on all major implementations.
+Otherwise, using different initial/experimental profiles will require
+too much boilerplate code and different interfaces to different tool
+chains (e.g., in-code annotations, compiler options, and build-system
+settings). That will impede portability and possibly introduce
+incompatibilities that will be hard to root out in the future.
+Currently, there is - to the best of my knowledge - a
+specification<sup>[6]</sup> and an experimental implementation is being
+conducted in a major C++ compiler. Also, an implementation guide is
+being written. We encourage implementers to coordinate and if possible,
+collaborate to avoid inessential incompatibilities<sup>[21]</sup>.</p>
+<p>Beyond the framework implementation(s), we need to design and
+precisely specify a few initial profiles. We need a reasonable common
+style of Profile descriptions. That - and bringing the older documents
+in line with the C++26 specification - is a necessary first step on the
+way to standardization. A start is made in <a href="https://wg21.link/p3274r0">P3274R0</a><sup>[7]</sup>.</p>
 <hr />
 <h2 id="acknowledgements">Acknowledgements</h2>
-<p>The author thanks the engineering team at the integration partner for
-their time, candour, and willingness to share their experience. Their
-structured feedback on documentation, API design, and migration strategy
-has informed improvements to both Capy and Corosio.</p>
-<p>Thanks to Vinnie Falco for developing Capy and Corosio and for
-supporting this evaluation. Thanks to Steve Gerbino for technical
-contributions to both libraries.</p>
+<p>Thanks to Howard Hinnant and Joshua Berne for constructive comments
+on drafts of this paper.</p>
 <hr />
 <h2 id="references">References</h2>
 <ol type="1">
-<li><p><a href="https://github.com/cppalliance/capy">Capy</a> - C++
-async/coroutine building blocks.
-https://github.com/cppalliance/capy</p></li>
-<li><p><a href="https://github.com/cppalliance/corosio">Corosio</a> -
-Coroutine-native networking library.
-https://github.com/cppalliance/corosio</p></li>
-<li><p><a href="https://wg21.link/p4003r0">P4003R0</a> - “Coroutines for
-I/O” (Vinnie Falco, 2026). https://wg21.link/p4003r0</p></li>
-<li><p><a href="https://isocpp.org/files/papers/P4007R1.pdf">P4007R1</a>
-- “Open Issues in std::execution::task” (Vinnie Falco, 2026).
-https://isocpp.org/files/papers/P4007R1.pdf</p></li>
-<li><p><a href="https://wg21.link/p4014r0">P4014R0</a> - “The Sender
-Sub-Language” (Vinnie Falco, Mungo Gill, 2026).
-https://wg21.link/p4014r0</p></li>
+<li><p><a href="https://wg21.link/p3704r0">P3704R0</a> - “What are
+profiles?” (Bjarne Stroustrup, 2025). https://wg21.link/p3704r0</p></li>
+<li><p><a href="https://wg21.link/p2687r0">P2687R0</a> - “Design
+Alternatives for Type-and-Resource Safe C++” (Bjarne Stroustrup, Gabriel
+Dos Reis, 2022). https://wg21.link/p2687r0</p></li>
+<li><p><a href="https://wg21.link/p2816r0">P2816R0</a> - “Safety
+Profiles: Type-and-resource Safe programming in ISO Standard C++”
+(Bjarne Stroustrup, Gabriel Dos Reis, 2023).
+https://wg21.link/p2816r0</p></li>
+<li><p>H. Sutter. Lifetime safety prototype implementation.
+2021.</p></li>
+<li><p><a href="https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines">C++
+Core Guidelines</a>.
+https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines</p></li>
+<li><p><a href="https://wg21.link/p3589r2">P3589R2</a> - “C++ Profiles:
+The Framework” (Gabriel Dos Reis, 2025).
+https://wg21.link/p3589r2</p></li>
+<li><p><a href="https://wg21.link/p3274r0">P3274R0</a> - “A framework
+for Profiles development” (Bjarne Stroustrup, 2024).
+https://wg21.link/p3274r0</p></li>
+<li><p>B. Stroustrup. “A rationale for semantically enhanced library
+languages.” 2005.</p></li>
+<li><p>B. Stroustrup and G. Dos Reis. “Supporting SELL for
+High-Performance Computing.” LCPC05. October 2005.</p></li>
+<li><p>G. Dos Reis and B. Stroustrup. “A Principled, Complete, and
+Efficient Representation of C++.” Journal of Mathematics in Computer
+Science, Volume 5, Issue 3 (2011).</p></li>
+<li><p>G. Dos Reis. “In-memory and Persistent Representations of C++.”
+CppCon 2021.</p></li>
+<li><p>M. Klimek. “The Clang AST - a Tutorial.” LLVM Euro 2013.</p></li>
+<li><p><a href="https://wg21.link/p3471r4">P3471R4</a> - “Standard
+library hardening” (Konstantin Varlamov, Louis Dionne, 2025).
+https://wg21.link/p3471r4</p></li>
+<li><p><a href="https://wg21.link/p1179r1">P1179R1</a> - “Lifetime
+safety: Preventing common dangling” (Herb Sutter, 2019).
+https://wg21.link/p1179r1</p></li>
+<li><p>B. Stroustrup. “Type-and-resource safety in modern C++.”
+2021.</p></li>
+<li><p><a href="https://wg21.link/p3346r0">P3346R0</a> - “Profile
+invalidation - eliminating dangling pointers” (Bjarne Stroustrup, 2024).
+https://wg21.link/p3346r0</p></li>
+<li><p><a href="https://wg21.link/p3651r0">P3651R0</a> - “Dealing with
+pointer errors: Separating static and dynamic checking” (Bjarne
+Stroustrup, 2025). https://wg21.link/p3651r0</p></li>
+<li><p><a href="https://wg21.link/p3447r0">P3447R0</a> - “Profiles
+syntax” (Bjarne Stroustrup, 2024). https://wg21.link/p3447r0</p></li>
+<li><p>B. Stroustrup. “Concept-Based Generic Programming in C++.”
+2025.</p></li>
+<li><p>H. Hinnant. “Better Behaved Integers (bbi).” 2025.</p></li>
+<li><p><a href="https://wg21.link/p3970r0">P3970R0</a> - “Profiles and
+Safety: a call to action” (Daveed Vandevoorde, Jody Garland, Paul E.
+McKenney, Roger Orr, Bjarne Stroustrup, Michael Wong, 2026).
+https://wg21.link/p3970r0</p></li>
+<li><p><a href="https://wg21.link/p3038r0">P3038R0</a> - “Concrete
+suggestions for initial Profiles” (Bjarne Stroustrup, 2023).
+https://wg21.link/p3038r0</p></li>
+<li><p><a href="https://wg21.link/p3650r0">P3650R0</a> - “21st Century
+C++” (Bjarne Stroustrup, 2025). https://wg21.link/p3650r0</p></li>
+<li><p><a href="https://wg21.link/p3402r3">P3402R3</a> - “A Safety
+Profile Verifying Initialization” (Marc Laverdière, Cody Lapkowski,
+Christof Gros, 2025). https://wg21.link/p3402r3</p></li>
+<li><p>B. Stroustrup. “A Tour of C++ (3rd Edition).” Addison-Wesley.
+2022. ISBN 978-0136816485.</p></li>
+<li><p>B. Stroustrup. “Programming: Principle and Practice using C++.”
+Addison-Wesley. 2024. ISBN 978-0-13-830868-1.</p></li>
 </ol>
 
 </body>
