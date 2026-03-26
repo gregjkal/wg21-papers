@@ -874,7 +874,8 @@ outline: none;
   <li><a href="#structured-concurrency" id="toc-structured-concurrency">5. Structured Concurrency</a></li>
   <li><a href="#cstring_view-constructors" id="toc-cstring_view-constructors">6. <code>cstring_view</code>
   Constructors</a></li>
-  <li><a href="#conclusion" id="toc-conclusion">7. Conclusion</a></li>
+  <li><a href="#the-implicit-constructor" id="toc-the-implicit-constructor">7. The Implicit Constructor</a></li>
+  <li><a href="#conclusion" id="toc-conclusion">8. Conclusion</a></li>
   <li><a href="#acknowledgements" id="toc-acknowledgements">Acknowledgements</a></li>
   <li><a href="#references" id="toc-references">References</a></li>
   </ul>
@@ -900,7 +901,8 @@ already satisfied at a boundary and re-validation is pure overhead.</p>
 libraries, in the current <code>cstring_view</code> proposal, and in
 coroutine-based concurrency libraries. Four independent examples follow.
 A fifth section applies the pattern to <code>cstring_view</code>
-constructor design.</p>
+constructor design. A sixth examines what happens when the pattern is
+applied to the implicit <code>char const*</code> constructor.</p>
 <h2 id="standard-precedent">2. Standard Precedent</h2>
 <p>The standard library provides <a href="https://eel.is/c++draft/thread.condition.condvar"><code>std::condition_variable</code></a><sup>[1]</sup>,
 which requires <code>std::unique_lock&lt;std::mutex&gt;</code>. This
@@ -1009,6 +1011,15 @@ and <code>cstring_view</code> does not own but does null-terminate. Over
 <code>string_view</code> - and the deletion of
 <code>remove_suffix</code> show careful attention to the
 null-termination invariant.</p>
+<p><a href="https://wg21.link/p3566r2">P3566R2</a><sup>[11]</sup> (“You
+shall not pass <code>char*</code>”) independently arrives at the same
+pattern for <code>string</code> and <code>string_view</code>: deprecate
+the <code>char const*</code> constructor as an unbounded-range
+operation, add a bounded <code>char[N]</code> constructor for arrays,
+and provide an explicitly tagged <code>unsafe_length_t</code>
+replacement for the deprecated path. The escape-hatch structure - safe
+default, explicit opt-in - is identical to the pattern documented in
+Sections 2-5.</p>
 <p>The escape-hatch pattern from Sections 2-5 applies directly to the
 constructor set. P3655R3’s pointer-and-length constructor has a narrow
 contract:</p>
@@ -1095,14 +1106,67 @@ serve. Real-world <code>cstring_view</code> usage originates from
 <code>std::string</code> (implicit conversion). Ship the type without
 this constructor; add it later when evidence of need emerges.</li>
 </ul>
-<h2 id="conclusion">7. Conclusion</h2>
+<h2 id="the-implicit-constructor">7. The Implicit Constructor</h2>
+<p>P3566R2’s <code>char[N]</code> constructor is a genuine improvement.
+It captures bounds at compile time, eliminates <code>strlen</code> for
+string literals, and provides bounded safety for array sources.</p>
+<p>The <code>char const*</code> constructor that P3566R2 deprecates is
+implicit. That property is load-bearing. Every function that accepts
+<code>string_view</code> or <code>cstring_view</code> today silently
+accepts <code>char const*</code> at the call site - no tag, no cast, no
+ceremony. Deprecating the implicit constructor does not degrade one API.
+It degrades every call site where a <code>char const*</code> crosses
+into a function taking a view type.</p>
+<p>The standard library’s own error-reporting interface returns
+<code>char const*</code>:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> log_error<span class="op">(</span><span class="bu">std::</span>string_view msg<span class="op">);</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="cf">try</span> <span class="op">{</span> <span class="co">/* ... */</span> <span class="op">}</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="cf">catch</span> <span class="op">(</span><span class="bu">std::</span>exception <span class="at">const</span><span class="op">&amp;</span> e<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    log_error<span class="op">(</span>e<span class="op">.</span>what<span class="op">());</span>              <span class="co">// today</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    log_error<span class="op">(</span><span class="bu">std::</span>string_view<span class="op">(</span>       <span class="co">// under P3566</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>        unsafe_length<span class="op">,</span> e<span class="op">.</span>what<span class="op">()));</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>C library functions exhibit the same pattern.
+<code>std::getenv()</code>, <code>std::strerror()</code>, and
+<code>std::setlocale()</code> return <code>char const*</code> and always
+will:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> configure<span class="op">(</span>cstring_view path<span class="op">);</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>configure<span class="op">(</span><span class="bu">std::</span>getenv<span class="op">(</span><span class="st">&quot;HOME&quot;</span><span class="op">));</span>       <span class="co">// today</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>configure<span class="op">(</span>cstring_view<span class="op">(</span>               <span class="co">// under P3566</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    unsafe_length<span class="op">,</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>getenv<span class="op">(</span><span class="st">&quot;HOME&quot;</span><span class="op">)));</span></span></code></pre></div>
+<p>P3566R2 documents that certain language constructs force
+array-to-pointer decay - notably, the ternary operator and initializer
+lists<sup>[11]</sup>. Both operands in
+<code>cond ? &quot;first&quot; : &quot;second&quot;</code> are string literals. Both are
+arrays. The language decays them to <code>char*</code> before overload
+resolution. The <code>char[N]</code> constructor cannot intercept:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> f<span class="op">(</span><span class="bu">std::</span>string_view s<span class="op">);</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>f<span class="op">(</span>cond <span class="op">?</span> <span class="st">&quot;first&quot;</span> <span class="op">:</span> <span class="st">&quot;second&quot;</span><span class="op">);</span>         <span class="co">// today</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>f<span class="op">(</span>cond <span class="op">?</span> <span class="st">&quot;first&quot;</span><span class="bu">sv</span> <span class="op">:</span> <span class="st">&quot;second&quot;</span><span class="bu">sv</span><span class="op">);</span>     <span class="co">// under P3566</span></span></code></pre></div>
+<p>P3566R2’s own migration data quantifies the scope. The Qt experiment
+reports that “all of Qt’s runtime reflection APIs yield
+<code>const char*</code>, causing many warnings that one is unable to
+quickly address”<sup>[11]</sup>. The NVIDIA Omniverse migration required
+codebase-wide search and replace of <code>const char* x = &quot;...&quot;</code>
+declarations to
+<code>constexpr char x[] = &quot;...&quot;</code><sup>[11]</sup>.</p>
+<p>The <code>char[N]</code> constructor adds a bounded path for
+literals. The <code>char const*</code> constructor is the only implicit
+path for runtime string sources - <code>std::exception::what()</code>,
+<code>std::getenv()</code>, <code>std::strerror()</code>, stored
+<code>c_str()</code> results, ternary expressions. Adding a path is not
+the same as closing one.</p>
+<h2 id="conclusion">8. Conclusion</h2>
 <p>The standard library already provides constrained defaults with
 explicit broader counterparts. Production libraries independently
 converge on the same pattern for trusted boundaries. The same principle
-governs concurrency structure. This paper asks for no wording and no
-poll. It asks the committee to recognize a design value: safe by
-default, with explicit escape hatches where zero-cost composition
-requires them.</p>
+governs concurrency structure. The evidence documents a recurring design
+value: safe by default, with explicit escape hatches where zero-cost
+composition requires them.</p>
 <p>How explicit escape hatches interact with Hardening, Contracts, and
 Erroneous Behavior is a related question that deserves separate
 treatment.</p>
@@ -1112,7 +1176,8 @@ treatment.</p>
 Nevin Liber for discussion and feedback on safe and unsafe construction
 paths. The author thanks Peter Bindels, Hana Dusikova, Jeremy Rifkin,
 Marco Foco, and Alexey Shevlyakov for their work on
-<code>cstring_view</code>.</p>
+<code>cstring_view</code>. The author thanks Giuseppe D’Angelo and
+Joshua Kriegshauser for the migration data cited in Section 7.</p>
 <hr />
 <h1 id="references">References</h1>
 <p>[1] C++ Working Draft, <code>condition_variable</code>
@@ -1135,6 +1200,9 @@ https://pubs.opengroup.org/onlinepubs/9799919799/</p>
 <p>[9] Capy, https://github.com/cppalliance/capy</p>
 <p>[10] P3655R3, “cstring_view,” Peter Bindels, Hana Dusikova, Jeremy
 Rifkin, Marco Foco, Alexey Shevlyakov, https://wg21.link/p3655r3</p>
+<p>[11] P3566R2, “You shall not pass <code>char*</code>,” Marco Foco,
+Joshua Kriegshauser, Alexey Shevlyakov, Giuseppe D’Angelo,
+https://wg21.link/p3566r2</p>
 
 </body>
 </html>

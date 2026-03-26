@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>P4003R1: Coroutines for I/O</title>
+  <title>D4003R1: The Narrowest Execution Model for Networking</title>
   <style type="text/css">
 
 @font-face {
@@ -842,12 +842,12 @@ outline: none;
   <div class="header-text">WG21 Proposal</div>
 </header>
 
-<h1>Coroutines for I/O</h1>
+<h1>The Narrowest Execution Model for Networking</h1>
 
 <!-- Document Metadata -->
 <div class="document-info">
-  <p><strong>Document Number:</strong> P4003R1</p>
-  <p><strong>Date:</strong> 2026-03-25</p>
+  <p><strong>Document Number:</strong> D4003R1</p>
+  <p><strong>Date:</strong> 2026-03-26</p>
   <p><strong>Audience:</strong> LEWG</p>
   <p><strong>Reply-to:</strong> Vinnie Falco <a href="mailto:vinnie.falco@gmail.com" class="email">vinnie.falco@gmail.com</a><br><strong></strong> Steve
 Gerbino <a href="mailto:steve@gerbino.co" class="email">steve@gerbino.co</a><br><strong></strong> Mungo Gill <a href="mailto:mungo.gill@me.com" class="email">mungo.gill@me.com</a></p>
@@ -866,7 +866,8 @@ Gerbino <a href="mailto:steve@gerbino.co" class="email">steve@gerbino.co</a><br>
   <li><a href="#r0-march-2026-pre-croydon-mailing" id="toc-r0-march-2026-pre-croydon-mailing">R0: March 2026 (pre-Croydon
   mailing)</a></li>
   </ul></li>
-  <li><a href="#introduction" id="toc-introduction">1. Introduction</a>
+  <li><a href="#disclosure" id="toc-disclosure">1. Disclosure</a></li>
+  <li><a href="#introduction" id="toc-introduction">2. Introduction</a>
   <ul>
   <li><a href="#priorities" id="toc-priorities">Priorities</a></li>
   <li><a href="#what-matters" id="toc-what-matters">What
@@ -874,84 +875,90 @@ Gerbino <a href="mailto:steve@gerbino.co" class="email">steve@gerbino.co</a><br>
   <li><a href="#why-standardize" id="toc-why-standardize">Why
   Standardize</a></li>
   </ul></li>
-  <li><a href="#networkings-essentials" id="toc-networkings-essentials">2. Networking’s Essentials</a>
+  <li><a href="#networkings-essentials" id="toc-networkings-essentials">3. Networking’s Essentials</a>
   <ul>
-  <li><a href="#the-executor" id="toc-the-executor">2.1 The
+  <li><a href="#the-executor" id="toc-the-executor">3.1 The
   Executor</a></li>
-  <li><a href="#the-stop_token" id="toc-the-stop_token">2.2 The
+  <li><a href="#the-stop_token" id="toc-the-stop_token">3.2 The
   <code>stop_token</code></a></li>
-  <li><a href="#the-frame-allocator" id="toc-the-frame-allocator">2.3
+  <li><a href="#the-frame-allocator" id="toc-the-frame-allocator">3.3
   The Frame Allocator</a></li>
-  <li><a href="#ergonomics" id="toc-ergonomics">2.4 Ergonomics</a></li>
+  <li><a href="#ergonomics" id="toc-ergonomics">3.4 Ergonomics</a></li>
   </ul></li>
-  <li><a href="#the-protocol-what-coroutines-need-for-io" id="toc-the-protocol-what-coroutines-need-for-io">3. The Protocol:
+  <li><a href="#the-protocol-what-coroutines-need-for-io" id="toc-the-protocol-what-coroutines-need-for-io">4. The Protocol:
   What Coroutines Need for I/O</a>
   <ul>
-  <li><a href="#ioawaitable" id="toc-ioawaitable">3.1
+  <li><a href="#ioawaitable" id="toc-ioawaitable">4.1
   <em>IoAwaitable</em></a></li>
-  <li><a href="#iorunnable" id="toc-iorunnable">3.2
+  <li><a href="#iorunnable" id="toc-iorunnable">4.2
   <em>IoRunnable</em></a></li>
-  <li><a href="#executor_ref" id="toc-executor_ref">3.3
+  <li><a href="#executor_ref" id="toc-executor_ref">4.3
   <code>executor_ref</code></a></li>
-  <li><a href="#how-does-a-coroutine-start" id="toc-how-does-a-coroutine-start">3.4 How Does a Coroutine
+  <li><a href="#how-does-a-coroutine-start" id="toc-how-does-a-coroutine-start">4.4 How Does a Coroutine
   Start?</a></li>
-  <li><a href="#implementing-a-launcher" id="toc-implementing-a-launcher">3.5 Implementing a Launcher</a></li>
+  <li><a href="#implementing-a-launcher" id="toc-implementing-a-launcher">4.5 Implementing a Launcher</a></li>
   </ul></li>
-  <li><a href="#executor-concept" id="toc-executor-concept">4. Executor
+  <li><a href="#executor-concept" id="toc-executor-concept">5. Executor
   concept</a>
   <ul>
-  <li><a href="#dispatch" id="toc-dispatch">4.1 Dispatch</a></li>
-  <li><a href="#post" id="toc-post">4.2 Post</a></li>
-  <li><a href="#the-execution_context" id="toc-the-execution_context">4.3 The
+  <li><a href="#dispatch" id="toc-dispatch">5.1 Dispatch</a></li>
+  <li><a href="#post" id="toc-post">5.2 Post</a></li>
+  <li><a href="#the-execution_context" id="toc-the-execution_context">5.3 The
   <code>execution_context</code></a></li>
-  <li><a href="#executioncontext-concept" id="toc-executioncontext-concept">4.4 <em>ExecutionContext</em>
+  <li><a href="#executioncontext-concept" id="toc-executioncontext-concept">5.4 <em>ExecutionContext</em>
   Concept</a></li>
   </ul></li>
-  <li><a href="#the-frame-allocator-1" id="toc-the-frame-allocator-1">5.
+  <li><a href="#the-frame-allocator-1" id="toc-the-frame-allocator-1">6.
   The Frame Allocator</a>
   <ul>
-  <li><a href="#the-timing-constraint" id="toc-the-timing-constraint">5.1 The Timing Constraint</a></li>
-  <li><a href="#the-awkward-approach" id="toc-the-awkward-approach">5.2
+  <li><a href="#the-timing-constraint" id="toc-the-timing-constraint">6.1 The Timing Constraint</a></li>
+  <li><a href="#the-awkward-approach" id="toc-the-awkward-approach">6.2
   The Awkward Approach</a></li>
-  <li><a href="#our-solution-thread-local-propagation" id="toc-our-solution-thread-local-propagation">5.3 Our Solution:
+  <li><a href="#our-solution-thread-local-propagation" id="toc-our-solution-thread-local-propagation">6.3 Our Solution:
   Thread-Local Propagation</a></li>
-  <li><a href="#the-window" id="toc-the-window">5.4 The Window</a></li>
-  <li><a href="#addressing-tls-concerns" id="toc-addressing-tls-concerns">5.5 Addressing TLS Concerns</a></li>
+  <li><a href="#the-window" id="toc-the-window">6.4 The Window</a></li>
+  <li><a href="#addressing-tls-concerns" id="toc-addressing-tls-concerns">6.5 Addressing TLS Concerns</a></li>
   </ul></li>
-  <li><a href="#the-ergonomics-of-type-erasure" id="toc-the-ergonomics-of-type-erasure">6. The Ergonomics of Type
+  <li><a href="#the-ergonomics-of-type-erasure" id="toc-the-ergonomics-of-type-erasure">7. The Ergonomics of Type
   Erasure</a>
   <ul>
-  <li><a href="#coroutine-frames-as-type-erasure" id="toc-coroutine-frames-as-type-erasure">6.1 Coroutine Frames as Type
+  <li><a href="#coroutine-frames-as-type-erasure" id="toc-coroutine-frames-as-type-erasure">7.1 Coroutine Frames as Type
   Erasure</a></li>
-  <li><a href="#type-erased-streams" id="toc-type-erased-streams">6.2
+  <li><a href="#type-erased-streams" id="toc-type-erased-streams">7.2
   Type-Erased Streams</a></li>
-  <li><a href="#one-template-parameter" id="toc-one-template-parameter">6.3 One Template Parameter</a></li>
-  <li><a href="#ergonomic-impact" id="toc-ergonomic-impact">6.4
+  <li><a href="#one-template-parameter" id="toc-one-template-parameter">7.3 One Template Parameter</a></li>
+  <li><a href="#ergonomic-impact" id="toc-ergonomic-impact">7.4
   Ergonomic Impact</a></li>
   </ul></li>
-  <li><a href="#the-io_awaitable_promise_base-mixin" id="toc-the-io_awaitable_promise_base-mixin">7. The
+  <li><a href="#the-io_awaitable_promise_base-mixin" id="toc-the-io_awaitable_promise_base-mixin">8. The
   <code>io_awaitable_promise_base</code> Mixin</a></li>
-  <li><a href="#conclusion" id="toc-conclusion">8. Conclusion</a></li>
   <li><a href="#evidence-framework" id="toc-evidence-framework">9.
   Evidence Framework</a>
   <ul>
   <li><a href="#competing-designs" id="toc-competing-designs">9.1
   Competing Designs</a></li>
-  <li><a href="#case-against-standardization" id="toc-case-against-standardization">9.2 Case Against
-  Standardization</a></li>
-  <li><a href="#decision-record" id="toc-decision-record">9.3 Decision
+  <li><a href="#decision-record" id="toc-decision-record">9.2 Decision
   Record</a></li>
-  <li><a href="#domain-coverage" id="toc-domain-coverage">9.4 Domain
+  <li><a href="#domain-coverage" id="toc-domain-coverage">9.3 Domain
   Coverage</a></li>
-  <li><a href="#post-adoption-metrics" id="toc-post-adoption-metrics">9.5 Post-Adoption Metrics</a></li>
-  <li><a href="#retrospective-commitment" id="toc-retrospective-commitment">9.6 Retrospective
+  <li><a href="#post-adoption-metrics" id="toc-post-adoption-metrics">9.4 Post-Adoption Metrics</a></li>
+  <li><a href="#retrospective-commitment" id="toc-retrospective-commitment">9.5 Retrospective
   Commitment</a></li>
-  <li><a href="#prediction-registry" id="toc-prediction-registry">9.7
+  <li><a href="#prediction-registry" id="toc-prediction-registry">9.6
   Prediction Registry</a></li>
   </ul></li>
-  <li><a href="#suggested-straw-polls" id="toc-suggested-straw-polls">10. Suggested Straw Polls</a></li>
-  <li><a href="#thoughts-on-wording" id="toc-thoughts-on-wording">11.
-  Thoughts on Wording</a>
+  <li><a href="#preemptive-objections" id="toc-preemptive-objections">10. Preemptive Objections</a>
+  <ul>
+  <li><a href="#the-ecosystem-can-deliver-this-without-standardization" id="toc-the-ecosystem-can-deliver-this-without-standardization">“The
+  ecosystem can deliver this without standardization”</a></li>
+  <li><a href="#thread-local-storage-is-problematic" id="toc-thread-local-storage-is-problematic">“Thread-local storage is
+  problematic”</a></li>
+  <li><a href="#the-two-call-syntax-is-a-workaround" id="toc-the-two-call-syntax-is-a-workaround">“The two-call syntax is a
+  workaround”</a></li>
+  <li><a href="#the-design-is-too-young" id="toc-the-design-is-too-young">“The design is too young”</a></li>
+  </ul></li>
+  <li><a href="#proposed-wording" id="toc-proposed-wording">11. Proposed
+  Wording</a>
   <ul>
   <li><a href="#header-io_awaitable-synopsis-ioawait.syn" id="toc-header-io_awaitable-synopsis-ioawait.syn">11.1 Header
   <code>&lt;io_awaitable&gt;</code> synopsis [ioawait.syn]</a></li>
@@ -972,6 +979,8 @@ Gerbino <a href="mailto:steve@gerbino.co" class="email">steve@gerbino.co</a><br>
   <li><a href="#threading-and-synchronization-ioawait.sync" id="toc-threading-and-synchronization-ioawait.sync">11.8 Threading and
   synchronization [ioawait.sync]</a></li>
   </ul></li>
+  <li><a href="#suggested-straw-polls" id="toc-suggested-straw-polls">12. Suggested Straw Polls</a></li>
+  <li><a href="#conclusion" id="toc-conclusion">13. Conclusion</a></li>
   <li><a href="#appendix-a-understanding-asynchronous-io" id="toc-appendix-a-understanding-asynchronous-io">Appendix A:
   Understanding Asynchronous I/O</a>
   <ul>
@@ -1003,40 +1012,40 @@ Gerbino <a href="mailto:steve@gerbino.co" class="email">steve@gerbino.co</a><br>
 </nav>
 
 <h2 id="abstract">Abstract</h2>
-<p>C++20 coroutines have five properties that, taken together, make them
-uniquely suited to asynchronous I/O: type erasure through
-<code>coroutine_handle&lt;&gt;</code>, customization through
-<code>promise_type</code>, stackless independently-resumable frames,
-symmetric transfer through <code>await_suspend</code>, and
-compiler-managed state that persists across suspension points. Each was
-designed for generality. Their conjunction yields something no single
-property suggests: the optimal basis for byte-oriented I/O.</p>
-<p>We used C++20 coroutines directly for I/O - timers, sockets, DNS,
-TLS, HTTP - and observed what the language already provides. The
-protocol that emerged is the <em>IoAwaitable</em>: a system for
-associating a coroutine with an executor, stop token, and frame
-allocator, and propagating this context forward through a coroutine
-chain to the operating system API boundary where asynchronous operations
-are performed.</p>
+<p>Three standard cycles named networking a priority. None shipped
+it.</p>
+<p>We built a complete networking stack - timers, sockets, DNS, TLS,
+HTTP - using C++20 coroutines directly. The execution model that emerged
+is two concepts, one type-erased executor, and a thread-local frame
+allocator cache. We could not remove anything from it without losing
+function. The <em>IoAwaitable</em> protocol propagates an executor, stop
+token, and frame allocator forward through the coroutine chain to the OS
+API boundary, keeping allocation policy out of every coroutine signature
+except the launch site. The specification fits in six pages. This paper
+proposes the protocol as the standard vocabulary for coroutine-based
+I/O.</p>
 <hr />
 <h2 id="revision-history">Revision History</h2>
 <h3 id="r1-march-2026-post-croydon-mailing">R1: March 2026 (post-Croydon
 mailing)</h3>
 <ul>
-<li>Added “Why Standardize” subsection to Section 1: committee record,
+<li>Title changed from “Coroutines for I/O” to “The Narrowest Execution
+Model for Networking”</li>
+<li>Restructured as ask-paper: disclosure section added, conclusion made
+vote-ready, objections restructured with quoted headings, straw polls
+expanded, wording disclaimer removed.</li>
+<li>Added “Why Standardize” subsection to Section 2: committee record,
 tower of abstraction argument, P4133 cost/benefit analysis.</li>
-<li>Expanded implementation evidence in Section 3.</li>
+<li>Expanded implementation evidence in Section 4.</li>
 <li>Added Section 9 “Evidence Framework” addressing P4133 requirements:
 competing designs, case against standardization, decision record, domain
 coverage, post-adoption metrics, retrospective commitment, prediction
 registry.</li>
-<li>Editorial: fixed list formatting, code line wrapping,
-acknowledgements</li>
 <li>Expanded sequence diagram with explicit
 <code>set_environment</code>, <code>set_continuation</code>, and
 <code>handle.resume()</code> steps</li>
 <li>Renamed “Boost.Http” to “Http” in body and references</li>
-<li>Closed TLS spoilage gap in Section 5.4: intervening code between
+<li>Closed TLS spoilage gap in Section 6.4: intervening code between
 resume and child creation can overwrite the thread-local frame
 allocator. Introduced <code>safe_resume</code> save/restore
 protocol</li>
@@ -1048,6 +1057,8 @@ requiring event loop pump sites to save and restore TLS around
 <code>continuation</code> struct embeds an intrusive list pointer,
 eliminating per-post heap allocation - the last steady-state allocation
 in the hot path</li>
+<li>Editorial: fixed list formatting, code line wrapping,
+acknowledgements, renumbered sections to accommodate disclosure</li>
 </ul>
 <h3 id="r0-march-2026-pre-croydon-mailing">R0: March 2026 (pre-Croydon
 mailing)</h3>
@@ -1055,19 +1066,39 @@ mailing)</h3>
 <li>Initial version.</li>
 </ul>
 <hr />
-<h2 id="introduction">1. Introduction</h2>
-<p>This paper is a research report drawn from working code: a complete
-coroutine-only networking library.</p>
-<p>What we found surprised us in its simplicity. The protocol that
-emerged is small: two concepts, a type-erased executor, and a
-thread-local write-through cache that keeps frame allocator policy out
-of coroutine signatures - yet it is the foundation from which a complete
-networking stack can be built. We could not find anything to remove from
-it without losing function. Like the narrow abstractions that have
-succeeded in C++: iterators for traversal, RAII for resource lifetime,
-allocators for memory strategy, it captures one essential property and
-leaves everything else to the user. For readers interested in how this
-model relates to other execution frameworks, see <a href="https://wg21.link/p4007r0">P4007R0</a> “Senders and
+<h2 id="disclosure">1. Disclosure</h2>
+<p>The authors are affiliated with the C++ Alliance, which develops <a href="https://github.com/cppalliance/capy">Capy</a><sup>[5]</sup>, <a href="https://github.com/cppalliance/corosio">Corosio</a><sup>[6]</sup>,
+and <a href="https://github.com/cppalliance/http">Http</a><sup>[8]</sup>
+- the libraries that implement the protocol described in this paper. The
+authors’ preferred asynchronous model competes with <a href="https://wg21.link/p2300r10">P2300R10</a><sup>[12]</sup>
+(<code>std::execution</code>). Coroutine-native I/O cannot express
+compile-time work graphs. That is a real limitation. The authors are
+telling you this so you can calibrate everything that follows.</p>
+<p>This paper is part of a series. <a href="https://wg21.link/p4007r0">P4007R0</a> “Senders and
+Coroutines”<sup>[1]</sup> examines the relationship between
+coroutine-based and sender-based execution models. <a href="https://wg21.link/p4014r0">P4014R0</a> “The Sender
+Sub-Language”<sup>[2]</sup> describes the programming model that
+<code>std::execution</code> provides. <a href="https://wg21.link/p4035r0">D4035R0</a> “The Need for Escape
+Hatches” examines the design pattern of constrained defaults with
+explicit broader paths. Each paper stands independently. This one
+proposes a protocol for standardization.</p>
+<hr />
+<h2 id="introduction">2. Introduction</h2>
+<p>After adopting this protocol, every coroutine-based I/O library in
+the C++ ecosystem shares a common vocabulary - two concepts, one
+type-erased executor - and the tower of networking abstractions that
+other language ecosystems take for granted becomes buildable in C++.</p>
+<p>This paper describes the protocol that emerged from building that
+foundation: a complete coroutine-only networking library. The protocol
+is small - two concepts, a type-erased executor, and a thread-local
+write-through cache that keeps frame allocator policy out of coroutine
+signatures - yet it is sufficient for a complete networking stack. We
+could not find anything to remove from it without losing function. Like
+the narrow abstractions that have succeeded in C++: iterators for
+traversal, RAII for resource lifetime, allocators for memory strategy,
+it captures one essential property and leaves everything else to the
+user. For readers interested in how this model relates to other
+execution frameworks, see <a href="https://wg21.link/p4007r0">P4007R0</a> “Senders and
 Coroutines”<sup>[1]</sup> and <a href="https://wg21.link/p4014r0">P4014R0</a> “The Sender
 Sub-Language”<sup>[2]</sup>.</p>
 <p>Readers unfamiliar with event loops, completion handlers, and
@@ -1143,7 +1174,7 @@ depends on the one below. Without a standard base layer, none of the
 layers above can be standard either.</p>
 <p>The wrong foundation would be worse than none. Alternative coroutine
 task designs propagate the frame allocator through
-<code>allocator_arg_t</code> in every function signature (Section 5.2
+<code>allocator_arg_t</code> in every function signature (Section 6.2
 demonstrates the damage). If such a design were standardized, every
 public interface of every library across the C++ ecosystem would carry
 allocator parameters unrelated to the library’s purpose. That pollution
@@ -1153,7 +1184,7 @@ propagation: the frame allocator is invisible to every coroutine except
 the launch site. Getting this right in the standard matters because
 getting it wrong in the standard is irreversible.</p>
 <p>Performance requires the frame allocator; ergonomics require TLS. The
-benchmarks in Section 2.3 show a 3.1x speedup over
+benchmarks in Section 3.3 show a 3.1x speedup over
 <code>std::allocator</code> and 1.28x over mimalloc. This performance is
 necessary for C++ to remain competitive with other language ecosystems
 for I/O workloads. But the performance is worthless if every route
@@ -1171,7 +1202,7 @@ Once this vocabulary is standard, any HTTP library, any WebSocket
 library, any database driver that satisfies the protocol can compose
 with any other. The tower becomes buildable.</p>
 <hr />
-<h2 id="networkings-essentials">2. Networking’s Essentials</h2>
+<h2 id="networkings-essentials">3. Networking’s Essentials</h2>
 <p>A socket read has <strong>one implementation per platform</strong>.
 The contract is specific: the coroutine suspends, a platform reactor
 performs the operation, and the coroutine resumes under the
@@ -1183,15 +1214,15 @@ memory. Every executor is bound to an execution context that owns the
 platform reactor and its I/O objects. Completions are delivered through
 the context the socket is registered with - a coupling inherent to every
 platform: IOCP, epoll, kqueue, io_uring.</p>
-<h3 id="the-executor">2.1 The Executor</h3>
+<h3 id="the-executor">3.1 The Executor</h3>
 <p>An allocator controls where objects live. An executor controls how
 coroutines resume. A minimal executor needs two operations:
 <code>dispatch</code> for continuations that can run inline, and
 <code>post</code> for work that must be deferred. The distinction
 matters for correctness: inline execution while holding a lock can
 deadlock. <code>dispatch</code> uses symmetric transfer to avoid stack
-buildup. Section 4 defines the concept and its semantics.</p>
-<h3 id="the-stop_token">2.2 The <code>stop_token</code></h3>
+buildup. Section 5 defines the concept and its semantics.</p>
+<h3 id="the-stop_token">3.2 The <code>stop_token</code></h3>
 <p>The stop token propagates forward through the coroutine chain from
 the launch site to the I/O object:</p>
 <pre><code>http_client -&gt; http_request -&gt; write -&gt; write_some -&gt; socket</code></pre>
@@ -1200,7 +1231,7 @@ primitive: <code>CancelIoEx</code> on Windows,
 <code>IORING_OP_ASYNC_CANCEL</code> on Linux, <code>close()</code> on
 POSIX. The operation completes with an error and the coroutine chain
 unwinds normally. Cancellation is cooperative.</p>
-<h3 id="the-frame-allocator">2.3 The Frame Allocator</h3>
+<h3 id="the-frame-allocator">3.3 The Frame Allocator</h3>
 <p>A <em>frame allocator</em> is a <code>memory_resource</code> used
 exclusively for coroutine frame allocation. Coroutine frames follow a
 narrow pattern: sizes repeat, lifetimes nest, and deallocation order
@@ -1255,14 +1286,15 @@ frame allocator is 1.28x faster. Different deployments need different
 strategies - bounded pools, per-tenant budgets, allocation tracking - so
 the execution model must let the application choose. The frame allocator
 must be present at invocation time: <code>operator new</code> executes
-before the coroutine body. Section 5 examines the timing constraint and
+before the coroutine body. Section 6 examines the timing constraint and
 the solution.</p>
-<h3 id="ergonomics">2.4 Ergonomics</h3>
+<h3 id="ergonomics">3.4 Ergonomics</h3>
 <p>The executor, stop token, and frame allocator are infrastructure.
 They should be invisible to every coroutine except the launch site. When
 the developer needs control, the API should be obvious.</p>
+<p><strong>Four requirements. One protocol.</strong></p>
 <hr />
-<h2 id="the-protocol-what-coroutines-need-for-io">3. The Protocol: What
+<h2 id="the-protocol-what-coroutines-need-for-io">4. The Protocol: What
 Coroutines Need for I/O</h2>
 <p>The <em>IoAwaitable</em> protocol is a pair of concepts layered on
 top of each other, working together to deliver what coroutines need for
@@ -1271,7 +1303,7 @@ I/O correctness and performance:</p>
 <blockquote>
 <p>To help readers understand how these requirements fit together, this
 paper provides the <code>io_awaitable_promise_base</code> CRTP mixin
-(Section 7) as a non-normative reference implementation. It is not
+(Section 8) as a non-normative reference implementation. It is not
 proposed for standardization - implementors may write their own
 machinery - but examining it clarifies how the protocol works in
 practice. The mixin also provides the
@@ -1290,7 +1322,7 @@ demonstrating that the single template parameter on
 <code>task&lt;T&gt;</code> enables separate compilation in practice. All
 three libraries are open-source, buildable with CMake, and available on
 GitHub. The code examples in this paper are drawn from them.</p>
-<h3 id="ioawaitable">3.1 <em>IoAwaitable</em></h3>
+<h3 id="ioawaitable">4.1 <em>IoAwaitable</em></h3>
 <p>The <em>IoAwaitable</em> concept propagates execution context
 <strong>forward</strong> from caller to callee at every suspension
 point. The context is three things a coroutine needs for I/O: the
@@ -1323,7 +1355,7 @@ never the right choice, so the API makes it difficult to do
 accidentally. The frame allocator is part of the environment and
 propagates to coroutine frame allocation via a thread-local
 write-through cache, ensuring it is available before the frame is
-created (Section 5 covers the mechanism).</p>
+created (Section 6 covers the mechanism).</p>
 <h4 id="satisfying-ioawaitable">Satisfying <em>IoAwaitable</em></h4>
 <p>Any type that can be <code>co_await</code>ed within the protocol
 must:</p>
@@ -1406,7 +1438,7 @@ coroutine copies, moves, or reallocates the environment. When a launch
 function like <code>run</code> creates a new chain with a different
 executor, it creates a new <code>io_env</code>, cleanly breaking the old
 chain and establishing a new one.</p>
-<h3 id="iorunnable">3.2 <em>IoRunnable</em></h3>
+<h3 id="iorunnable">4.2 <em>IoRunnable</em></h3>
 <p>The <em>IoRunnable</em> concept refines <em>IoAwaitable</em> with the
 interface needed by launch functions. <code>run_async</code> starts a
 coroutine chain from non-coroutine code - <code>main()</code>, a
@@ -1550,14 +1582,14 @@ disjunction to handle this:</p>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">requires</span><span class="op">(</span> <span class="kw">typename</span> T<span class="op">::</span><span class="dt">promise_type</span><span class="op">&amp;</span> p <span class="op">)</span> <span class="op">{</span> p<span class="op">.</span>result<span class="op">();</span> <span class="op">}</span> <span class="op">);</span></span></code></pre></div>
 <blockquote>
 <p><strong>Non-normative note.</strong> The
-<code>io_awaitable_promise_base</code> CRTP mixin (Section 7) provides
+<code>io_awaitable_promise_base</code> CRTP mixin (Section 8) provides
 the promise-internal machinery (context storage, continuation
 management, awaitable transformation) as a convenience. It is not
 proposed for standardization - implementors may write their own. The
 <code>handle()</code> and <code>release()</code> methods are
 task-specific and not part of the mixin.</p>
 </blockquote>
-<h3 id="executor_ref">3.3 <code>executor_ref</code></h3>
+<h3 id="executor_ref">4.3 <code>executor_ref</code></h3>
 <p>The <code>executor_ref</code> type is the mechanism that makes
 <code>io_env</code> concrete rather than templated. It is a type-erasing
 wrapper that stores any executor satisfying the <em>Executor</em>
@@ -1614,7 +1646,7 @@ immediately with the stored environment:</p>
 <span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">co_await</span> process_chunk<span class="op">(</span>env<span class="op">-&gt;</span>executor<span class="op">,</span> i<span class="op">);</span></span>
 <span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
 <span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
-<h3 id="how-does-a-coroutine-start">3.4 How Does a Coroutine Start?</h3>
+<h3 id="how-does-a-coroutine-start">4.4 How Does a Coroutine Start?</h3>
 <p>Two basic functions are needed to launch coroutine chains, and
 authors can define their own custom launch functions to suit their
 needs.</p>
@@ -1677,7 +1709,7 @@ caller’s executor while customizing stop_token or frame allocator:</p>
 <span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Child inherits caller&#39;s executor, but uses a different stop_token</span></span>
 <span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">co_await</span> run<span class="op">(</span> source<span class="op">.</span>get_token<span class="op">()</span> <span class="op">)(</span> subtask<span class="op">()</span> <span class="op">);</span></span>
 <span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
-<h3 id="implementing-a-launcher">3.5 Implementing a Launcher</h3>
+<h3 id="implementing-a-launcher">4.5 Implementing a Launcher</h3>
 <p>A launch function (e.g., <code>run_async</code>, <code>run</code>)
 bridges non-coroutine code into the coroutine world or performs executor
 hopping within a coroutine chain. Launch functions are constrained on
@@ -1718,10 +1750,10 @@ promise</li>
 <span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 <blockquote>
 <p><strong>Non-normative note.</strong> This simplified example has the
-frame allocator ordering problem described in Section 5.1: the task’s
+frame allocator ordering problem described in Section 6.1: the task’s
 frame is allocated before <code>run_async</code> is called, so any
 thread-local frame allocator setup would arrive too late. A correct
-implementation uses the two-call syntax shown in Section 3.4 -
+implementation uses the two-call syntax shown in Section 4.4 -
 <code>run_async(ex)(my_task())</code> - where the first call returns a
 wrapper that sets up the frame allocator before the task expression is
 evaluated. A complete implementation is beyond the scope of this
@@ -1732,7 +1764,7 @@ concrete type, they work with any conforming task implementation. This
 decoupling enables library authors to write launch utilities that
 interoperate with user-defined task types.</p>
 <hr />
-<h2 id="executor-concept">4. Executor concept</h2>
+<h2 id="executor-concept">5. Executor concept</h2>
 <p><strong>Terminology note.</strong> We use the term <em>Executor</em>
 intentionally. An executor controls how coroutines resume:
 <code>dispatch</code> for inline continuations via symmetric transfer,
@@ -1804,7 +1836,7 @@ after the API has locked in the executor choice. Executor types are
 fully preserved at call sites even though they are type-erased
 internally. This enables zero-overhead composition at the API boundary
 while maintaining uniform internal representation.</p>
-<h3 id="dispatch">4.1 Dispatch</h3>
+<h3 id="dispatch">5.1 Dispatch</h3>
 <p>Every coroutine resumption must go through either symmetric transfer
 or the scheduler queue - never through an inline <code>resume()</code>
 or <code>dispatch()</code> that creates a frame below the resumed
@@ -1818,7 +1850,7 @@ continuation is queued via its intrusive <code>next_</code> pointer and
 <code>resume()</code> on the handle inside <code>dispatch</code> - the
 returned handle is used by the caller for symmetric transfer from
 <code>await_suspend</code>, or called with <code>safe_resume()</code> at
-the event loop pump level (Section 5.4), which saves and restores the
+the event loop pump level (Section 6.4), which saves and restores the
 thread-local frame allocator around the <code>.resume()</code> call.</p>
 <p>Unlike general-purpose executors that accept templated callables,
 <code>dispatch</code> and <code>post</code> accept only
@@ -1836,7 +1868,7 @@ primitives.</p>
 work cannot dispatch inline without breaking serialization -
 <code>dispatch</code> then behaves like <code>post</code>, queuing
 unconditionally and returning <code>std::noop_coroutine()</code>.</p>
-<h3 id="post">4.2 Post</h3>
+<h3 id="post">5.2 Post</h3>
 <p><code>post</code> queues work for later execution. Unlike
 <code>dispatch</code>, it never executes inline - the work item is
 always enqueued, and <code>post</code> returns immediately.</p>
@@ -1848,7 +1880,7 @@ operation</li>
 <li><strong>Safety under locks</strong> - posting while holding a mutex
 avoids deadlock risk from inline execution</li>
 </ul>
-<h3 id="the-execution_context">4.3 The
+<h3 id="the-execution_context">5.3 The
 <code>execution_context</code></h3>
 <p>An executor’s <code>context()</code> function returns a reference to
 the <code>execution_context</code>, the proposed base class for any
@@ -1918,7 +1950,7 @@ the default without breaking ABI. Applications can set a policy once via
 <code>set_frame_allocator</code>, and all coroutines launched with the
 default will use it - including those in foreign libraries, without
 propagating allocator template parameters or recompiling.</p>
-<h3 id="executioncontext-concept">4.4 <em>ExecutionContext</em>
+<h3 id="executioncontext-concept">5.4 <em>ExecutionContext</em>
 Concept</h3>
 <p>While <code>execution_context</code> serves as a base class for
 contexts that manage I/O objects and services, concrete execution
@@ -1950,7 +1982,7 @@ objects that were submitted via an associated executor are also
 destroyed. This ensures orderly cleanup - work queued but not yet
 executed does not leak or outlive its context.</p>
 <hr />
-<h2 id="the-frame-allocator-1">5. The Frame Allocator</h2>
+<h2 id="the-frame-allocator-1">6. The Frame Allocator</h2>
 <p>Achieving high performance levels with coroutines demands frame
 allocator customization, yet frame allocator propagation presents a
 unique challenge. Unlike executors and stop tokens, which can be
@@ -1958,7 +1990,7 @@ injected at suspension points via <code>await_transform</code>, the
 frame allocator must be available <em>before</em> the coroutine frame
 exists. This section examines why standard approaches fail and presents
 our solution.</p>
-<h3 id="the-timing-constraint">5.1 The Timing Constraint</h3>
+<h3 id="the-timing-constraint">6.1 The Timing Constraint</h3>
 <p>Coroutine frame allocation has a fundamental timing constraint:
 <code>operator new</code> executes before the coroutine body. When a
 coroutine is called, the compiler allocates the frame first, then begins
@@ -1969,7 +2001,7 @@ configuration - arrives too late.</p>
 <span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="cf">co_await</span> t<span class="op">;</span>              <span class="co">// await_transform kicks in HERE (too late)</span></span>
 <span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>spawn<span class="op">(</span> my_coro<span class="op">(</span>sock<span class="op">)</span> <span class="op">);</span>  <span class="co">// my_coro(sock) evaluated BEFORE calling spawn (too late)</span></span></code></pre></div>
-<h3 id="the-awkward-approach">5.2 The Awkward Approach</h3>
+<h3 id="the-awkward-approach">6.2 The Awkward Approach</h3>
 <p>C++ provides exactly one hook at the right time:
 <strong><code>promise_type::operator new</code></strong>. The compiler
 passes coroutine arguments directly to this overload, allowing the
@@ -2075,7 +2107,7 @@ written once by experts and used many times. Coroutine handlers are the
 reverse: they are written by application developers, often in large
 numbers, for specific business logic. Burdening every handler with frame
 allocation plumbing is a significant ergonomic cost.</p>
-<h3 id="our-solution-thread-local-propagation">5.3 Our Solution:
+<h3 id="our-solution-thread-local-propagation">6.3 Our Solution:
 Thread-Local Propagation</h3>
 <p>Thread-local propagation is the only approach that maintains clean
 interfaces while respecting the timing constraint. The premise is
@@ -2149,7 +2181,7 @@ repopulated before it is read. This is an example implementation
 <span id="cb29-38"><a href="#cb29-38" aria-hidden="true" tabindex="-1"></a><span class="co">//</span></span>
 <span id="cb29-39"><a href="#cb29-39" aria-hidden="true" tabindex="-1"></a><span class="co">// Only IoAwaitable machinery and launch functions should call</span></span>
 <span id="cb29-40"><a href="#cb29-40" aria-hidden="true" tabindex="-1"></a><span class="co">// these accessors. The thread-local value is valid only during</span></span>
-<span id="cb29-41"><a href="#cb29-41" aria-hidden="true" tabindex="-1"></a><span class="co">// the execution window (Section 5.4): between a coroutine&#39;s</span></span>
+<span id="cb29-41"><a href="#cb29-41" aria-hidden="true" tabindex="-1"></a><span class="co">// the execution window (Section 6.4): between a coroutine&#39;s</span></span>
 <span id="cb29-42"><a href="#cb29-42" aria-hidden="true" tabindex="-1"></a><span class="co">// resumption and its next suspension point.</span></span>
 <span id="cb29-43"><a href="#cb29-43" aria-hidden="true" tabindex="-1"></a><span class="co">//</span></span>
 <span id="cb29-44"><a href="#cb29-44" aria-hidden="true" tabindex="-1"></a><span class="co">// A null return from get means &quot;not specified&quot; - no frame</span></span>
@@ -2237,7 +2269,7 @@ first chain resumes, the window mechanism restores its frame allocator
 before any child coroutines are created. This is how frame allocators
 should work in practice - stateful and scoped to the work they serve,
 not a global policy that every coroutine chain must share.</p>
-<h3 id="the-window">5.4 The Window</h3>
+<h3 id="the-window">6.4 The Window</h3>
 <p>Thread-local propagation relies on a narrow, deterministic execution
 window. Consider:</p>
 <div class="sourceCode" id="cb31"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>task<span class="op">&lt;</span><span class="dt">void</span><span class="op">&gt;</span> parent<span class="op">()</span> <span class="op">{</span>        <span class="co">// parent is RUNNING here</span></span>
@@ -2361,7 +2393,7 @@ write promise types, <code>await_transform</code>, and
 <code>operator new</code> overloads. They write <code>safe_resume</code>
 once, and every application developer who writes a coroutine body
 benefits without knowing it exists.</p>
-<h3 id="addressing-tls-concerns">5.5 Addressing TLS Concerns</h3>
+<h3 id="addressing-tls-concerns">6.5 Addressing TLS Concerns</h3>
 <p>Thread-local storage has a well-deserved reputation for creating
 hidden coupling and brittle behavior. The concerns are familiar and
 worth addressing directly.</p>
@@ -2382,7 +2414,7 @@ from, not what the program does.</p>
 <p>The reason TLS is involved at all is <code>operator new</code>’s
 fixed signature. The frame allocator cannot arrive as a parameter
 without polluting every coroutine signature with
-<code>allocator_arg_t</code> (Section 5.2). The standard library already
+<code>allocator_arg_t</code> (Section 6.2). The standard library already
 accepted this tradeoff: <code>std::pmr::get_default_resource()</code> is
 a process-wide thread-local allocator channel, adopted in C++17. Ours is
 the same principle, scoped per-chain instead of per-process.</p>
@@ -2417,8 +2449,10 @@ convention, but by the structural nesting of coroutine lifetimes.</p>
 is created - the one point in time where it can actually work. Any
 mechanism that delivers the allocator after coroutine invocation arrives
 too late by definition.</p>
+<p><strong>Performance requires the frame allocator; ergonomics require
+TLS. Both or neither.</strong></p>
 <hr />
-<h2 id="the-ergonomics-of-type-erasure">6. The Ergonomics of Type
+<h2 id="the-ergonomics-of-type-erasure">7. The Ergonomics of Type
 Erasure</h2>
 <p>C++20 coroutines allocate a frame for every invocation. The frame
 stores local variables, awaitables, and intermediate state across
@@ -2427,7 +2461,7 @@ Heap Allocation eLision Optimization (HALO) cannot apply when frame
 lifetime depends on an external event.</p>
 <p><strong>The allocation we cannot avoid buys the type erasure we
 need.</strong></p>
-<h3 id="coroutine-frames-as-type-erasure">6.1 Coroutine Frames as Type
+<h3 id="coroutine-frames-as-type-erasure">7.1 Coroutine Frames as Type
 Erasure</h3>
 <p>A socket, an SSL context, an HTTP parser, a database connection - all
 live inside a coroutine frame. The caller sees
@@ -2435,7 +2469,7 @@ live inside a coroutine frame. The caller sees
 <code>.cpp</code> file; the header exposes the signature. Every type
 behind the frame boundary is hidden from the caller’s type system. This
 is the foundation of ABI stability for coroutine-based libraries.</p>
-<h3 id="type-erased-streams">6.2 Type-Erased Streams</h3>
+<h3 id="type-erased-streams">7.2 Type-Erased Streams</h3>
 <p>This research produced <code>any_read_stream</code>, a type-erased
 wrapper for any type satisfying the <code>ReadStream</code> concept
 (complete listing in Appendix B). It is not part of the
@@ -2450,7 +2484,7 @@ handlers, and sends responses without knowing whether the underlying
 transport is a TCP socket, a TLS connection, or a test harness. The HTTP
 library depends on Capy’s type-erased abstractions. It ships as a
 compiled library with stable ABI.</p>
-<h3 id="one-template-parameter">6.3 One Template Parameter</h3>
+<h3 id="one-template-parameter">7.3 One Template Parameter</h3>
 <p>The <em>IoAwaitable</em> protocol type-erases the environment through
 <code>executor_ref</code> and <code>std::pmr::memory_resource*</code>.
 The task type has one template parameter:</p>
@@ -2463,7 +2497,7 @@ the public interface. Libraries built on <em>IoAwaitable</em> ship as
 compiled binaries. <a href="https://wg21.link/p4007r0">P4007R0</a><sup>[1]</sup> Section 6.4
 examines why alternative designs require a second template parameter and
 what the ecosystem’s response has been.</p>
-<h3 id="ergonomic-impact">6.4 Ergonomic Impact</h3>
+<h3 id="ergonomic-impact">7.4 Ergonomic Impact</h3>
 <p>An HTTP server has dozens of route handlers. A database layer has
 query functions. A WebSocket handler has message processors. Application
 developers write these, not framework experts.</p>
@@ -2477,8 +2511,10 @@ token propagate automatically. The developer writes business logic:</p>
 <span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>ec<span class="op">)</span> <span class="cf">co_return</span> route_error<span class="op">(</span>ec<span class="op">);</span></span>
 <span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">co_return</span> route_done<span class="op">;</span></span>
 <span id="cb37-8"><a href="#cb37-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p><strong>One template parameter. Separate compilation. Stable
+ABI.</strong></p>
 <hr />
-<h2 id="the-io_awaitable_promise_base-mixin">7. The
+<h2 id="the-io_awaitable_promise_base-mixin">8. The
 <code>io_awaitable_promise_base</code> Mixin</h2>
 <p>This utility simplifies promise type implementation by providing the
 internal machinery that every <em>IoRunnable</em>-conforming promise
@@ -2643,32 +2679,6 @@ import the base class overloads with a using-declaration:</p>
 <em>IoRunnable</em>-compatible promise type would otherwise
 duplicate.</p>
 <hr />
-<h2 id="conclusion">8. Conclusion</h2>
-<p>We asked what happens when networking requirements drive the design
-of a coroutine execution model. The protocol that emerged is small, and
-we could not find anything to remove from it without losing function.
-Every language feature it depends on -
-<code>coroutine_handle&lt;&gt;</code>, <code>promise_type</code>,
-<code>await_suspend</code>, compiler-managed state - is part of
-C++20.</p>
-<p>The abstractions that succeed in C++ are narrow. Iterators capture
-traversal. Allocators capture memory strategy. Each serves a broad
-category by focusing on one set of requirements. I/O asynchrony is one
-such category. GPU computing is another. Each deserves a model that
-fits.</p>
-<p><strong>For I/O, the basis is already in the language.</strong></p>
-<p>A reference implementation is available as <a href="https://github.com/cppalliance/capy">Capy</a><sup>[5]</sup>, with
-networking provided by <a href="https://github.com/cppalliance/corosio">Corosio</a><sup>[6]</sup>.
-A self-contained demonstration is on <a href="https://godbolt.org/z/Wzrb7McrT">Compiler Explorer</a>
-(https://godbolt.org/z/Wzrb7McrT)<sup>[10]</sup>.</p>
-<p>These libraries arose from use-case-first development with a simple
-mandate: use C++20 coroutines directly for I/O and observe what the
-language provides. Every design decision emerged from implementing the
-solution. Standards should follow implementations, not the reverse. The
-<em>IoAwaitable</em> protocol is offered in that spirit: not as a
-theoretical construct, but as a distillation of patterns proven in
-practice.</p>
-<hr />
 <h2 id="evidence-framework">9. Evidence Framework</h2>
 <p>This section addresses the structured evidence requirements described
 in <a href="https://isocpp.org/files/papers/P4133R0.pdf">P4133R0</a>
@@ -2736,65 +2746,13 @@ provide. Each C++ networking library builds on a different async model.
 The higher layers of the abstraction tower - the layers that application
 developers need - have not emerged because the foundation is not
 shared.</p>
-<h3 id="case-against-standardization">9.2 Case Against
-Standardization</h3>
-<p>The strongest argument against standardization: Capy, Corosio, and
-Http already exist as open-source libraries. Any project that needs
-<em>IoAwaitable</em> can depend on them directly. The protocol relies on
-thread-local storage, which may not be available or performant on all
-target platforms. The two-call launch syntax
-(<code>run_async(ex)(task())</code>) is a workaround for a language
-limitation in <code>operator new</code> timing. The design is young -
-the first implementation is months old, not years.</p>
-<p>Each point deserves a direct response.</p>
-<p><strong>“The ecosystem can deliver this.”</strong> It has not.
-Boost.Asio has been available for over twenty years. In that time, the
-C++ ecosystem has not produced the tower of abstractions that every
-other major language ecosystem enjoys. There is no Django of C++. There
-is no standard HTTP framework. The <code>vcpkg</code> and Conan catalogs
-do not approach the depth of npm or pip for networking applications. The
-reason is that every C++ networking library is an island - each builds
-on a different async model, so they cannot compose. The ecosystem cannot
-converge on a common vocabulary without standardization, because the
-entire point of a vocabulary is that everyone can depend on it being
-there. Twenty years of evidence is sufficient to conclude that the
-ecosystem alone will not produce a shared foundation.</p>
-<p><strong>“Thread-local storage is problematic.”</strong> Section 5.5
-addresses the TLS concerns directly. The thread-local here is a
-write-through cache with exactly one purpose: deliver a
-<code>memory_resource*</code> to <code>operator new</code>. It is
-written before every coroutine invocation and read in exactly one place.
-Thread migration is handled: every resume path restores TLS from the
-heap-stable <code>io_env</code> before the coroutine body continues. The
-standard library already accepted this approach:
-<code>std::pmr::get_default_resource()</code> is a process-wide
-thread-local allocator channel, adopted in C++17. For platforms without
-thread-local storage, implementations may use whatever mechanism is
-available - the interface is two free functions, not a language
-feature.</p>
-<p><strong>“The two-call syntax is a workaround.”</strong> It is. The
-syntax exists because <code>operator new</code> executes before the
-coroutine body, and no mechanism exists to inject the frame allocator
-after invocation. A future language change could eliminate the need. But
-the alternative - threading <code>allocator_arg_t</code> through every
-coroutine signature in every library across the ecosystem - is worse,
-and that damage would be permanent if standardized. The two-call syntax
-is localized to launch sites. Application-level coroutines never see
-it.</p>
-<p><strong>“The design is young.”</strong> The protocol is young. The
-patterns it captures are not. Type-erased executors, stop-token
-cancellation, and per-chain frame allocation have been refined across
-years of networking library development. The protocol is small because
-it was distilled from experience, not because it is incomplete. What
-matters is whether the protocol is correct - and three deployed
-libraries across multiple platforms provide that evidence.</p>
-<h3 id="decision-record">9.3 Decision Record</h3>
+<h3 id="decision-record">9.2 Decision Record</h3>
 <p>Each major design decision was forced by the bottom-up development
 process described above. This section consolidates the rationale,
 documents trade-offs, and states conditions for revisiting.</p>
 <p><strong>Two-argument
 <code>await_suspend(coroutine_handle&lt;&gt;, io_env const*)</code></strong>
-(Section 3.1). The only signature that makes protocol violations a
+(Section 4.1). The only signature that makes protocol violations a
 compile error. A non-compliant awaitable produces a compile-time failure
 when a compliant coroutine’s <code>await_transform</code> calls the
 two-argument form. The alternative - templating on the promise type -
@@ -2804,7 +2762,7 @@ must be adapted. <em>Revisit if:</em> the language gains a mechanism for
 statically verifying awaitable-promise compatibility without a custom
 <code>await_suspend</code> signature.</p>
 <p><strong>Thread-local frame allocator propagation</strong> (Sections
-5.2-5.5). The only mechanism that respects <code>operator new</code>
+6.2-6.5). The only mechanism that respects <code>operator new</code>
 timing without polluting coroutine signatures with
 <code>allocator_arg_t</code>. The frame allocator must be available
 before the coroutine frame exists. Standard approaches (parameter
@@ -2813,7 +2771,7 @@ threading, post-construction injection) arrive too late.
 non-obvious propagation path. <em>Revisit if:</em> the language gains a
 mechanism to inject allocator context into <code>operator new</code>
 without function parameters.</p>
-<p><strong>Type-erased <code>executor_ref</code></strong> (Section 3.3).
+<p><strong>Type-erased <code>executor_ref</code></strong> (Section 4.3).
 The only way to keep <code>task&lt;T&gt;</code> at one template
 parameter. Alternatives that preserve the executor type in the task type
 produce <code>task&lt;T, Executor&gt;</code>, which prevents separate
@@ -2822,7 +2780,7 @@ indirection - roughly 1-2 nanoseconds - negligible for I/O operations.
 <em>Trade-off:</em> type information is lost behind the erasure
 boundary. <em>Revisit if:</em> the overhead proves measurable relative
 to I/O latency in a validated benchmark.</p>
-<p><strong><code>io_env</code> passed by pointer</strong> (Section 3.1).
+<p><strong><code>io_env</code> passed by pointer</strong> (Section 4.1).
 The launch function owns the <code>io_env</code>. Every coroutine in the
 chain borrows it. Pointer semantics make this ownership model explicit
 and make accidental copies difficult. <em>Trade-off:</em> nullable
@@ -2830,7 +2788,7 @@ pointer; requires documentation of lifetime invariant. <em>Revisit
 if:</em> a reference-based alternative can enforce the same ownership
 semantics without adding a nullable state.</p>
 <p><strong><code>execution_context</code> as a base class</strong>
-(Section 4.3). I/O objects need the platform reactor, not the executor.
+(Section 5.3). I/O objects need the platform reactor, not the executor.
 A socket registers with epoll, IOCP, or kqueue through the execution
 context, not through the executor. The executor is a lightweight handle;
 the context owns the reactor and its services. <em>Trade-off:</em>
@@ -2838,7 +2796,7 @@ virtual <code>shutdown()</code> in the service base class; runtime
 polymorphism in the service registry. <em>Revisit if:</em> a
 compile-time service mechanism can provide the same ordered-shutdown
 guarantees.</p>
-<h3 id="domain-coverage">9.4 Domain Coverage</h3>
+<h3 id="domain-coverage">9.3 Domain Coverage</h3>
 <p>The <em>IoAwaitable</em> protocol has been validated in the following
 I/O domains through deployed implementations:</p>
 <table>
@@ -2896,7 +2854,7 @@ scheduling constraints</li>
 <li><strong>GPU compute</strong> - explicitly deferred to
 sender/receiver; see <a href="https://wg21.link/p4007r0">P4007R0</a><sup>[1]</sup></li>
 </ul>
-<h3 id="post-adoption-metrics">9.5 Post-Adoption Metrics</h3>
+<h3 id="post-adoption-metrics">9.4 Post-Adoption Metrics</h3>
 <p>The following measurable criteria define successful adoption:</p>
 <ol type="1">
 <li><strong>Implementation breadth.</strong> At least two major standard
@@ -2917,7 +2875,7 @@ conference feedback show that the two-call launch syntax and the TLS
 propagation mechanism are understood by a majority of C++ developers who
 use coroutines for I/O.</li>
 </ol>
-<h3 id="retrospective-commitment">9.6 Retrospective Commitment</h3>
+<h3 id="retrospective-commitment">9.5 Retrospective Commitment</h3>
 <p>We commit to a retrospective at two standard releases or six years
 after standardization, whichever comes first. The retrospective must
 answer:</p>
@@ -2936,7 +2894,7 @@ negligible relative to I/O latency?</li>
 <li>What design limitations emerged in practice that were not
 anticipated?</li>
 </ol>
-<h3 id="prediction-registry">9.7 Prediction Registry</h3>
+<h3 id="prediction-registry">9.6 Prediction Registry</h3>
 <table>
 <colgroup>
 <col style="width: 1%" />
@@ -3002,52 +2960,61 @@ conformance</td>
 </tbody>
 </table>
 <hr />
-<h2 id="suggested-straw-polls">10. Suggested Straw Polls</h2>
-<p>SG4 polled at Kona (November 2023) on <a href="https://wg21.link/p2762r2">P2762R2</a> “Sender/Receiver Interface
-For Networking”<sup>[9]</sup>:</p>
-<blockquote>
-<p><em>“Networking should support only a sender/receiver model for
-asynchronous operations; the Networking TS’s executor model should be
-removed”</em></p>
-<table>
-<thead>
-<tr>
-<th>SF</th>
-<th>F</th>
-<th>N</th>
-<th>A</th>
-<th>SA</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>5</td>
-<td>5</td>
-<td>1</td>
-<td>0</td>
-<td>1</td>
-</tr>
-</tbody>
-</table>
-<p>Consensus.</p>
-</blockquote>
-<p>The approach described in this paper - a coroutine-native I/O model
-using C++20 language features - was not among the alternatives
-considered.</p>
-<p><strong>Poll 1.</strong> A coroutine-native I/O model is a distinct
-approach from both the Networking TS executor model and the
-sender/receiver model.</p>
-<p><strong>Poll 2.</strong> New research into coroutine-native I/O, not
-available at the time of the Kona poll, warrants consideration.</p>
+<h2 id="preemptive-objections">10. Preemptive Objections</h2>
+<p>Every foreseeable objection deserves a direct response in its
+strongest form.</p>
+<h3 id="the-ecosystem-can-deliver-this-without-standardization">“The
+ecosystem can deliver this without standardization”</h3>
+<p>It has not. <a href="https://www.boost.org/doc/libs/release/doc/html/boost_asio.html">Boost.Asio</a><sup>[3]</sup>
+has been available for over twenty years. In that time, the C++
+ecosystem has not produced the tower of abstractions that every other
+major language ecosystem enjoys. There is no Django of C++. There is no
+standard HTTP framework. The <code>vcpkg</code> and Conan catalogs do
+not approach the depth of npm or pip for networking applications. The
+reason is that every C++ networking library is an island - each builds
+on a different async model, so they cannot compose. The ecosystem cannot
+converge on a common vocabulary without standardization, because the
+entire point of a vocabulary is that everyone can depend on it being
+there. Twenty years of evidence is sufficient to conclude that the
+ecosystem alone will not produce a shared foundation.</p>
+<h3 id="thread-local-storage-is-problematic">“Thread-local storage is
+problematic”</h3>
+<p>Section 6.5 addresses the TLS concerns directly. The thread-local
+here is a write-through cache with exactly one purpose: deliver a
+<code>memory_resource*</code> to <code>operator new</code>. It is
+written before every coroutine invocation and read in exactly one place.
+Thread migration is handled: every resume path restores TLS from the
+heap-stable <code>io_env</code> before the coroutine body continues. The
+standard library already accepted this approach:
+<code>std::pmr::get_default_resource()</code> is a process-wide
+thread-local allocator channel, adopted in C++17. For platforms without
+thread-local storage, implementations may use whatever mechanism is
+available - the interface is two free functions, not a language
+feature.</p>
+<h3 id="the-two-call-syntax-is-a-workaround">“The two-call syntax is a
+workaround”</h3>
+<p>It is. The syntax exists because <code>operator new</code> executes
+before the coroutine body, and no mechanism exists to inject the frame
+allocator after invocation. A future language change could eliminate the
+need. But the alternative - threading <code>allocator_arg_t</code>
+through every coroutine signature in every library across the ecosystem
+- is worse, and that damage would be permanent if standardized. The
+two-call syntax is localized to launch sites. Application-level
+coroutines never see it.</p>
+<h3 id="the-design-is-too-young">“The design is too young”</h3>
+<p>The protocol is young. The patterns it captures are not. Type-erased
+executors, stop-token cancellation, and per-chain frame allocation have
+been refined across years of networking library development. The
+protocol is small because it was distilled from experience, not because
+it is incomplete. What matters is whether the protocol is correct - and
+three deployed libraries across multiple platforms provide that
+evidence.</p>
+<p><strong>The ecosystem has had twenty years. The tower does not
+exist.</strong></p>
 <hr />
-<h2 id="thoughts-on-wording">11. Thoughts on Wording</h2>
-<blockquote>
-<p><strong>Non-normative note.</strong> The wording below is not
-primarily intended for standardization. Its purpose is to demonstrate
-how a use-case-first design produces a lean specification footprint, and
-to show how compact an execution model becomes when designed
-specifically for I/O workloads.</p>
-</blockquote>
+<h2 id="proposed-wording">11. Proposed Wording</h2>
+<p>The following wording implements the <em>IoAwaitable</em>
+protocol.</p>
 <h3 id="header-io_awaitable-synopsis-ioawait.syn">11.1 Header
 <code>&lt;io_awaitable&gt;</code> synopsis [ioawait.syn]</h3>
 <div class="sourceCode" id="cb40"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="kw">namespace</span> std <span class="op">{</span></span>
@@ -3431,7 +3398,7 @@ thread-local frame allocator before calling <code>h.resume()</code> and
 restore it afterward. This ensures that a resumed coroutine cannot spoil
 the frame allocator of the coroutine that was executing on the same
 thread before the event loop iteration. A convenience function
-<code>safe_resume</code> encapsulates this protocol (Section 5.4).
+<code>safe_resume</code> encapsulates this protocol (Section 6.4).
 Failure to save and restore does not cause memory corruption -
 <code>operator delete</code> reads the frame allocator from the frame
 footer - but can cause frames to be allocated from the wrong memory
@@ -3993,6 +3960,82 @@ synchronizes with the resumption of the parent coroutine.</li>
 modifications made by one coroutine before suspension are visible to the
 code that resumes it. <em>- end note</em> ]</p>
 <hr />
+<h2 id="suggested-straw-polls">12. Suggested Straw Polls</h2>
+<p><a href="https://wg21.link/p0592r5">P0592R0</a> (2017)<sup>[13]</sup>
+listed networking as a C++20 priority. <a href="https://wg21.link/p0592r5">P0592R2</a><sup>[13]</sup> elevated it
+to must-work-on-first for C++23. <a href="https://wg21.link/p0592r5">P0592R5</a><sup>[13]</sup> dropped it
+from C++26. Three standard cycles, the same priority, no result. This
+paper provides the exploration that three standard cycles have been
+waiting for.</p>
+<p>SG4 polled at Kona (November 2023) on <a href="https://wg21.link/p2762r2">P2762R2</a> “Sender/Receiver Interface
+For Networking”<sup>[9]</sup>:</p>
+<blockquote>
+<p><em>“Networking should support only a sender/receiver model for
+asynchronous operations; the Networking TS’s executor model should be
+removed”</em></p>
+<table>
+<thead>
+<tr>
+<th>SF</th>
+<th>F</th>
+<th>N</th>
+<th>A</th>
+<th>SA</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>5</td>
+<td>5</td>
+<td>1</td>
+<td>0</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+<p>Consensus.</p>
+</blockquote>
+<p>The coroutine-native I/O model described in this paper was not among
+the alternatives considered at the time of that poll.</p>
+<p><strong>Poll 1.</strong> A coroutine-native I/O model is a distinct
+approach from both the Networking TS executor model and the
+sender/receiver model.</p>
+<p><strong>Poll 2.</strong> New research into coroutine-native I/O, not
+available at the time of the Kona poll, warrants consideration.</p>
+<p><strong>Poll 3.</strong> Frame allocator propagation for coroutine
+I/O should not require <code>allocator_arg_t</code> in every coroutine
+signature.</p>
+<p><strong>Poll 4.</strong> A standard vocabulary for coroutine I/O
+should support separate compilation with a single template parameter on
+the task type.</p>
+<p><strong>Poll 5.</strong> LEWG should explore the <em>IoAwaitable</em>
+protocol as a candidate standard vocabulary for coroutine-based I/O.</p>
+<hr />
+<h2 id="conclusion">13. Conclusion</h2>
+<p>The <em>IoAwaitable</em> protocol is two concepts, one type-erased
+executor, and a thread-local frame allocator cache. Three deployed
+libraries - <a href="https://github.com/cppalliance/capy">Capy</a><sup>[5]</sup>, <a href="https://github.com/cppalliance/corosio">Corosio</a><sup>[6]</sup>,
+and <a href="https://github.com/cppalliance/http">Http</a><sup>[8]</sup>
+- implement it across Linux, Windows, and macOS. A self-contained
+demonstration is on <a href="https://godbolt.org/z/Wzrb7McrT">Compiler
+Explorer</a> (https://godbolt.org/z/Wzrb7McrT)<sup>[10]</sup>. The
+specification fits in six pages. We could not find anything to remove
+from it without losing function.</p>
+<p>The abstractions that succeed in C++ are narrow. Iterators capture
+traversal. Allocators capture memory strategy. Each serves a broad
+category by focusing on one set of requirements. I/O asynchrony is one
+such category. GPU computing is another. Each deserves a model that
+fits.</p>
+<p><strong>For I/O, the basis is already in the language.</strong></p>
+<p>The committee has named networking a priority in every standard cycle
+since C++20. The coroutine-native approach was not among the
+alternatives considered at the time of the Kona poll. It is now. Poll 1
+asks whether it is distinct. Poll 2 asks whether it warrants
+consideration. Polls 3 and 4 establish the design principles. Poll 5
+asks LEWG to explore. A delegate who agrees that C++ deserves a
+networking foundation - and that the narrowest sufficient model is the
+right one - can vote for all five.</p>
+<hr />
 <h2 id="appendix-a-understanding-asynchronous-io">Appendix A:
 Understanding Asynchronous I/O</h2>
 <p>Not every committee member or library reviewer works with network
@@ -4440,10 +4483,10 @@ Lewis Baker for his foundational work on C++ coroutines - their
 contributions shaped the landscape upon which this paper builds. We also
 thank Peter Dimov and Mateusz Pusz for their valuable feedback, as well
 as Mohammad Nejati, Michael Vandeberg, and Klemens Morgenstern for their
-assistance with the implementation. We thank [TODO: reviewer names] for
-independently identifying the TLS spoilage gap in frame allocator
-propagation, which led to the <code>safe_resume</code> protocol
-described in Section 5.4.</p>
+assistance with the implementation. The TLS spoilage gap in frame
+allocator propagation, which led to the <code>safe_resume</code>
+protocol described in Section 6.4, was identified during internal
+review.</p>
 <hr />
 <h2 id="references">References</h2>
 <ol type="1">
