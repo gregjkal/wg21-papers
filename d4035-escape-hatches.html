@@ -574,20 +574,43 @@ background-color: var(--text-secondary);
 
 .wording {
 background-color: var(--bg-secondary);
+border-left: 3px solid var(--text-muted);
 border-radius: 4px;
 padding: var(--spacing-lg);
 margin: var(--spacing-lg) 0;
 }
 .wording-add {
 background-color: #eef6ee;
-border-color: #66aa66;
+border-left: 3px solid #66aa66;
+border-radius: 4px;
+padding: var(--spacing-lg);
+margin: var(--spacing-lg) 0;
+color: #006e28;
 }
 .wording-remove {
 background-color: #fdf2f2;
-border-color: var(--cpp-alliance-red);
-}
-.wording-remove > p:not(:first-child) {
+border-left: 3px solid var(--cpp-alliance-red);
+border-radius: 4px;
+padding: var(--spacing-lg);
+margin: var(--spacing-lg) 0;
+color: #bf0303;
 text-decoration: line-through;
+}
+
+.wording code,
+.wording-add code,
+.wording-remove code {
+color: inherit;
+}
+
+.wording pre,
+.wording-add pre,
+.wording-remove pre {
+border-left: none;
+padding: 0;
+margin: 0;
+background: none;
+box-shadow: none;
 }
 
 .pnum {
@@ -849,7 +872,9 @@ outline: none;
   <li><a href="#application-level" id="toc-application-level">4.
   Application Level</a></li>
   <li><a href="#structured-concurrency" id="toc-structured-concurrency">5. Structured Concurrency</a></li>
-  <li><a href="#conclusion" id="toc-conclusion">6. Conclusion</a></li>
+  <li><a href="#cstring_view-constructors" id="toc-cstring_view-constructors">6. <code>cstring_view</code>
+  Constructors</a></li>
+  <li><a href="#conclusion" id="toc-conclusion">7. Conclusion</a></li>
   <li><a href="#acknowledgements" id="toc-acknowledgements">Acknowledgements</a></li>
   <li><a href="#references" id="toc-references">References</a></li>
   </ul>
@@ -873,8 +898,9 @@ needs an explicit path for trusted data - when the precondition is
 already satisfied at a boundary and re-validation is pure overhead.</p>
 <p>This pattern appears in the standard library, in production Boost
 libraries, in the current <code>cstring_view</code> proposal, and in
-coroutine-based concurrency libraries. Four independent examples
-follow.</p>
+coroutine-based concurrency libraries. Four independent examples follow.
+A fifth section applies the pattern to <code>cstring_view</code>
+constructor design.</p>
 <h2 id="standard-precedent">2. Standard Precedent</h2>
 <p>The standard library provides <a href="https://eel.is/c++draft/thread.condition.condvar"><code>std::condition_variable</code></a><sup>[1]</sup>,
 which requires <code>std::unique_lock&lt;std::mutex&gt;</code>. This
@@ -969,7 +995,107 @@ precisely why the escape hatch must be designed rather than left to raw
 <code>std::thread</code> or <code>std::async</code>, which offer none of
 these guardrails. Eliminating the escape hatch does not eliminate
 unstructured concurrency; it pushes programmers toward worse tools.</p>
-<h2 id="conclusion">6. Conclusion</h2>
+<h2 id="cstring_view-constructors">6. <code>cstring_view</code>
+Constructors</h2>
+<p><a href="https://wg21.link/p3655r3">P3655R3</a><sup>[10]</sup>
+(“cstring_view”) proposes <code>std::cstring_view</code>, a non-owning
+view guaranteed to be null-terminated. The type fills a real gap:
+<code>std::string</code> owns and null-terminates,
+<code>std::string_view</code> does not own and does not null-terminate,
+and <code>cstring_view</code> does not own but does null-terminate. Over
+2,100 independent implementations on GitHub confirm the demand. The
+<code>substr</code> split - one-argument returning
+<code>cstring_view</code>, two-argument returning
+<code>string_view</code> - and the deletion of
+<code>remove_suffix</code> show careful attention to the
+null-termination invariant.</p>
+<p>The escape-hatch pattern from Sections 2-5 applies directly to the
+constructor set. P3655R3’s pointer-and-length constructor has a narrow
+contract:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> basic_cstring_view<span class="op">(</span><span class="at">const</span> charT<span class="op">*</span> str<span class="op">,</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="dt">size_type</span> len<span class="op">);</span>   <span class="co">// Precondition: str[len] == &#39;\0&#39;.</span></span></code></pre></div>
+<p>Violating the precondition is undefined behavior. The design
+purchases O(1) construction for callers who already hold null-terminated
+data. Completely reasonable when the data is trusted.</p>
+<p>LEWG designs are evaluated in a climate where safety is a first-order
+concern. A constructor whose public interface admits undefined behavior
+when a caller provides unterminated data will face scrutiny that a
+constructor with well-defined behavior for all inputs does not. This is
+an observable condition the design operates in.</p>
+<p>Two callers illustrate the tension:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> caller_a<span class="op">(</span>DIR<span class="op">*</span> dir<span class="op">)</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    dirent<span class="op">*</span> de <span class="op">=</span> <span class="op">::</span>readdir<span class="op">(</span>dir<span class="op">);</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">const</span> <span class="dt">char</span><span class="op">*</span> p <span class="op">=</span> de<span class="op">-&gt;</span>d_name<span class="op">;</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>size_t n <span class="op">=</span> de<span class="op">-&gt;</span>d_namlen<span class="op">;</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    <span class="co">// OS guarantees null-termination. O(1) desired.</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    cstring_view name<span class="op">(</span>p<span class="op">,</span> n<span class="op">);</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    consume<span class="op">(</span>name<span class="op">);</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> caller_b<span class="op">(</span><span class="bu">std::</span>span<span class="op">&lt;</span><span class="at">const</span> <span class="dt">char</span><span class="op">&gt;</span> buffer<span class="op">)</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">const</span> <span class="dt">char</span><span class="op">*</span> p <span class="op">=</span> buffer<span class="op">.</span>data<span class="op">();</span></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>size_t n <span class="op">=</span> buffer<span class="op">.</span>size<span class="op">();</span></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Data origin unknown. Null-termination not guaranteed.</span></span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>    cstring_view name<span class="op">(</span>p<span class="op">,</span> n<span class="op">);</span>  <span class="co">// UB if not null-terminated.</span></span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>    consume<span class="op">(</span>name<span class="op">);</span></span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>Caller A holds trusted data and wants zero-cost construction. Caller
+B holds untrusted data and needs validation. One constructor cannot
+serve both safely. The escape-hatch pattern resolves this:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Safe: scans [str, str+len] for the first null.</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="co">// Postcondition: data()[size()] == &#39;\0&#39;,</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="co">//   no interior nulls.</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> cstring_view<span class="op">(</span><span class="at">const</span> charT<span class="op">*</span> str<span class="op">,</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">size_type</span> len<span class="op">);</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="co">// Escape hatch: O(1), no scan.</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="co">// Precondition: str[len] == &#39;\0&#39;, no interior nulls.</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a><span class="at">static</span> <span class="kw">constexpr</span> cstring_view unsafe<span class="op">(</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">const</span> charT<span class="op">*</span> str<span class="op">,</span> <span class="dt">size_type</span> len<span class="op">)</span> <span class="kw">noexcept</span><span class="op">;</span></span></code></pre></div>
+<p>The safe constructor scans. The cost is O(n). The <code>unsafe</code>
+factory trusts the caller and pays nothing. This is the same pattern as
+<code>pct_string_view</code> and
+<code>make_pct_string_view_unsafe</code> from Section 3 - safe by
+default, explicit opt-in at trusted boundaries.</p>
+<p>C++ earns its reputation as a zero-cost abstraction language by
+letting programmers pay only for what they use. A type that validates on
+every construction - with no way to bypass validation at a trusted
+boundary - imposes cost the programmer cannot eliminate. The
+<code>unsafe</code> factory preserves this principle.</p>
+<p>The choice of the name <code>unsafe</code> is deliberate. It mirrors
+the Rust keyword, where <code>unsafe</code> marks the boundary at which
+the programmer takes responsibility for invariants the language normally
+enforces. <code>cstring_view::unsafe</code> marks the same kind of
+boundary: the caller asserts null-termination that the constructor
+normally verifies. The cross-language resonance makes the API legible to
+developers familiar with either language.</p>
+<p>P3655R3 also provides a templated constructor from an iterator
+pair:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span><span class="op">&lt;</span><span class="kw">class</span> It<span class="op">,</span> <span class="kw">class</span> End<span class="op">&gt;</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> basic_cstring_view<span class="op">(</span>It begin<span class="op">,</span> End end<span class="op">);</span></span></code></pre></div>
+<p>The contract requires <code>*(begin + (end - begin)) == &#39;\0&#39;</code> -
+the iterator at position <code>end</code> must be dereferenceable. This
+breaks the standard C++ convention that <code>end</code> is past-the-end
+and not dereferenceable. Under a wide-contract model, three options
+present themselves:</p>
+<ul>
+<li><strong>A.</strong> Require <code>[begin, end]</code> readable
+(inclusive), scan for the first null. Same model as the
+pointer-and-length constructor.</li>
+<li><strong>B.</strong> Require only <code>[begin, end)</code> readable,
+scan the half-open range for the first null.</li>
+<li><strong>C.</strong> Remove the constructor. No demonstrated use case
+requires it that the pointer-and-length constructor does not already
+serve. Real-world <code>cstring_view</code> usage originates from
+<code>const char*</code> (C APIs, OS calls, string literals) or from
+<code>std::string</code> (implicit conversion). Ship the type without
+this constructor; add it later when evidence of need emerges.</li>
+</ul>
+<h2 id="conclusion">7. Conclusion</h2>
 <p>The standard library already provides constrained defaults with
 explicit broader counterparts. Production libraries independently
 converge on the same pattern for trusted boundaries. The same principle
@@ -984,7 +1110,9 @@ treatment.</p>
 <h1 id="acknowledgements">Acknowledgements</h1>
 <p>The author thanks Jonathan Wakely, Jan Schultke, Pablo Halpern, and
 Nevin Liber for discussion and feedback on safe and unsafe construction
-paths.</p>
+paths. The author thanks Peter Bindels, Hana Dusikova, Jeremy Rifkin,
+Marco Foco, and Alexey Shevlyakov for their work on
+<code>cstring_view</code>.</p>
 <hr />
 <h1 id="references">References</h1>
 <p>[1] C++ Working Draft, <code>condition_variable</code>
@@ -1005,6 +1133,8 @@ https://cgit.freebsd.org/src/tree/sys/sys/dirent.h</p>
 <p>[8] The Open Group Base Specifications Issue 8,
 https://pubs.opengroup.org/onlinepubs/9799919799/</p>
 <p>[9] Capy, https://github.com/cppalliance/capy</p>
+<p>[10] P3655R3, “cstring_view,” Peter Bindels, Hana Dusikova, Jeremy
+Rifkin, Marco Foco, Alexey Shevlyakov, https://wg21.link/p3655r3</p>
 
 </body>
 </html>
