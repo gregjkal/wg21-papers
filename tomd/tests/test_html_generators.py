@@ -2,8 +2,6 @@
 """Per-generator integration tests for the HTML converter."""
 from pathlib import Path
 
-import pytest
-
 from lib.html.extract import (
     parse_html, detect_generator, extract_metadata, strip_boilerplate,
 )

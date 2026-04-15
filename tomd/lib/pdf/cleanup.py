@@ -2,7 +2,7 @@
 
 import logging
 import re
-from collections import defaultdict
+from collections import defaultdict, Counter
 from dataclasses import replace
 
 from .. import strip_format_chars, DOC_NUM_RE
@@ -79,14 +79,7 @@ def detect_repeating(all_edge_items: list[list[PageEdgeItem]],
         pages_seen = len(set(it.page_num for it in items))
         if pages_seen < threshold:
             continue
-
         texts = [it.text for it in items]
-        entry_count = {k: texts.count(k) for k in texts}
-        for k, v in entry_count.items():
-            if v > total_pages / 2:
-                repeating.add((y_key, k))
-                _log.debug("Repeating exact: y=%.1f text=%r", y_key, k)
-                continue
 
         if all(PAGE_NUM_RE.match(t) for t in texts):
             repeating.add((y_key, "__PAGE_NUM__"))
@@ -96,6 +89,16 @@ def detect_repeating(all_edge_items: list[list[PageEdgeItem]],
         if all(DOC_NUM_RE.search(t) for t in texts):
             repeating.add((y_key, "__DOC_NUM__"))
             _log.debug("Repeating doc number at y=%.1f", y_key)
+            continue
+
+        text_counts = Counter(it.text for it in items)
+        exact_hit = False
+        for text, count in text_counts.items():
+            if count >= threshold:
+                repeating.add((y_key, text))
+                _log.debug("Repeating exact: y=%.1f text=%r", y_key, text)
+                exact_hit = True
+        if exact_hit:
             continue
 
     return repeating

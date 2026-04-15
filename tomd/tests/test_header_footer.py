@@ -90,7 +90,6 @@ def test_detect_repeating_exact_text():
         [PageEdgeItem(text="Unique Title", y=30.0, page_num=5, bbox=(0, 30, 100, 42))],
     ]
     result = detect_repeating(all_edges, total_pages=5)
-    print(all_edges)
     # y_bucket = round(30 / Y_TOLERANCE) * Y_TOLERANCE = 30.0 (Y_TOLERANCE is 2.0)
     assert (30.0, "Running Head") in result
 

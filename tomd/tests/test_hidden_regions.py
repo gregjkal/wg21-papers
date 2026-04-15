@@ -2,8 +2,6 @@
 """Tests for hidden region detection and stripping in lib.pdf.cleanup."""
 from unittest.mock import MagicMock
 
-import pytest
-
 from lib.pdf.cleanup import find_hidden_regions, strip_hidden_blocks
 from lib.pdf.types import Block, Line, Span
 
